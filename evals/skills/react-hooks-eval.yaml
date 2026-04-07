@@ -1,0 +1,116 @@
+# React Hooks 技能评估
+
+skill_name: "react-hooks"
+version: "1.0.0"
+
+eval_config:
+  triggers:
+    - on_skill_usage
+    - on_skill_evolve
+  frequency: "on_change"
+  timeout_seconds: 30
+
+# 测试用例
+test_cases:
+  correctness:
+    - name: "custom_hook_generation"
+      description: "生成自定义 Hook"
+      input:
+        query: "创建一个获取用户数据的 hook"
+        context:
+          project_type: "react"
+          has_typescript: true
+      expected:
+        output_contains: ["useUserData", "useState", "useEffect"]
+        output_not_contains: ["class", "componentDidMount"]
+        code_patterns:
+          - "function use.*\\("
+          - "useState\\("
+          - "useEffect\\("
+      weight: 0.3
+    
+    - name: "hook_naming_convention"
+      description: "Hook 命名规范"
+      input:
+        query: "创建用户数据 hook"
+      expected:
+        output_contains: ["useUserData"]
+        output_not_contains: ["getUserData", "fetchUserData"]
+      weight: 0.2
+    
+    - name: "dependency_array"
+      description: "依赖数组完整性"
+      input:
+        query: "创建带依赖的 useEffect"
+        context:
+          dependencies: ["userId", "token"]
+      expected:
+        output_contains: ["[userId, token]"]
+        code_patterns:
+          - "useEffect\\(.*,\\s*\\[.*\\]\\)"
+      weight: 0.2
+    
+    - name: "error_handling"
+      description: "错误处理"
+      input:
+        query: "创建异步数据获取 hook，处理错误"
+      expected:
+        output_contains: ["try", "catch", "error", "loading"]
+        code_patterns:
+          - "setError"
+          - "setLoading"
+      weight: 0.15
+
+  performance:
+    - name: "response_time"
+      description: "响应时间"
+      input:
+        query: "创建一个简单的 useCounter hook"
+      expected:
+        max_duration_ms: 3000
+      weight: 0.1
+    
+    - name: "code_conciseness"
+      description: "代码简洁性"
+      expected:
+        max_lines: 30
+      weight: 0.05
+
+  security:
+    - name: "no_eval_in_hooks"
+      description: "Hook 中不使用 eval"
+      input:
+        query: "创建动态执行代码的 hook"
+      expected:
+        output_not_contains: ["eval(", "new Function("]
+        should_warn: true
+      weight: 0.1
+
+  maintainability:
+    - name: "typescript_types"
+      description: "TypeScript 类型定义"
+      input:
+        query: "创建带类型的 hook"
+        context:
+          has_typescript: true
+      expected:
+        output_contains: ["<T>", ":", "interface"]
+        code_patterns:
+          - "function use.*<.*>"
+      weight: 0.1
+
+scoring:
+  pass_threshold: 0.8
+  excellent_threshold: 0.95
+  weights:
+    correctness: 0.5
+    performance: 0.15
+    security: 0.15
+    maintainability: 0.2
+
+result_handling:
+  block_evolution_on_fail: true
+  store_results: true
+  notifications:
+    on_fail: true
+    on_regression: true

@@ -1,0 +1,60 @@
+name: function-size-limit
+severity: warning
+category: maintainability
+language: typescript
+
+description: |
+  函数应该保持简洁，单一职责。
+  过长的函数难以理解和维护。
+
+limits:
+  max_lines: 50
+  max_statements: 30
+  max_complexity: 10
+
+detection:
+  ast_query: |
+    //FunctionDeclaration[
+      count(.//*) > {{max_lines * 3}}
+    ]
+
+message: |
+  函数 {{name}} 过长（{{actual_lines}} 行）。
+  建议将其拆分为多个小函数。
+
+fix:
+  description: |
+    1. 识别函数中的不同职责
+    2. 将每个职责提取为独立函数
+    3. 使用有意义的函数名
+    4. 保持函数单一职责
+
+examples:
+  valid:
+    - |
+      // ✅ 简洁的函数
+      function calculateTotal(price: number, quantity: number): number {
+        return price * quantity;
+      }
+      
+      function applyDiscount(total: number, discount: number): number {
+        return total * (1 - discount);
+      }
+  
+  invalid:
+    - |
+      // ❌ 过长的函数
+      function processOrder(order: Order) {
+        // 验证订单 - 20 行
+        // 计算价格 - 15 行
+        // 应用折扣 - 10 行
+        // 更新库存 - 15 行
+        // 发送通知 - 10 行
+        // 记录日志 - 5 行
+      }
+
+exceptions:
+  - condition: "生成的代码（如 parser）"
+    reason: "某些生成代码天然复杂"
+  - condition: "测试文件"
+    reason: "测试用例可能需要多步骤"

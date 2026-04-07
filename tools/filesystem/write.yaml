@@ -1,0 +1,101 @@
+name: filesystem_write
+description: |
+  写入文件内容。支持创建新文件或覆盖现有文件。
+  默认会创建备份，可通过参数禁用。
+
+input:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 文件路径
+    
+    content:
+      type: string
+      description: 文件内容
+    
+    create_backup:
+      type: boolean
+      description: 是否创建备份
+      default: true
+    
+    append:
+      type: boolean
+      description: 是否追加模式
+      default: false
+    
+    encoding:
+      type: string
+      description: 文件编码
+      default: "utf-8"
+  
+  required: [path, content]
+
+output:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: 是否成功
+    
+    bytes_written:
+      type: integer
+      description: 写入字节数
+    
+    backup_path:
+      type: string
+      description: 备份文件路径（如创建）
+    
+    previous_size:
+      type: integer
+      description: 原文件大小（如存在）
+  
+  required: [success, bytes_written]
+
+errors:
+  - name: PermissionDeniedError
+    code: PERMISSION_DENIED
+    description: 无权限写入
+  
+  - name: PathBlockedError
+    code: PATH_BLOCKED
+    description: 路径被安全策略阻止
+  
+  - name: DiskFullError
+    code: DISK_FULL
+    description: 磁盘空间不足
+
+confirmation:
+  required: true
+  reason: |
+    写入操作会修改文件系统状态。
+    大文件修改（>100行）或关键配置文件需要确认。
+
+examples:
+  - name: 创建新文件
+    input:
+      path: "./src/utils/helper.ts"
+      content: "export function helper() {}"
+    output:
+      success: true
+      bytes_written: 32
+
+  - name: 修改现有文件（带备份）
+    input:
+      path: "./config.json"
+      content: '{"version": "2.0"}'
+      create_backup: true
+    output:
+      success: true
+      bytes_written: 20
+      backup_path: "./config.json.backup.20240115"
+      previous_size: 18
+
+constraints:
+  blocked_patterns:
+    - "*.secret"
+    - "*.key"
+    - "~/.ssh/*"
+    - "/etc/*"
+  max_file_size_mb: 10
+  require_confirmation_above_lines: 100

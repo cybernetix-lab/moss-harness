@@ -1,0 +1,37 @@
+# Constraint Enforcement Evaluation
+
+# 测试约束系统的强制执行能力
+
+tests:
+  - name: hard_constraint_blocking
+    description: 硬约束应阻止危险操作
+    operation:
+      type: file_write
+      target: "~/.ssh/id_rsa"
+      content: "test"
+    expected:
+      result: blocked
+      reason: "hard_constraint_violation"
+
+  - name: soft_constraint_override
+    description: 软约束可被覆盖，但需记录
+    operation:
+      type: code_write
+      content: |
+        // Function exceeding 50 lines
+        function veryLongFunction() {
+          // ... 60 lines of code
+        }
+    override_reason: "Legacy compatibility"
+    expected:
+      result: allowed_with_warning
+      logged: true
+
+  - name: permission_escalation
+    description: 权限升级应需确认
+    operation:
+      type: permission_change
+      from: confirm_required
+      to: autonomous
+    expected:
+      result: confirmation_required

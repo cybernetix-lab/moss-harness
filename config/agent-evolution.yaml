@@ -1,0 +1,126 @@
+# Agent Evolution Configuration
+# Agent 进化引擎配置
+
+# 触发阈值配置
+thresholds:
+  # 最小评估次数（达到此次数后才考虑进化）
+  min_evaluations: 3
+  
+  # 最低成功率（低于此值触发 prompt 优化）
+  min_success_rate: 70
+  
+  # 最低质量评分（低于此值触发模型调优）
+  min_quality_score: 75
+  
+  # 最低约束遵守度（低于此值触发工具调整）
+  min_constraint_compliance: 90
+  
+  # 最大进化频率（两次进化间隔至少 7 天）
+  max_evolution_frequency: 7d
+
+# 评分权重配置
+weights:
+  success_rate: 0.4
+  quality_score: 0.4
+  constraint_compliance: 0.2
+
+# 进化策略配置
+strategies:
+  # Prompt 优化策略
+  prompt_optimization:
+    enabled: true
+    trigger: success_rate < 80
+    description: |
+      当成功率低于阈值时，优化 system_prompt 以增强指导性。
+      包括：
+      - 添加更详细的步骤说明
+      - 强化约束提醒
+      - 增加示例和最佳实践
+    
+  # 工具权限调整策略
+  tool_adjustment:
+    enabled: true
+    trigger: constraint_compliance < 90
+    description: |
+      当约束遵守度较低时，审查工具权限配置。
+      包括：
+      - 重新评估 allowed/blocked 工具
+      - 添加或移除特定工具权限
+      - 调整工具使用指导
+    
+  # 模型参数调优策略
+  model_tuning:
+    enabled: true
+    trigger: quality_score < 75
+    description: |
+      当质量评分较低时，调整模型参数以提高输出质量。
+      包括：
+      - 降低 temperature 以提高稳定性
+      - 调整 max_tokens 以优化成本
+      - 考虑更换模型版本
+    adjustments:
+      temperature_step: -0.1
+      min_temperature: 0.1
+      max_temperature: 1.0
+    
+  # 上下文优化策略
+  context_optimization:
+    enabled: true
+    trigger: avg_duration > 300
+    description: |
+      当平均执行时间较长时，优化上下文管理。
+      包括：
+      - 减少 max_tokens
+      - 优化 context retention 策略
+      - 调整 priority 配置
+    adjustments:
+      max_tokens_step: -1024
+      min_max_tokens: 4096
+
+# 进化约束
+constraints:
+  # 温度参数边界
+  max_temperature: 1.0
+  min_temperature: 0.1
+  
+  # Token 调整步长
+  max_tokens_step: 1024
+  
+  # 最大进化次数（防止过度进化）
+  max_evolutions_per_month: 4
+  
+  # 必须保留的原始配置项
+  preserve_fields:
+    - name
+    - type
+    - description
+
+# 进化历史保留
+history:
+  # 保留备份数量
+  max_backups: 10
+  
+  # 保留提案数量
+  max_proposals: 50
+  
+  # 历史数据保留天数
+  retention_days: 90
+
+# 通知配置
+notifications:
+  # 进化完成时通知
+  on_evolution_complete: true
+  
+  # 进化失败时通知
+  on_evolution_failed: true
+  
+  # 需要人工审查时通知
+  on_manual_review_required: true
+
+# 与 Skill 进化的协同
+skill_integration:
+  # 是否考虑 Skill 评估结果
+  consider_skill_performance: true
+  
+  # Skill 权重
+  skill_weight: 0.3

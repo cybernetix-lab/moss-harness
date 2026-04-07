@@ -1,0 +1,85 @@
+# Agent Evaluation Case: Planner - Task Decomposition
+# 测试 Planner 的任务分解能力
+
+name: planner-task-decomposition
+description: |
+  评估 Planner 将复杂需求分解为合理子任务的能力。
+  测试任务粒度控制、依赖关系识别和验收标准制定。
+
+test_cases:
+  - id: TC-001
+    name: 简单功能实现
+    input:
+      requirements: |
+        实现一个用户注册功能，包括：
+        - 用户名和密码输入
+        - 密码强度验证
+        - 用户信息存储到数据库
+    expected_output:
+      task_count_range: [3, 5]
+      max_task_hours: 4
+      has_dependencies: true
+      has_acceptance_criteria: true
+    evaluation_criteria:
+      - 任务分解粒度合理（2-4小时/任务）
+      - 依赖关系清晰
+      - 验收标准明确可验证
+
+  - id: TC-002
+    name: 复杂系统架构
+    input:
+      requirements: |
+        设计并实现一个微服务架构的电商系统，包括：
+        - 用户服务、商品服务、订单服务
+        - 服务间通信和负载均衡
+        - 数据库设计和分库分表
+        - 缓存和消息队列
+    expected_output:
+      task_count_range: [10, 20]
+      max_task_hours: 8
+      has_architecture_design: true
+      has_risk_assessment: true
+    evaluation_criteria:
+      - 任务分解符合架构设计流程
+      - 识别关键技术决策点
+      - 风险评估全面
+
+  - id: TC-003
+    name: 边界情况处理
+    input:
+      requirements: |
+        实现一个文件上传功能
+    expected_output:
+      includes_edge_cases:
+        - 大文件处理
+        - 文件类型验证
+        - 上传失败重试
+        - 并发上传处理
+    evaluation_criteria:
+      - 识别隐性需求
+      - 考虑边界情况
+      - 包含错误处理任务
+
+scoring:
+  weights:
+    task_granularity: 0.3
+    dependency_clarity: 0.2
+    acceptance_criteria: 0.3
+    edge_case_coverage: 0.2
+  
+  thresholds:
+    pass: 75
+    excellent: 90
+
+metrics:
+  - name: average_task_hours
+    description: 平均任务工时
+    target: "2-4 hours"
+  
+  - name: dependency_accuracy
+    description: 依赖关系准确性
+    target: ">= 90%"
+  
+  - name: criteria_completeness
+    description: 验收标准完整性
+    target: ">= 85%"

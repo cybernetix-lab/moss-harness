@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Prometheus - 指标存储和查询
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: harness-prometheus
+    ports:
+      - "9091:9090"  # 映射到 9091 避免与 exporter 冲突
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - harness-monitoring
+    restart: unless-stopped
+
+  # Grafana - 可视化仪表盘
+  grafana:
+    image: grafana/grafana:latest
+    container_name: harness-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - harness-monitoring
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # 可选：Node Exporter - 系统指标
+  # node-exporter:
+  #   image: prom/node-exporter:latest
+  #   container_name: harness-node-exporter
+  #   ports:
+  #     - "9100:9100"
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   command:
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.rootfs=/rootfs'
+  #     - '--path.sysfs=/host/sys'
+  #     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  #   networks:
+  #     - harness-monitoring
+  #   restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  harness-monitoring:
+    driver: bridge

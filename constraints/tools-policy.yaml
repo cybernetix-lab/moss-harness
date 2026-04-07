@@ -1,0 +1,67 @@
+# Tools Policy - 工具使用策略
+
+tools:
+  # 文件操作
+  file_operations:
+    read:
+      permission: allowed
+      max_size_mb: 5
+    
+    write:
+      permission: confirm_required
+      blocked_patterns:
+        - "*.secret"
+        - "*.key"
+      backup_required: true
+    
+    delete:
+      permission: confirm_required
+      require_trash: true
+
+  # 代码执行
+  code_execution:
+    run_tests:
+      permission: allowed
+      sandbox: preferred
+    
+    install_dependencies:
+      permission: confirm_required
+      allowed_managers:
+        - npm
+        - pip
+        - cargo
+    
+    execute_arbitrary:
+      permission: blocked
+
+  # 网络请求
+  network:
+    fetch_documentation:
+      permission: allowed
+      timeout_seconds: 30
+    
+    api_calls:
+      permission: confirm_required
+      log_requests: true
+
+  # 搜索
+  search:
+    codebase:
+      permission: allowed
+    
+    web:
+      permission: allowed
+      max_results: 5
+
+# 工具掩码 - 根据任务阶段隐藏工具
+masking:
+  enabled: true
+  stages:
+    planning:
+      visible: [read, search, list]
+    
+    implementation:
+      visible: [read, write, search, run_tests]
+    
+    review:
+      visible: [read, search, run_tests]

@@ -1,0 +1,130 @@
+# Agent Evaluation Case: Evaluator - Quality Assessment
+# 测试 Evaluator 的质量评估能力
+
+name: evaluator-assessment
+description: |
+  评估 Evaluator 客观评估实现质量的能力。
+  测试需求验证、测试评估和评估报告的准确性。
+
+test_cases:
+  - id: TC-001
+    name: 需求满足度验证
+    input:
+      requirements:
+        - "实现用户登录 API"
+        - "验证用户名和密码"
+        - "返回 JWT token"
+        - "记录登录日志"
+      implementation:
+        files:
+          - path: "src/auth/login.ts"
+            content: |
+              export async function login(username: string, password: string) {
+                const user = await findUser(username);
+                if (!user) throw new Error('User not found');
+                const valid = await verifyPassword(password, user.passwordHash);
+                if (!valid) throw new Error('Invalid password');
+                const token = generateJWT(user);
+                return { token };
+              }
+        tests:
+          - name: "should login with valid credentials"
+            status: passed
+          - name: "should reject invalid password"
+            status: passed
+    expected_output:
+      verdict: "PASS_WITH_WARNINGS"
+      issues_found:
+        - severity: warning
+          description: "未实现登录日志记录"
+    evaluation_criteria:
+      - 准确识别已实现的需求
+      - 发现未实现的需求
+      - 给出合理的评估结论
+
+  - id: TC-002
+    name: 测试覆盖评估
+    input:
+      requirements:
+        - "实现用户注册 API"
+      implementation:
+        test_coverage: 60
+        tests:
+          - name: "should register new user"
+            status: passed
+          - name: "should reject duplicate username"
+            status: passed
+    expected_output:
+      coverage_assessment: "insufficient"
+      recommendations:
+        - "需要添加边界情况测试"
+        - "需要添加错误处理测试"
+    evaluation_criteria:
+      - 准确评估测试覆盖率
+      - 识别测试盲点
+      - 提供测试改进建议
+
+  - id: TC-003
+    name: 代码质量评估
+    input:
+      implementation:
+        code_metrics:
+          complexity: 15
+          lines_per_function: 80
+          duplicate_code: true
+      test_results:
+        passed: 10
+        failed: 0
+    expected_output:
+      verdict: "NEEDS_IMPROVEMENT"
+      issues_found:
+        - severity: critical
+          description: "代码复杂度过高"
+        - severity: warning
+          description: "函数过长"
+    evaluation_criteria:
+      - 识别代码质量问题
+      - 不因为测试通过而忽略质量问题
+      - 问题分级合理
+
+  - id: TC-004
+    name: 客观性测试
+    input:
+      requirements:
+        - "实现简单功能"
+      implementation:
+        quality: excellent
+        has_minor_issues: true
+    expected_output:
+      verdict: "PASS"
+      not_biased_by: "实现简单"
+      issues_found:
+        - severity: suggestion
+    evaluation_criteria:
+      - 保持客观，不因任务简单而降低标准
+      - 不因任务复杂而放宽要求
+      - 严格按照验收标准评估
+
+scoring:
+  weights:
+    requirement_verification: 0.3
+    test_assessment: 0.2
+    code_quality_review: 0.3
+    objectivity: 0.2
+  
+  thresholds:
+    pass: 80
+    excellent: 95
+
+metrics:
+  - name: verdict_accuracy
+    description: 评估结论准确性
+    target: ">= 90%"
+  
+  - name: issue_detection_completeness
+    description: 问题检出完整性
+    target: ">= 85%"
+  
+  - name: objectivity_score
+    description: 客观性评分
+    target: ">= 90%"

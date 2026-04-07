@@ -1,0 +1,71 @@
+# Telemetry Configuration
+
+collection:
+  # 启用/禁用
+  enabled: true
+  
+  # 采样率 (1.0 = 100%)
+  sample_rate: 1.0
+  
+  # 收集的数据类型
+  data_types:
+    traces: true
+    metrics: true
+    logs: true
+    checkpoints: true
+
+storage:
+  # 存储后端
+  backend: local
+  
+  # 本地存储配置
+  local:
+    path: ./runtime/telemetry
+    max_size_mb: 1000
+    retention_days: 30
+
+  # 旋转策略
+  rotation:
+    max_file_size_mb: 100
+    max_files: 10
+
+traces:
+  # 追踪配置
+  capture:
+    input: true
+    output: true
+    stack_trace: true
+    context_snapshot: true
+  
+  # 敏感数据过滤
+  redaction:
+    patterns:
+      - "password"
+      - "token"
+      - "secret"
+      - "api_key"
+    replacement: "[REDACTED]"
+
+metrics:
+  # 指标收集
+  collect:
+    - operation_count
+    - operation_duration
+    - error_rate
+    - context_size
+    - token_usage
+  
+  # 聚合间隔
+  aggregation_interval_seconds: 60
+
+checkpoints:
+  # 自动检查点
+  auto_create:
+    on_success: true
+    on_error: true
+    interval_minutes: 10
+  
+  # 保留策略
+  retention:
+    max_checkpoints: 50
+    min_interval_minutes: 5

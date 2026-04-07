@@ -1,0 +1,117 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "name": "Filesystem",
+      "description": "文件系统操作",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "{{PROJECT_ROOT}}"
+      ],
+      "env": {},
+      "enabled": true,
+      "constraints": {
+        "allowedPaths": ["{{PROJECT_ROOT}}"],
+        "blockedPaths": [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/.env*",
+          "**/*.key",
+          "**/*.pem"
+        ],
+        "maxFileSize": "10MB"
+      }
+    },
+    
+    "git": {
+      "name": "Git",
+      "description": "Git 操作",
+      "command": "uvx",
+      "args": [
+        "mcp-server-git"
+      ],
+      "env": {
+        "REPOSITORY_PATH": "{{PROJECT_ROOT}}"
+      },
+      "enabled": true,
+      "constraints": {
+        "allowedCommands": [
+          "status",
+          "log",
+          "diff",
+          "branch",
+          "show"
+        ],
+        "blockedCommands": [
+          "push",
+          "force-push",
+          "reset --hard"
+        ]
+      }
+    },
+    
+    "github": {
+      "name": "GitHub",
+      "description": "GitHub API 集成",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "enabled": false,
+      "constraints": {
+        "readOnly": true,
+        "rateLimit": 100
+      }
+    },
+    
+    "fetch": {
+      "name": "Fetch",
+      "description": "网页内容获取",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "enabled": true,
+      "constraints": {
+        "allowedHosts": [
+          "developer.mozilla.org",
+          "docs.python.org",
+          "www.typescriptlang.org",
+          "react.dev",
+          "github.com"
+        ],
+        "maxContentLength": "1MB",
+        "timeout": 30000
+      }
+    },
+    
+    "sqlite": {
+      "name": "SQLite",
+      "description": "SQLite 数据库查询",
+      "command": "uvx",
+      "args": [
+        "mcp-server-sqlite",
+        "--db-path",
+        "{{PROJECT_ROOT}}/data.db"
+      ],
+      "env": {},
+      "enabled": false,
+      "constraints": {
+        "readOnly": true,
+        "maxQueryLength": 1000
+      }
+    }
+  },
+  
+  "global": {
+    "timeout": 30000,
+    "maxConcurrentRequests": 5,
+    "logLevel": "info"
+  }
+}

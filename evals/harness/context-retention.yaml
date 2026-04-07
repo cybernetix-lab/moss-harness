@@ -1,0 +1,44 @@
+# Context Retention Evaluation
+
+# 测试上下文在压缩后的保留质量
+
+tests:
+  - name: goal_preservation
+    description: 目标信息在压缩后应被保留
+    input:
+      context: |
+        # Task
+        Goal: Implement user authentication
+        Progress: Login form created
+        Next: Add password validation
+    compression_ratio: 0.5
+    expected:
+      contains:
+        - "user authentication"
+        - "password validation"
+
+  - name: decision_preservation
+    description: 关键决策应被保留
+    input:
+      context: |
+        # Decisions
+        - Use JWT for auth (2024-01-15)
+        - Store tokens in httpOnly cookies
+    compression_ratio: 0.5
+    expected:
+      contains:
+        - "JWT"
+        - "httpOnly"
+
+  - name: failure_preservation
+    description: 失败信息应被保留
+    input:
+      context: |
+        # Attempts
+        - Tried bcrypt but too slow
+        - Switched to Argon2
+    compression_ratio: 0.5
+    expected:
+      contains:
+        - "bcrypt"
+        - "Argon2"

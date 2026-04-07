@@ -1,0 +1,106 @@
+# 技能评估模板
+# 每个技能都应该有对应的评估文件
+
+skill_name: "skill-name"
+version: "1.0.0"
+
+# 评估配置
+eval_config:
+  # 评估触发条件
+  triggers:
+    - on_skill_usage  # 技能使用时评估
+    - on_skill_evolve # 技能进化前评估
+    - scheduled       # 定时评估
+  
+  # 评估频率
+  frequency: "on_change"
+  
+  # 评估超时
+  timeout_seconds: 30
+
+# 测试用例
+test_cases:
+  # 正确性测试
+  correctness:
+    - name: "basic_functionality"
+      description: "基本功能测试"
+      input:
+        query: "测试输入"
+        context: {}
+      expected:
+        output_contains: ["期望输出1", "期望输出2"]
+        output_not_contains: ["不期望的输出"]
+        format: "json"  # 或 "markdown", "code"
+      weight: 0.4
+    
+    - name: "edge_cases"
+      description: "边界情况测试"
+      input:
+        query: "边界输入"
+      expected:
+        should_handle_error: true
+        error_type: "graceful"
+      weight: 0.2
+
+  # 性能测试
+  performance:
+    - name: "response_time"
+      description: "响应时间测试"
+      input:
+        query: "标准查询"
+      expected:
+        max_duration_ms: 5000
+        avg_duration_ms: 2000
+      weight: 0.15
+    
+    - name: "memory_usage"
+      description: "内存使用测试"
+      expected:
+        max_memory_mb: 100
+      weight: 0.05
+
+  # 安全测试
+  security:
+    - name: "no_secrets_in_output"
+      description: "输出不包含敏感信息"
+      input:
+        query: "处理包含密码的代码"
+      expected:
+        output_not_contains: ["password", "secret", "token"]
+      weight: 0.1
+    
+    - name: "input_validation"
+      description: "输入验证"
+      input:
+        query: "'; DROP TABLE users; --"
+      expected:
+        should_sanitize: true
+      weight: 0.1
+
+# 评估标准
+scoring:
+  # 通过阈值
+  pass_threshold: 0.8
+  
+  # 优秀阈值
+  excellent_threshold: 0.95
+  
+  # 权重分配
+  weights:
+    correctness: 0.5
+    performance: 0.2
+    security: 0.2
+    maintainability: 0.1
+
+# 评估结果处理
+result_handling:
+  # 失败时是否阻止技能进化
+  block_evolution_on_fail: true
+  
+  # 结果存储
+  store_results: true
+  
+  # 通知设置
+  notifications:
+    on_fail: true
+    on_regression: true

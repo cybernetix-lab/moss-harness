@@ -1,0 +1,72 @@
+name: type-safety-required
+severity: error
+category: maintainability
+language: typescript
+
+description: |
+  TypeScript 代码应该充分利用类型系统，避免使用 any。
+  类型安全是 TypeScript 的核心价值。
+
+rules:
+  - name: no-explicit-any
+    message: "禁止使用 explicit any"
+    pattern: ": any"
+    fix: "使用 unknown 或具体类型替代"
+  
+  - name: no-implicit-any
+    message: "参数需要显式类型"
+    pattern: "function.*\\(.*\\).*\\{"
+    check: "所有参数都有类型注解"
+  
+  - name: strict-null-checks
+    message: "处理可能的 null/undefined"
+    pattern: "\\w+\\?\\."
+    suggest: "使用可选链或明确处理"
+
+detection:
+  pattern: "\\bany\\b"
+
+message: |
+  检测到 any 类型使用。请使用更具体的类型。
+
+fix:
+  description: |
+    1. 分析变量/参数的实际类型
+    2. 定义接口或类型别名
+    3. 使用泛型增加灵活性
+    4. 必要时使用 unknown 替代 any
+
+examples:
+  valid:
+    - |
+      // ✅ 使用具体类型
+      interface User {
+        id: string;
+        name: string;
+      }
+      
+      function getUser(id: string): User | undefined {
+        return users.find(u => u.id === id);
+      }
+    - |
+      // ✅ 使用泛型
+      function identity<T>(value: T): T {
+        return value;
+      }
+  
+  invalid:
+    - |
+      // ❌ 使用 any
+      function processData(data: any): any {
+        return data.value;
+      }
+    - |
+      // ❌ 隐式 any
+      function add(a, b) {
+        return a + b;
+      }
+
+exceptions:
+  - condition: "与遗留 JavaScript 交互"
+    reason: "某些第三方库可能没有类型定义"
+    mitigation: "使用 declare module 或 @ts-ignore 并注释原因"

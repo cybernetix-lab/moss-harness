@@ -1,0 +1,131 @@
+name: security-scan
+description: |
+  安全扫描技能。自动检测代码中的安全漏洞、敏感信息泄露、不安全的编码实践。
+
+version: 1.0.0
+
+# 多标签分类
+tags:
+  # 领域标签
+  - security
+  # 任务类型标签
+  - review
+  - analysis
+  - testing
+  # 场景标签
+  - enterprise
+  - maintenance
+  # 复杂度标签
+  - advanced
+  - expert
+
+# 标签权重
+tag_weights:
+  security: 1.0
+  review: 0.9
+  analysis: 0.85
+
+triggers:
+  - pattern: "安全.*审查"
+    confidence: 0.9
+    tags_match: [security, review]
+  - pattern: "security.*scan"
+    confidence: 0.9
+    tags_match: [security]
+  - pattern: "漏洞.*检测"
+    confidence: 0.85
+    tags_match: [security, analysis]
+  - pattern: "检查.*密码"
+    confidence: 0.8
+    tags_match: [security]
+
+context:
+  scan_targets:
+    - "*.ts"
+    - "*.tsx"
+    - "*.js"
+    - "*.py"
+    - "*.yaml"
+    - "*.json"
+  exclude_patterns:
+    - "node_modules/**"
+    - ".git/**"
+    - "dist/**"
+
+detectors:
+  - name: hardcoded-secrets
+    severity: critical
+    tags: [secrets, credentials]
+    patterns:
+      - "api[_-]?key\s*[=:]\s*['\"][^'\"]{16,}['\"]"
+      - "password\s*[=:]\s*['\"][^'\"]+['\"]"
+      - "secret\s*[=:]\s*['\"][^'\"]+['\"]"
+      - "token\s*[=:]\s*['\"][^'\"]{20,}['\"]"
+      - "-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"
+    message: "检测到硬编码的敏感信息"
+  
+  - name: sql-injection
+    severity: critical
+    tags: [injection, database]
+    patterns:
+      - "query\s*\(\s*.*\+.*\)"
+      - "exec\s*\(\s*[`\"'].*\$\{.*\}"
+    message: "可能存在 SQL 注入风险"
+  
+  - name: xss-vulnerability
+    severity: high
+    tags: [xss, frontend]
+    patterns:
+      - "innerHTML\s*="
+      - "dangerouslySetInnerHTML"
+    message: "可能存在 XSS 风险，请确保内容已转义"
+  
+  - name: insecure-random
+    severity: medium
+    tags: [cryptography]
+    patterns:
+      - "Math\.random\(\)"
+    message: "Math.random() 不适用于加密场景"
+    suggestion: "使用 crypto.getRandomValues() 替代"
+  
+  - name: eval-usage
+    severity: high
+    tags: [code-injection]
+    patterns:
+      - "eval\s*\("
+      - "new\s+Function\s*\("
+    message: "避免使用 eval 或 new Function"
+
+actions:
+  - type: scan
+    description: 扫描整个代码库
+    tags: [scanning]
+    steps:
+      - 遍历所有目标文件
+      - 应用所有检测器
+      - 生成报告
+  
+  - type: fix
+    description: 自动修复可修复的问题
+    tags: [remediation]
+    steps:
+      - 识别自动修复项
+      - 应用安全修复
+      - 验证修复结果
+
+output:
+  format: report
+  sections:
+    - summary
+    - critical_issues
+    - warnings
+    - suggestions
+    - fixed_issues
+
+related_skills:
+  - code-review
+  - dependency-audit
+
+evolution:
+  track_findings: true
+  learn_patterns: true

@@ -1,0 +1,61 @@
+# Runtime directories
+runtime/
+logs/
+*.log
+
+# Session data
+sessions/
+checkpoints/
+
+# Telemetry
+telemetry/data/
+*.trace
+*.metrics
+
+# Memory
+memory/sessions/
+memory/telemetry/
+
+# Backups
+*.backup.*
+*.bak
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.Python
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Local config overrides
+config.local.yaml
+config.override.yaml

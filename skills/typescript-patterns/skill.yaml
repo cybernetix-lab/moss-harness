@@ -1,0 +1,115 @@
+name: typescript-patterns
+description: |
+  TypeScript 设计模式与最佳实践。提供类型定义、泛型使用、类型体操等高级技巧。
+
+version: 1.0.0
+
+# 多标签分类
+tags:
+  # 领域标签
+  - frontend
+  - backend
+  - fullstack
+  # 技术栈标签
+  - typescript
+  - javascript
+  # 任务类型标签
+  - coding
+  - refactoring
+  # 场景标签
+  - enterprise
+  - greenfield
+  # 复杂度标签
+  - advanced
+
+# 标签权重
+tag_weights:
+  typescript: 1.0
+  coding: 0.9
+  refactoring: 0.8
+
+triggers:
+  - pattern: "typescript.*pattern"
+    confidence: 0.95
+    tags_match: [typescript]
+  - pattern: "类型.*定义"
+    confidence: 0.9
+    tags_match: [typescript]
+  - pattern: "泛型.*使用"
+    confidence: 0.9
+    tags_match: [typescript]
+  - pattern: "type.*definition"
+    confidence: 0.85
+    tags_match: [typescript]
+
+patterns:
+  - name: result-type
+    description: Result 类型模式（错误处理）
+    tags: [error-handling, functional]
+    template: |
+      type Result<T, E = Error> = 
+        | { success: true; data: T }
+        | { success: false; error: E };
+      
+      function divide(a: number, b: number): Result<number> {
+        if (b === 0) {
+          return { success: false, error: new Error('Division by zero') };
+        }
+        return { success: true, data: a / b };
+      }
+  
+  - name: branded-type
+    description: 品牌类型（防止类型混淆）
+    tags: [type-safety, utility]
+    template: |
+      type Brand<K, T> = K & { __brand: T };
+      
+      type UserId = Brand<string, 'UserId'>;
+      type PostId = Brand<string, 'PostId'>;
+      
+      function createUserId(id: string): UserId {
+        return id as UserId;
+      }
+  
+  - name: builder-pattern
+    description: 构建者模式类型安全实现
+    tags: [creational, oop]
+    template: |
+      class Builder<T = {}> {
+        private config: T = {} as T;
+        
+        with<K extends string, V>(key: K, value: V): Builder<T & Record<K, V>> {
+          return Object.assign(Object.create(Builder.prototype), {
+            config: { ...this.config, [key]: value }
+          });
+        }
+        
+        build(): T {
+          return this.config;
+        }
+      }
+
+rules:
+  - name: strict-null-checks
+    description: 启用 strictNullChecks
+    severity: error
+  
+  - name: no-any
+    description: 避免使用 any 类型
+    severity: warning
+  
+  - name: explicit-return-types
+    description: 公共 API 显式声明返回类型
+    severity: warning
+
+validation:
+  - tsc --strict
+  - eslint @typescript-eslint
+
+related_skills:
+  - react-hooks
+  - nodejs-patterns
+
+evolution:
+  track_patterns: true
+  learn_from_usage: true

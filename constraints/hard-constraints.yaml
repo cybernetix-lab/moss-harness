@@ -1,0 +1,55 @@
+# Hard Constraints - 不可覆盖
+
+safety:
+  # 文件系统安全
+  filesystem:
+    blocked_patterns:
+      - "~/.ssh/*"
+      - "~/.aws/*"
+      - "~/.env"
+      - "/etc/passwd"
+      - "*.pem"
+      - "*.key"
+    max_file_size_mb: 10
+    require_confirmation_above_lines: 100
+
+  # 网络限制
+  network:
+    allowed_hosts:
+      - "api.github.com"
+      - "registry.npmjs.org"
+      - "pypi.org"
+    blocked_hosts:
+      - "localhost"
+      - "127.0.0.1"
+      - "*.local"
+
+  # 执行限制
+  execution:
+    sandbox_required: true
+    max_execution_time_seconds: 300
+    blocked_commands:
+      - "rm -rf /"
+      - "dd if=/dev/zero"
+      - "mkfs"
+      - "fdisk"
+
+permissions:
+  # 权限级别
+  levels:
+    - name: read_only
+      description: 只读访问
+      allowed: [read, list, search]
+    
+    - name: confirm_required
+      description: 需确认的操作
+      allowed: [write, delete, execute]
+      requires_confirmation: true
+    
+    - name: autonomous
+      description: 完全自主
+      allowed: [all]
+      requires_confirmation: false
+
+  # 当前权限级别
+current_level: confirm_required

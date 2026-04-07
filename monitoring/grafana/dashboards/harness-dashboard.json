@@ -1,0 +1,351 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Harness Telemetry Dashboard",
+    "tags": ["harness", "telemetry", "ai-agent"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Sessions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "harness_sessions_active",
+            "legendFormat": "Active Sessions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Total Sessions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "harness_sessions_total",
+            "legendFormat": "Total Sessions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "blue"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Total Actions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(harness_session_actions_total)",
+            "legendFormat": "Total Actions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "purple"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 4,
+        "title": "Success Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "sum(harness_session_actions_successful) / sum(harness_session_actions_total) * 100",
+            "legendFormat": "Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 80
+                },
+                {
+                  "color": "green",
+                  "value": 95
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        }
+      },
+      {
+        "id": 5,
+        "title": "Actions by Session",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_session_actions_total",
+            "legendFormat": "{{session_id}} - Total",
+            "refId": "A"
+          },
+          {
+            "expr": "harness_session_actions_successful",
+            "legendFormat": "{{session_id}} - Success",
+            "refId": "B"
+          },
+          {
+            "expr": "harness_session_actions_failed",
+            "legendFormat": "{{session_id}} - Failed",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "pointSize": 5,
+              "showPoints": "auto"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        }
+      },
+      {
+        "id": 6,
+        "title": "Average Action Duration",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_session_avg_duration_ms",
+            "legendFormat": "{{session_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "pointSize": 5
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        }
+      },
+      {
+        "id": 7,
+        "title": "Action Types Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (action_type) (harness_action_count)",
+            "legendFormat": "{{action_type}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "pieType": "donut",
+          "legend": {
+            "displayMode": "list",
+            "placement": "right"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 12
+        }
+      },
+      {
+        "id": 8,
+        "title": "Resource Usage",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "sum by (session_id) (harness_session_files_read)",
+            "legendFormat": "Files Read",
+            "refId": "A"
+          },
+          {
+            "expr": "sum by (session_id) (harness_session_files_written)",
+            "legendFormat": "Files Written",
+            "refId": "B"
+          },
+          {
+            "expr": "sum by (session_id) (harness_session_commands_executed)",
+            "legendFormat": "Commands",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "displayMode": "gradient"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 12
+        }
+      },
+      {
+        "id": 9,
+        "title": "Security Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(harness_session_blocked_actions)",
+            "legendFormat": "Blocked Actions",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(harness_session_warnings)",
+            "legendFormat": "Warnings",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 12
+        }
+      },
+      {
+        "id": 10,
+        "title": "Action Success/Failure by Type",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (action_type) (harness_action_success)",
+            "legendFormat": "{{action_type}} - Success",
+            "refId": "A"
+          },
+          {
+            "expr": "sum by (action_type) (harness_action_fail)",
+            "legendFormat": "{{action_type}} - Fail",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "bars",
+              "stacking": {
+                "mode": "normal"
+              }
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 20
+        }
+      }
+    ]
+  }
+}

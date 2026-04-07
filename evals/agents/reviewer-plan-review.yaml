@@ -1,0 +1,102 @@
+# Agent Evaluation Case: Reviewer - Plan Review
+# 测试 Reviewer 的计划审查能力
+
+name: reviewer-plan-review
+description: |
+  评估 Reviewer 审查执行计划的能力。
+  测试风险识别、问题发现和改进建议质量。
+
+test_cases:
+  - id: TC-001
+    name: 识别计划缺陷
+    input:
+      execution_plan:
+        summary: "实现用户认证系统"
+        tasks:
+          - id: 1
+            description: "实现登录 API"
+            estimated_hours: 1
+            risk: low
+          - id: 2
+            description: "实现注册 API"
+            estimated_hours: 1
+            risk: low
+          - id: 3
+            description: "实现密码重置"
+            estimated_hours: 1
+            risk: low
+    expected_issues:
+      - type: "时间估算过于乐观"
+        severity: warning
+      - type: "缺少数据库设计任务"
+        severity: critical
+      - type: "缺少安全考虑"
+        severity: critical
+    evaluation_criteria:
+      - 识别时间估算问题
+      - 发现遗漏的任务
+      - 指出安全风险
+
+  - id: TC-002
+    name: 技术方案评估
+    input:
+      execution_plan:
+        summary: "实现文件存储服务"
+        architecture:
+          storage: "本地文件系统"
+          database: "SQLite"
+        tasks:
+          - description: "实现文件上传"
+          - description: "实现文件下载"
+    expected_issues:
+      - type: "技术选型不适合生产环境"
+        severity: warning
+      - type: "缺少扩展性考虑"
+        severity: warning
+    evaluation_criteria:
+      - 评估技术方案可行性
+      - 考虑扩展性和维护性
+      - 对比业界最佳实践
+
+  - id: TC-003
+    name: 建设性反馈
+    input:
+      execution_plan:
+        summary: "实现订单系统"
+        tasks:
+          - id: 1
+            description: "设计订单表"
+            acceptance_criteria:
+              - "包含订单ID"
+              - "包含用户ID"
+    expected_output:
+      provides_improvement_suggestions: true
+      suggestions_include_examples: true
+      maintains_constructive_tone: true
+    evaluation_criteria:
+      - 不仅指出问题，还提供解决方案
+      - 给出具体的改进示例
+      - 保持建设性的语气
+
+scoring:
+  weights:
+    issue_detection: 0.4
+    risk_assessment: 0.3
+    improvement_suggestions: 0.3
+  
+  thresholds:
+    pass: 75
+    excellent: 90
+
+metrics:
+  - name: issue_detection_rate
+    description: 问题检出率
+    target: ">= 85%"
+  
+  - name: false_positive_rate
+    description: 误报率
+    target: "<= 10%"
+  
+  - name: suggestion_quality
+    description: 建议质量评分
+    target: ">= 80%"

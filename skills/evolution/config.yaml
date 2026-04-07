@@ -1,0 +1,115 @@
+# Skill Evolution Configuration
+# 技能进化系统配置
+
+version: 1.1.0
+
+# 进化触发条件
+evolution_triggers:
+  # 使用次数阈值
+  usage_threshold: 10
+  
+  # 成功率阈值
+  success_rate_threshold: 0.85
+  
+  # 时间间隔（天）
+  time_interval_days: 7
+  
+  # 新模式发现阈值
+  new_pattern_threshold: 3
+
+# 性能指标权重
+performance_weights:
+  success_rate: 0.4
+  avg_duration: 0.2
+  user_feedback: 0.2
+  code_quality: 0.2
+
+# 进化策略
+evolution_strategies:
+  # 触发器优化
+  trigger_optimization:
+    enabled: true
+    min_confidence: 0.7
+    max_triggers: 10
+  
+  # 模板扩展
+  template_expansion:
+    enabled: true
+    max_templates: 20
+    similarity_threshold: 0.8
+  
+  # 参数学习
+  parameter_learning:
+    enabled: true
+    learning_rate: 0.1
+  
+  # 上下文感知
+  context_awareness:
+    enabled: true
+    context_window: 5
+
+# 学习数据源
+learning_sources:
+  - session_memory
+  - successful_executions
+  - user_corrections
+  - code_reviews
+  - extracted_patterns
+
+# 新技能发现配置 (New Skill Discovery)
+new_skill_discovery:
+  enabled: true
+  
+  # 发现触发条件 - 严格控制避免随意生成
+  discovery_triggers:
+    # 最小重复模式次数 - 必须多次出现才考虑
+    min_pattern_frequency: 5
+    # 最小会话样本数 - 需要跨多个会话验证
+    min_session_samples: 3
+    # 最小成功率 - 只有高成功率的模式才考虑
+    min_success_rate: 0.9
+    # 时间窗口（天）- 必须在近期频繁出现
+    time_window_days: 30
+    # 最小独特性分数 - 必须与现有技能有足够差异
+    min_uniqueness_score: 0.7
+  
+  # 模式提取配置
+  pattern_extraction:
+    # 代码模式最小行数
+    min_code_lines: 5
+    # 代码模式最大行数
+    max_code_lines: 100
+    # 关键词提取数量
+    keyword_count: 5
+    # 语义相似度阈值
+    semantic_similarity_threshold: 0.85
+  
+  # 提案验证流程
+  proposal_validation:
+    # 是否需要人工审核
+    require_approval: true
+    # 自动验证检查项
+    auto_checks:
+      - syntax_valid
+      - no_duplicates
+      - naming_convention
+      - trigger_coverage
+    # 相似技能检测阈值
+    similarity_threshold: 0.75
+  
+  # 生成控制 - 防止过度生成
+  generation_control:
+    # 每周最大新技能提案数
+    max_proposals_per_week: 3
+    # 冷却期（天）- 同类型技能生成间隔
+    cooldown_days: 7
+    # 最小质量分数
+    min_quality_score: 0.8
+    # 必须满足的最低条件数
+    min_requirements_met: 4
+
+# 版本控制
+versioning:
+  auto_increment: patch
+  retention_versions: 5
+  changelog_required: true

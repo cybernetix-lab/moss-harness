@@ -1,0 +1,93 @@
+# Agent Evaluation Case: Executor - Code Quality
+# 测试 Executor 的代码实现质量
+
+name: executor-code-quality
+description: |
+  评估 Executor 编写高质量代码的能力。
+  测试代码正确性、可读性、测试覆盖和约束遵守。
+
+test_cases:
+  - id: TC-001
+    name: 基础功能实现
+    input:
+      task: |
+        实现一个用户认证的登录函数：
+        - 验证用户名和密码
+        - 检查用户是否存在
+        - 验证密码是否正确
+        - 返回认证结果
+      constraints:
+        - 使用 TypeScript
+        - 函数不超过 50 行
+        - 必须包含单元测试
+    expected_output:
+      has_input_validation: true
+      has_error_handling: true
+      has_unit_tests: true
+      lines_of_code:
+        max: 50
+    evaluation_criteria:
+      - 代码正确实现功能需求
+      - 包含输入验证和错误处理
+      - 代码风格符合规范
+      - 单元测试覆盖主要路径
+
+  - id: TC-002
+    name: 约束遵守测试
+    input:
+      task: |
+        实现一个复杂的数据处理函数
+      constraints:
+        - 函数不超过 50 行
+        - 圈复杂度不超过 10
+        - 必须使用依赖注入
+    expected_output:
+      follows_constraints: true
+      function_lines:
+        max: 50
+      cyclomatic_complexity:
+        max: 10
+    evaluation_criteria:
+      - 严格遵守所有约束条件
+      - 代码仍然保持可读性
+      - 适当的抽象和拆分
+
+  - id: TC-003
+    name: 边界情况处理
+    input:
+      task: |
+        实现一个数组分页函数
+    expected_output:
+      handles_edge_cases:
+        - 空数组
+        - 负数页码
+        - 超出范围的页码
+        - 非整数参数
+    evaluation_criteria:
+      - 正确处理所有边界情况
+      - 返回有意义的错误信息
+      - 不抛出未捕获的异常
+
+scoring:
+  weights:
+    correctness: 0.4
+    code_style: 0.2
+    test_coverage: 0.2
+    constraint_compliance: 0.2
+  
+  thresholds:
+    pass: 80
+    excellent: 95
+
+metrics:
+  - name: test_coverage
+    description: 单元测试覆盖率
+    target: ">= 80%"
+  
+  - name: constraint_violations
+    description: 约束违反次数
+    target: "0"
+  
+  - name: code_complexity
+    description: 代码复杂度
+    target: "<= 10"

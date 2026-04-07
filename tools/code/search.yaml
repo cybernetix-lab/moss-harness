@@ -1,0 +1,128 @@
+name: code_search
+description: |
+  在代码库中搜索模式。支持正则表达式和语义搜索。
+  返回匹配的文件位置和内容片段。
+
+input:
+  type: object
+  properties:
+    pattern:
+      type: string
+      description: 搜索模式（正则或文本）
+    
+    path:
+      type: string
+      description: 搜索路径
+      default: "."
+    
+    glob:
+      type: string
+      description: 文件过滤模式
+      default: "*"
+    
+    type:
+      type: string
+      description: 搜索类型
+      default: regex
+      enum: [regex, text, semantic]
+    
+    context_lines:
+      type: integer
+      description: 匹配行上下文行数
+      default: 2
+      maximum: 10
+    
+    max_results:
+      type: integer
+      description: 最大结果数
+      default: 20
+      maximum: 100
+  
+  required: [pattern]
+
+output:
+  type: object
+  properties:
+    matches:
+      type: array
+      items:
+        type: object
+        properties:
+          file:
+            type: string
+            description: 文件路径
+          line:
+            type: integer
+            description: 行号
+          column:
+            type: integer
+            description: 列号
+          content:
+            type: string
+            description: 匹配行内容
+          context:
+            type: array
+            description: 上下文行
+            items:
+              type: string
+    
+    total_matches:
+      type: integer
+      description: 总匹配数
+    
+    files_searched:
+      type: integer
+      description: 搜索的文件数
+    
+    duration_ms:
+      type: integer
+      description: 搜索耗时
+  
+  required: [matches, total_matches]
+
+errors:
+  - name: InvalidPatternError
+    code: INVALID_PATTERN
+    description: 无效的正则表达式
+  
+  - name: PathNotFoundError
+    code: PATH_NOT_FOUND
+    description: 搜索路径不存在
+
+examples:
+  - name: 搜索函数定义
+    input:
+      pattern: "function\\s+\\w+\\s*\\("
+      glob: "*.ts"
+    output:
+      matches:
+        - file: "./src/app.ts"
+          line: 15
+          column: 1
+          content: "function initApp() {"
+          context: ["// Initialize", "function initApp() {", "  // ..."]
+      total_matches: 5
+      files_searched: 12
+      duration_ms: 45
+
+  - name: 语义搜索
+    input:
+      pattern: "user authentication logic"
+      type: semantic
+      max_results: 10
+    output:
+      matches:
+        - file: "./src/auth.ts"
+          line: 42
+          content: "export function validateUser(...)"
+      total_matches: 3
+      files_searched: 50
+      duration_ms: 120
+
+constraints:
+  max_file_size_mb: 10
+  excluded_dirs:
+    - "node_modules"
+    - ".git"
+    - "dist"
+    - "build"

@@ -1,0 +1,111 @@
+name: documentation-lookup
+description: |
+  文档查询技能。自动检索相关技术文档、API 参考、最佳实践。
+
+version: 1.0.0
+
+# 多标签分类
+tags:
+  # 领域标签（文档查询跨领域）
+  - frontend
+  - backend
+  - devops
+  # 任务类型标签
+  - research
+  - documentation
+  # 场景标签
+  - startup
+  - enterprise
+  - maintenance
+  # 复杂度标签
+  - beginner
+  - intermediate
+
+# 标签权重
+tag_weights:
+  research: 1.0
+  documentation: 0.95
+
+triggers:
+  - pattern: "查找.*文档"
+    confidence: 0.9
+    tags_match: [research, documentation]
+  - pattern: "API.*参考"
+    confidence: 0.85
+    tags_match: [research]
+  - pattern: "怎么使用"
+    confidence: 0.8
+    tags_match: [research, beginner]
+  - pattern: "documentation.*lookup"
+    confidence: 0.9
+    tags_match: [documentation]
+
+sources:
+  - name: mdn
+    url: "https://developer.mozilla.org"
+    type: web
+    priority: high
+    tags: [frontend, javascript, web-api]
+  
+  - name: typescript-docs
+    url: "https://www.typescriptlang.org/docs"
+    type: web
+    priority: high
+    tags: [typescript]
+  
+  - name: react-docs
+    url: "https://react.dev"
+    type: web
+    priority: high
+    tags: [react, frontend]
+  
+  - name: local-readme
+    pattern: "README.md"
+    type: local
+    priority: highest
+    tags: [project-specific]
+  
+  - name: local-docs
+    pattern: "docs/**/*.md"
+    type: local
+    priority: high
+    tags: [project-specific]
+
+actions:
+  - type: search
+    description: 搜索文档
+    tags: [search, information-retrieval]
+    steps:
+      - 解析查询意图
+      - 搜索本地文档
+      - 搜索在线文档
+      - 汇总结果
+  
+  - type: summarize
+    description: 总结文档要点
+    tags: [summarization]
+    steps:
+      - 提取关键信息
+      - 生成简洁摘要
+      - 提供代码示例
+  
+  - type: compare
+    description: 比较不同版本/方案
+    tags: [comparison, analysis]
+    steps:
+      - 收集多个来源
+      - 对比差异
+      - 给出建议
+
+cache:
+  enabled: true
+  ttl_hours: 24
+  max_entries: 100
+
+related_skills:
+  - code-explanation
+  - api-design
+
+evolution:
+  track_queries: true
+  learn_sources: true

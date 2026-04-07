@@ -1,0 +1,52 @@
+# Soft Constraints - 可覆盖，需记录理由
+
+code_style:
+  # 通用原则
+  general:
+    max_function_lines: 50
+    max_file_lines: 300
+    prefer_explicit_over_implicit: true
+    require_error_handling: true
+  
+  # TypeScript/React
+  typescript:
+    use_strict_types: true
+    prefer_functional_components: true
+    avoid_any: true
+  
+  # Python
+  python:
+    follow_pep8: true
+    type_hints_required: true
+    max_complexity: 10
+
+architecture:
+  # 设计原则
+  principles:
+    - single_responsibility
+    - composition_over_inheritance
+    - dependency_inversion
+  
+  # 文件组织
+  file_organization:
+    components_per_folder_max: 10
+    group_by_feature: true
+    index_exports_required: true
+
+testing:
+  coverage:
+    minimum_percentage: 80
+    critical_paths_required: 100
+  
+  test_types:
+    - unit
+    - integration
+    - e2e
+
+documentation:
+  required:
+    - public_api
+    - complex_logic
+    - configuration
+  
+  format: markdown

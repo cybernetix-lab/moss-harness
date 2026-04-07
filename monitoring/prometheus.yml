@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus 自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Harness Telemetry Exporter
+  - job_name: 'harness-telemetry'
+    static_configs:
+      - targets: ['host.docker.internal:9090']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 3s
+    
+  # 如果使用 Docker Compose，使用服务名
+  # - job_name: 'harness-telemetry-docker'
+  #   static_configs:
+  #     - targets: ['harness-exporter:9090']
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 5s
+
+  # 可选：Node Exporter（系统监控）
+  # - job_name: 'node-exporter'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
