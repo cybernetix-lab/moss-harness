@@ -3,14 +3,14 @@
 verification:
   # 验证模式
   mode: checkpoint
-  
+
   # 检查点配置
   checkpoint:
     auto_create: true
     on_success: true
     on_failure: false
     interval_minutes: 15
-  
+
   # 验证级别
   levels:
     - name: syntax
@@ -20,7 +20,7 @@ verification:
       tools:
         - tsc --noEmit
         - eslint
-      
+
     - name: static
       description: "静态分析"
       auto: true
@@ -28,7 +28,7 @@ verification:
       tools:
         - eslint
         - prettier --check
-      
+
     - name: unit
       description: "单元测试"
       auto: true
@@ -37,7 +37,7 @@ verification:
       tools:
         - jest
         - vitest
-      
+
     - name: integration
       description: "集成测试"
       auto: false
@@ -45,7 +45,7 @@ verification:
       tools:
         - playwright
         - cypress
-      
+
     - name: security
       description: "安全扫描"
       auto: true
@@ -53,7 +53,7 @@ verification:
       tools:
         - security-scan
         - dependency-check
-      
+
     - name: performance
       description: "性能测试"
       auto: false
@@ -61,7 +61,7 @@ verification:
       tools:
         - lighthouse
         - k6
-  
+
   # 评分器配置
   graders:
     deterministic:
@@ -70,33 +70,33 @@ verification:
         - compilation
         - test_pass_rate
         - coverage
-    
+
     heuristic:
       weight: 0.3
       checks:
         - code_complexity
         - duplication
         - documentation_coverage
-    
+
     model_based:
       weight: 0.3
       checks:
         - semantic_correctness
         - completeness
         - best_practices
-  
+
   # 通过阈值
   thresholds:
     pass_score: 0.8
     excellent_score: 0.95
     max_attempts: 3
-  
+
   # 失败处理
   on_failure:
     action: pause  # pause | continue | rollback
     notify: true
     create_issue: false
-  
+
   # 报告配置
   reporting:
     format: markdown

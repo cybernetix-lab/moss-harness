@@ -9,19 +9,19 @@ input:
     query:
       type: string
       description: 搜索查询（关键词或语义描述）
-    
+
     search_type:
       type: string
       description: 搜索类型
       default: semantic
       enum: [semantic, keyword, hybrid]
-    
+
     context_type:
       type: string
       description: 上下文类型过滤
       default: all
       enum: [all, session, decision, task, agent_output]
-    
+
     time_range:
       type: object
       description: 时间范围过滤
@@ -35,20 +35,20 @@ input:
         last_hours:
           type: integer
           description: 最近 N 小时
-    
+
     max_results:
       type: integer
       description: 最大结果数
       default: 10
       maximum: 50
-    
+
     min_relevance:
       type: number
       description: 最小相关度分数 (0-1)
       default: 0.7
       minimum: 0
       maximum: 1
-  
+
   required: [query]
 
 output:
@@ -89,32 +89,32 @@ output:
                 type: array
                 items:
                   type: string
-    
+
     total_found:
       type: integer
       description: 找到的总数
-    
+
     search_duration_ms:
       type: integer
       description: 搜索耗时
-    
+
     query_expansion:
       type: array
       description: 查询扩展词
       items:
         type: string
-  
+
   required: [results, total_found]
 
 errors:
   - name: MemoryNotAvailableError
     code: MEMORY_NOT_AVAILABLE
     description: 记忆存储不可用
-  
+
   - name: InvalidQueryError
     code: INVALID_QUERY
     description: 查询格式无效
-  
+
   - name: SearchTimeoutError
     code: SEARCH_TIMEOUT
     description: 搜索超时

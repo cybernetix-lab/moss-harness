@@ -7,13 +7,13 @@ version: 1.1.0
 evolution_triggers:
   # 使用次数阈值
   usage_threshold: 10
-  
+
   # 成功率阈值
   success_rate_threshold: 0.85
-  
+
   # 时间间隔（天）
   time_interval_days: 7
-  
+
   # 新模式发现阈值
   new_pattern_threshold: 3
 
@@ -31,18 +31,18 @@ evolution_strategies:
     enabled: true
     min_confidence: 0.7
     max_triggers: 10
-  
+
   # 模板扩展
   template_expansion:
     enabled: true
     max_templates: 20
     similarity_threshold: 0.8
-  
+
   # 参数学习
   parameter_learning:
     enabled: true
     learning_rate: 0.1
-  
+
   # 上下文感知
   context_awareness:
     enabled: true
@@ -59,7 +59,7 @@ learning_sources:
 # 新技能发现配置 (New Skill Discovery)
 new_skill_discovery:
   enabled: true
-  
+
   # 发现触发条件 - 严格控制避免随意生成
   discovery_triggers:
     # 最小重复模式次数 - 必须多次出现才考虑
@@ -72,7 +72,7 @@ new_skill_discovery:
     time_window_days: 30
     # 最小独特性分数 - 必须与现有技能有足够差异
     min_uniqueness_score: 0.7
-  
+
   # 模式提取配置
   pattern_extraction:
     # 代码模式最小行数
@@ -83,7 +83,7 @@ new_skill_discovery:
     keyword_count: 5
     # 语义相似度阈值
     semantic_similarity_threshold: 0.85
-  
+
   # 提案验证流程
   proposal_validation:
     # 是否需要人工审核
@@ -96,7 +96,7 @@ new_skill_discovery:
       - trigger_coverage
     # 相似技能检测阈值
     similarity_threshold: 0.75
-  
+
   # 生成控制 - 防止过度生成
   generation_control:
     # 每周最大新技能提案数

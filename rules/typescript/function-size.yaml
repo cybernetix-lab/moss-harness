@@ -36,11 +36,11 @@ examples:
       function calculateTotal(price: number, quantity: number): number {
         return price * quantity;
       }
-      
+
       function applyDiscount(total: number, discount: number): number {
         return total * (1 - discount);
       }
-  
+
   invalid:
     - |
       // ❌ 过长的函数

@@ -24,7 +24,7 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 5s
     scrape_timeout: 3s
-    
+
   # 如果使用 Docker Compose，使用服务名
   # - job_name: 'harness-telemetry-docker'
   #   static_configs:

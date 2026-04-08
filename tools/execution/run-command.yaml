@@ -9,42 +9,42 @@ input:
     command:
       type: string
       description: 要执行的命令
-    
+
     args:
       type: array
       description: 命令参数
       items:
         type: string
       default: []
-    
+
     cwd:
       type: string
       description: 工作目录
       default: "."
-    
+
     env:
       type: object
       description: 环境变量
       additionalProperties:
         type: string
       default: {}
-    
+
     timeout:
       type: integer
       description: 超时时间（秒）
       default: 60
       maximum: 300
-    
+
     capture_output:
       type: boolean
       description: 是否捕获输出
       default: true
-    
+
     shell:
       type: boolean
       description: 是否使用 shell 执行
       default: false
-  
+
   required: [command]
 
 output:
@@ -53,42 +53,42 @@ output:
     success:
       type: boolean
       description: 命令是否成功执行（退出码为 0）
-    
+
     exit_code:
       type: integer
       description: 进程退出码
-    
+
     stdout:
       type: string
       description: 标准输出
-    
+
     stderr:
       type: string
       description: 标准错误
-    
+
     duration_ms:
       type: integer
       description: 执行耗时
-    
+
     command:
       type: string
       description: 实际执行的命令
-  
+
   required: [success, exit_code, duration_ms]
 
 errors:
   - name: CommandBlockedError
     code: COMMAND_BLOCKED
     description: 命令被安全策略阻止
-  
+
   - name: CommandTimeoutError
     code: TIMEOUT
     description: 命令执行超时
-  
+
   - name: CommandExecutionError
     code: EXECUTION_ERROR
     description: 命令执行失败
-  
+
   - name: PermissionDeniedError
     code: PERMISSION_DENIED
     description: 权限不足
@@ -106,14 +106,14 @@ security:
     - "fdisk"
     - "mount"
     - "umount"
-  
+
   blocked_patterns:
     - "*;*"
     - "*|*"
     - "*`*"
     - "*$("
     - "*${"
-  
+
   allowed_commands:
     - "ls"
     - "cat"

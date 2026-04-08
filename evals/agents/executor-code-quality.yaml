@@ -74,7 +74,7 @@ scoring:
     code_style: 0.2
     test_coverage: 0.2
     constraint_compliance: 0.2
-  
+
   thresholds:
     pass: 80
     excellent: 95
@@ -83,11 +83,11 @@ metrics:
   - name: test_coverage
     description: 单元测试覆盖率
     target: ">= 80%"
-  
+
   - name: constraint_violations
     description: 约束违反次数
     target: "0"
-  
+
   - name: code_complexity
     description: 代码复杂度
     target: "<= 10"

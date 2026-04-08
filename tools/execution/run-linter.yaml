@@ -10,36 +10,36 @@ input:
       type: string
       description: 检查路径（文件或目录）
       default: "."
-    
+
     linter:
       type: string
       description: 指定 linter（可选，自动检测）
       enum: [auto, eslint, prettier, flake8, pylint, rubocop, golangci-lint, cargo-clippy]
       default: auto
-    
+
     fix:
       type: boolean
       description: 是否自动修复问题
       default: false
-    
+
     config_path:
       type: string
       description: 自定义配置文件路径
-    
+
     include:
       type: array
       description: 包含的文件模式
       items:
         type: string
       default: []
-    
+
     exclude:
       type: array
       description: 排除的文件模式
       items:
         type: string
       default: ["node_modules", ".git", "dist", "build"]
-  
+
   required: []
 
 output:
@@ -48,15 +48,15 @@ output:
     success:
       type: boolean
       description: 是否通过检查（无错误或严重问题）
-    
+
     linter_used:
       type: string
       description: 实际使用的 linter
-    
+
     files_checked:
       type: integer
       description: 检查的文件数
-    
+
     issues:
       type: array
       description: 发现的问题列表
@@ -85,7 +85,7 @@ output:
           fixable:
             type: boolean
             description: 是否可自动修复
-    
+
     summary:
       type: object
       description: 问题汇总
@@ -102,11 +102,11 @@ output:
         fixable:
           type: integer
           description: 可自动修复数
-    
+
     duration_ms:
       type: integer
       description: 执行耗时
-  
+
   required: [success, linter_used, files_checked, summary]
 
 auto_detection:
@@ -115,27 +115,27 @@ auto_detection:
       indicators: [".eslintrc.js", ".eslintrc.json", ".eslintrc", "eslint.config.js"]
       languages: ["javascript", "typescript"]
       command: "npx eslint"
-    
+
     - name: prettier
       indicators: [".prettierrc", "prettier.config.js"]
       languages: ["javascript", "typescript", "json", "yaml", "markdown"]
       command: "npx prettier --check"
-    
+
     - name: flake8
       indicators: ["setup.cfg", "tox.ini", ".flake8"]
       languages: ["python"]
       command: "flake8"
-    
+
     - name: pylint
       indicators: [".pylintrc", "pyproject.toml"]
       languages: ["python"]
       command: "pylint"
-    
+
     - name: golangci-lint
       indicators: [".golangci.yml", ".golangci.yaml"]
       languages: ["go"]
       command: "golangci-lint run"
-    
+
     - name: cargo-clippy
       indicators: ["Cargo.toml"]
       languages: ["rust"]
@@ -145,11 +145,11 @@ errors:
   - name: LinterNotFoundError
     code: LINTER_NOT_FOUND
     description: 未找到合适的 linter
-  
+
   - name: ConfigError
     code: CONFIG_ERROR
     description: 配置文件错误
-  
+
   - name: LinterExecutionError
     code: EXECUTION_ERROR
     description: Linter 执行失败

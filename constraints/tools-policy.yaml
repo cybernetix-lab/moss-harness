@@ -6,14 +6,14 @@ tools:
     read:
       permission: allowed
       max_size_mb: 5
-    
+
     write:
       permission: confirm_required
       blocked_patterns:
         - "*.secret"
         - "*.key"
       backup_required: true
-    
+
     delete:
       permission: confirm_required
       require_trash: true
@@ -23,14 +23,14 @@ tools:
     run_tests:
       permission: allowed
       sandbox: preferred
-    
+
     install_dependencies:
       permission: confirm_required
       allowed_managers:
         - npm
         - pip
         - cargo
-    
+
     execute_arbitrary:
       permission: blocked
 
@@ -39,7 +39,7 @@ tools:
     fetch_documentation:
       permission: allowed
       timeout_seconds: 30
-    
+
     api_calls:
       permission: confirm_required
       log_requests: true
@@ -48,7 +48,7 @@ tools:
   search:
     codebase:
       permission: allowed
-    
+
     web:
       permission: allowed
       max_results: 5
@@ -59,9 +59,9 @@ masking:
   stages:
     planning:
       visible: [read, search, list]
-    
+
     implementation:
       visible: [read, write, search, run_tests]
-    
+
     review:
       visible: [read, search, run_tests]

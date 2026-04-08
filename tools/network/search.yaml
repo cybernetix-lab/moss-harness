@@ -9,41 +9,41 @@ input:
     query:
       type: string
       description: 搜索查询
-    
+
     engine:
       type: string
       description: 搜索引擎
       default: auto
       enum: [auto, google, bing, duckduckgo, perplexity]
-    
+
     search_type:
       type: string
       description: 搜索类型
       default: web
       enum: [web, news, technical, code]
-    
+
     max_results:
       type: integer
       description: 最大结果数
       default: 10
       maximum: 50
-    
+
     time_range:
       type: string
       description: 时间范围
       default: any
       enum: [any, day, week, month, year]
-    
+
     language:
       type: string
       description: 语言限制
       default: ""
-    
+
     safe_search:
       type: boolean
       description: 是否启用安全搜索
       default: true
-  
+
   required: [query]
 
 output:
@@ -52,15 +52,15 @@ output:
     success:
       type: boolean
       description: 搜索是否成功
-    
+
     engine_used:
       type: string
       description: 实际使用的搜索引擎
-    
+
     query:
       type: string
       description: 实际执行的查询
-    
+
     results:
       type: array
       description: 搜索结果列表
@@ -85,36 +85,36 @@ output:
           relevance_score:
             type: number
             description: 相关度分数
-    
+
     related_queries:
       type: array
       description: 相关搜索建议
       items:
         type: string
-    
+
     total_results:
       type: integer
       description: 估计的总结果数
-    
+
     search_duration_ms:
       type: integer
       description: 搜索耗时
-  
+
   required: [success, query, results]
 
 errors:
   - name: SearchError
     code: SEARCH_ERROR
     description: 搜索执行失败
-  
+
   - name: RateLimitError
     code: RATE_LIMIT
     description: 达到搜索频率限制
-  
+
   - name: NetworkError
     code: NETWORK_ERROR
     description: 网络连接错误
-  
+
   - name: InvalidQueryError
     code: INVALID_QUERY
     description: 查询格式无效

@@ -40,12 +40,12 @@ permissions:
     - name: read_only
       description: 只读访问
       allowed: [read, list, search]
-    
+
     - name: confirm_required
       description: 需确认的操作
       allowed: [write, delete, execute]
       requires_confirmation: true
-    
+
     - name: autonomous
       description: 完全自主
       allowed: [all]

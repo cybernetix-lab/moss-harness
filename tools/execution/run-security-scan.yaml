@@ -10,13 +10,13 @@ input:
       type: string
       description: 扫描路径
       default: "."
-    
+
     scanner:
       type: string
       description: 扫描工具（可选，自动检测）
       enum: [auto, bandit, safety, npm-audit, snyk, semgrep, trivy, codeql]
       default: auto
-    
+
     scan_type:
       type: array
       description: 扫描类型
@@ -24,24 +24,24 @@ input:
         type: string
         enum: [vulnerabilities, secrets, dependencies, sast, iac]
       default: [vulnerabilities, secrets]
-    
+
     severity_threshold:
       type: string
       description: 严重程度阈值
       default: medium
       enum: [low, medium, high, critical]
-    
+
     include_dev_dependencies:
       type: boolean
       description: 是否包含开发依赖
       default: false
-    
+
     output_format:
       type: string
       description: 输出格式
       default: json
       enum: [json, sarif, html]
-  
+
   required: []
 
 output:
@@ -50,11 +50,11 @@ output:
     success:
       type: boolean
       description: 扫描是否通过（无严重漏洞）
-    
+
     scanner_used:
       type: string
       description: 实际使用的扫描工具
-    
+
     summary:
       type: object
       description: 漏洞汇总
@@ -74,7 +74,7 @@ output:
         info:
           type: integer
           description: 信息数
-    
+
     vulnerabilities:
       type: array
       description: 漏洞详情列表
@@ -111,7 +111,7 @@ output:
             description: 参考链接
             items:
               type: string
-    
+
     secrets_found:
       type: array
       description: 发现的敏感信息
@@ -130,11 +130,11 @@ output:
           snippet:
             type: string
             description: 代码片段（脱敏）
-    
+
     duration_ms:
       type: integer
       description: 扫描耗时
-  
+
   required: [success, scanner_used, summary]
 
 auto_detection:
@@ -143,17 +143,17 @@ auto_detection:
       indicators: ["requirements.txt", "setup.py", "pyproject.toml"]
       languages: ["python"]
       command: "bandit -r ."
-    
+
     - name: npm-audit
       indicators: ["package.json", "package-lock.json"]
       languages: ["javascript", "typescript"]
       command: "npm audit --json"
-    
+
     - name: semgrep
       indicators: [".semgrep.yml", ".semgreprc"]
       languages: ["*"]
       command: "semgrep --config=auto"
-    
+
     - name: trivy
       indicators: ["Dockerfile", "docker-compose.yml"]
       scan_types: ["iac", "container"]
@@ -163,11 +163,11 @@ errors:
   - name: ScannerNotFoundError
     code: SCANNER_NOT_FOUND
     description: 未找到合适的扫描工具
-  
+
   - name: ScanFailedError
     code: SCAN_FAILED
     description: 扫描执行失败
-  
+
   - name: CriticalVulnerabilityFound
     code: CRITICAL_VULNERABILITY
     description: 发现严重漏洞

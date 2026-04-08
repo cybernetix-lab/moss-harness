@@ -9,33 +9,33 @@ input:
     command:
       type: string
       description: 测试命令（可选，自动检测）
-    
+
     path:
       type: string
       description: 测试路径
       default: "."
-    
+
     pattern:
       type: string
       description: 测试文件模式
       default: ""
-    
+
     coverage:
       type: boolean
       description: 是否生成覆盖率报告
       default: true
-    
+
     timeout:
       type: integer
       description: 超时时间（秒）
       default: 300
-    
+
     env:
       type: object
       description: 环境变量
       additionalProperties:
         type: string
-  
+
   required: []
 
 output:
@@ -44,23 +44,23 @@ output:
     success:
       type: boolean
       description: 是否全部通过
-    
+
     passed:
       type: integer
       description: 通过测试数
-    
+
     failed:
       type: integer
       description: 失败测试数
-    
+
     skipped:
       type: integer
       description: 跳过测试数
-    
+
     duration_ms:
       type: integer
       description: 执行耗时
-    
+
     coverage:
       type: object
       description: 覆盖率报告
@@ -74,7 +74,7 @@ output:
         branches:
           type: number
           description: 分支覆盖率
-    
+
     failures:
       type: array
       description: 失败详情
@@ -93,18 +93,18 @@ output:
           stack:
             type: string
             description: 堆栈跟踪
-  
+
   required: [success, passed, failed]
 
 errors:
   - name: TestFrameworkNotFoundError
     code: FRAMEWORK_NOT_FOUND
     description: 未找到测试框架
-  
+
   - name: TestTimeoutError
     code: TIMEOUT
     description: 测试执行超时
-  
+
   - name: TestCommandFailedError
     code: COMMAND_FAILED
     description: 测试命令执行失败
@@ -114,15 +114,15 @@ auto_detection:
     - name: jest
       indicators: ["jest.config.js", "jest.config.ts"]
       command: "npm test"
-    
+
     - name: vitest
       indicators: ["vitest.config.ts"]
       command: "npx vitest run"
-    
+
     - name: pytest
       indicators: ["pytest.ini", "pyproject.toml"]
       command: "pytest"
-    
+
     - name: cargo
       indicators: ["Cargo.toml"]
       command: "cargo test"

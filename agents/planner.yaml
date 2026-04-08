@@ -118,7 +118,7 @@ atomic_capabilities:
       - risk_assessment           # 风险评估
       - effort_estimation         # 工时估算
       - plan_refinement           # 计划修正（基于反馈）
-    
+
     input_patterns:
       - type: raw_requirement
         description: 原始用户需求
@@ -129,7 +129,7 @@ atomic_capabilities:
       - type: execution_feedback
         description: 执行反馈（发现计划缺陷）
         required: false
-    
+
     output_schema:
       plan:
         type: object
@@ -146,7 +146,7 @@ atomic_capabilities:
       limitations:
         type: array
         description: 计划的局限性或假设
-  
+
   # 决策能力 - 该 Agent 能做出什么决策
   decision:
     output_signals:
@@ -159,7 +159,7 @@ atomic_capabilities:
       - name: scope_too_large
         description: 任务范围过大，需要拆分
         trigger: 预估工时超过阈值
-    
+
     routing_hints:
       next_agents:
         - reviewer    # 默认下一节点
@@ -170,14 +170,14 @@ atomic_capabilities:
           next: user    # 需要用户输入
         - condition: scope_too_large
           next: planner  # 自我递归，拆分任务
-  
+
   # 反馈能力 - 该 Agent 如何反馈状态
   feedback:
     status_reporting:
       - planning_in_progress    # 规划中
       - planning_blocked        # 规划受阻
       - planning_complete       # 规划完成
-    
+
     issue_escalation:
       - type: requirement_ambiguous
         description: 需求不明确
@@ -188,11 +188,11 @@ atomic_capabilities:
       - type: scope_creep
         description: 范围蔓延
         action: flag_for_review
-    
+
     suggestions:
       enabled: true
       max_suggestions: 5
-  
+
   # 自省能力 - 该 Agent 如何评估自己
   introspection:
     confidence_scoring:
@@ -201,17 +201,17 @@ atomic_capabilities:
         - requirement_clarity     # 需求清晰度
         - domain_familiarity      # 领域熟悉度
         - technical_feasibility   # 技术可行性
-    
+
     limitations:
       - 无法执行实际代码编写
       - 无法访问外部实时数据
       - 无法验证第三方库的最新状态
-    
+
     self_assessment:
       - plan_quality_score        # 计划质量自评
       - risk_coverage_score       # 风险覆盖度
       - estimation_accuracy       # 估算准确度
-  
+
   # 协作能力 - 该 Agent 如何与其他 Agent 协作
   collaboration:
     dependencies:
@@ -221,7 +221,7 @@ atomic_capabilities:
       - agent: executor
         relationship: informs
         description: 计划指导 Executor 执行
-    
+
     collaboration_interfaces:
       - name: plan_delivery
         format: structured_yaml
@@ -229,7 +229,7 @@ atomic_capabilities:
       - name: feedback_reception
         format: structured_yaml
         content: review_feedback
-    
+
     context_sharing:
       shared_context:
         - requirements

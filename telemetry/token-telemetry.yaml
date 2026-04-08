@@ -14,12 +14,12 @@ metrics:
     description: 输入 Token 数量
     type: counter
     source: model_api
-    
+
   - name: token_output_count
     description: 输出 Token 数量
     type: counter
     source: model_api
-    
+
   - name: token_total_count
     description: 总 Token 消耗
     type: counter
@@ -32,7 +32,7 @@ metrics:
     unit: bits
     source: calculated
     formula: "-sum(p(x) * log2(p(x)))"
-    
+
   - name: token_information_density
     description: 信息密度（信息熵/Token数）
     type: gauge
@@ -44,7 +44,7 @@ metrics:
     description: 每个任务的平均 Token 消耗
     type: histogram
     buckets: [1000, 5000, 10000, 50000]
-    
+
   - name: token_utilization_rate
     description: Token 利用率（实际使用/预算上限）
     type: gauge
@@ -55,11 +55,11 @@ cost_models:
   - name: claude-3-opus
     input_price_per_1k: 15.0
     output_price_per_1k: 75.0
-    
+
   - name: claude-3-5-sonnet
     input_price_per_1k: 3.0
     output_price_per_1k: 15.0
-    
+
   - name: gpt-4
     input_price_per_1k: 30.0
     output_price_per_1k: 60.0

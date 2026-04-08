@@ -47,43 +47,43 @@ patterns:
     description: Result 类型模式（错误处理）
     tags: [error-handling, functional]
     template: |
-      type Result<T, E = Error> = 
+      type Result<T, E = Error> =
         | { success: true; data: T }
         | { success: false; error: E };
-      
+
       function divide(a: number, b: number): Result<number> {
         if (b === 0) {
           return { success: false, error: new Error('Division by zero') };
         }
         return { success: true, data: a / b };
       }
-  
+
   - name: branded-type
     description: 品牌类型（防止类型混淆）
     tags: [type-safety, utility]
     template: |
       type Brand<K, T> = K & { __brand: T };
-      
+
       type UserId = Brand<string, 'UserId'>;
       type PostId = Brand<string, 'PostId'>;
-      
+
       function createUserId(id: string): UserId {
         return id as UserId;
       }
-  
+
   - name: builder-pattern
     description: 构建者模式类型安全实现
     tags: [creational, oop]
     template: |
       class Builder<T = {}> {
         private config: T = {} as T;
-        
+
         with<K extends string, V>(key: K, value: V): Builder<T & Record<K, V>> {
           return Object.assign(Object.create(Builder.prototype), {
             config: { ...this.config, [key]: value }
           });
         }
-        
+
         build(): T {
           return this.config;
         }
@@ -93,11 +93,11 @@ rules:
   - name: strict-null-checks
     description: 启用 strictNullChecks
     severity: error
-  
+
   - name: no-any
     description: 避免使用 any 类型
     severity: warning
-  
+
   - name: explicit-return-types
     description: 公共 API 显式声明返回类型
     severity: warning

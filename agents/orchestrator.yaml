@@ -47,7 +47,7 @@ system_prompt: |
 
   ### 终止条件
   1. **成功终止**: Evaluator 返回 PASS 或 EXCELLENT
-  2. **失败终止**: 
+  2. **失败终止**:
      - 超过最大迭代次数 (默认 10 次)
      - 检测到循环依赖 (相同状态重复出现)
      - 连续 3 次重规划仍无法通过审查
@@ -218,7 +218,7 @@ atomic_capabilities:
         description: 工作流完成
         trigger: 评估通过
         feedback_type: positive          # 正反馈：目标达成，稳态达成
-      
+
       # 负反馈信号 - 纠正偏差，维持稳定（控制论）
       - name: route_to_planner_retry
         description: 返回 Planner 重规划（负反馈）
@@ -228,7 +228,7 @@ atomic_capabilities:
         description: 返回 Executor 修复（负反馈）
         trigger: 评估发现问题需要修复
         feedback_type: negative          # 负反馈：纠正执行偏差
-      
+
       # 外部交互信号
       - name: route_to_user
         description: 路由到用户
@@ -243,13 +243,13 @@ atomic_capabilities:
       # Orchestrator 是中心节点，根据输入信号动态路由（控制论：控制中心）
       dynamic_routing: true
       adaptive_routing: true             # 新增：自适应路由（控制论：自适应控制）
-      
+
       # 反馈控制策略（控制论）
       feedback_control:
         negative_feedback_threshold: 3   # 连续负反馈 3 次触发干预
         positive_feedback_limit: 1       # 正反馈直接推进
         stability_target: 0.8            # 系统稳定性目标
-      
+
       routing_logic:
         # 标准流程（正反馈驱动）
         - from: init
@@ -284,7 +284,7 @@ atomic_capabilities:
           signal: pass_with_warnings
           to: end
           feedback_type: positive
-        
+
         # 负反馈回路（纠正偏差）
         - from: reviewer
           signal: needs_revision
@@ -311,7 +311,7 @@ atomic_capabilities:
           to: classify_and_route
           feedback_type: negative
           note: 严重失败，需要分析后决定
-        
+
         # 外部交互
         - from: planner
           signal: need_more_info
@@ -342,7 +342,7 @@ atomic_capabilities:
         - condition: confidence_score < 0.5
           action: request_additional_info
           description: 置信度低，需要更多信息
-      
+
     # 正反馈机制 - 推进进度（控制论）
     positive_feedback:
       enabled: true
@@ -393,7 +393,7 @@ atomic_capabilities:
         - information_entropy       # 信息熵（不确定性度量）
         - channel_capacity_usage    # 信道容量使用率
         - confidence_calibration    # 置信度校准
-    
+
     # 控制论：控制效果评估
     control_effectiveness:
       enabled: true
@@ -402,7 +402,7 @@ atomic_capabilities:
         - stability_index           # 稳定性指标
         - oscillation_amplitude     # 振荡幅度（防止过度修正）
         - convergence_rate          # 收敛速度
-    
+
     # 系统论：系统健康评估
     system_health:
       enabled: true
@@ -411,7 +411,7 @@ atomic_capabilities:
         - component_synergy         # 组件协同度
         - boundary_integrity        # 边界完整性
         - adaptive_capacity         # 自适应能力
-    
+
     confidence_scoring:
       enabled: true
       factors:
