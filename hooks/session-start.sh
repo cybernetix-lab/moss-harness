@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-SESSION_ID="${ECC_SESSION_ID:-}"
+SESSION_ID="${AHARNESS_SESSION_ID:-}"
 if [[ -z "$SESSION_ID" ]]; then
     echo "⚠️  No session ID provided"
     exit 0
@@ -50,17 +50,17 @@ check_constraints() {
     
     # 加载硬约束
     if [[ -f "${PROJECT_ROOT}/constraints/hard-constraints.yaml" ]]; then
-        export ECC_HARD_CONSTRAINTS="${PROJECT_ROOT}/constraints/hard-constraints.yaml"
+        export AHARNESS_HARD_CONSTRAINTS="${PROJECT_ROOT}/constraints/hard-constraints.yaml"
     fi
     
     # 加载软约束
     if [[ -f "${PROJECT_ROOT}/constraints/soft-constraints.yaml" ]]; then
-        export ECC_SOFT_CONSTRAINTS="${PROJECT_ROOT}/constraints/soft-constraints.yaml"
+        export AHARNESS_SOFT_CONSTRAINTS="${PROJECT_ROOT}/constraints/soft-constraints.yaml"
     fi
     
     # 加载工具策略
     if [[ -f "${PROJECT_ROOT}/constraints/tools-policy.yaml" ]]; then
-        export ECC_TOOLS_POLICY="${PROJECT_ROOT}/constraints/tools-policy.yaml"
+        export AHARNESS_TOOLS_POLICY="${PROJECT_ROOT}/constraints/tools-policy.yaml"
     fi
 }
 
@@ -80,7 +80,7 @@ EOF
     
     # 创建结构化日志
     cat > "${telemetry_dir}/events.jsonl" << EOF
-{"type": "session.start", "session_id": "${SESSION_ID}", "timestamp": "${timestamp}", "data": {"profile": "${ECC_HOOK_PROFILE:-standard}"}}
+{"type": "session.start", "session_id": "${SESSION_ID}", "timestamp": "${timestamp}", "data": {"profile": "${AHARNESS_HOOK_PROFILE:-standard}"}}
 EOF
     
     # 初始化指标
@@ -138,7 +138,7 @@ log_to_central() {
     local central_log="${PROJECT_ROOT}/runtime/telemetry/all-sessions.jsonl"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     
-    echo "{\"event\": \"session_start\", \"session_id\": \"${SESSION_ID}\", \"timestamp\": \"${timestamp}\", \"profile\": \"${ECC_HOOK_PROFILE:-standard}\"}" >> "$central_log"
+    echo "{\"event\": \"session_start\", \"session_id\": \"${SESSION_ID}\", \"timestamp\": \"${timestamp}\", \"profile\": \"${AHARNESS_HOOK_PROFILE:-standard}\"}" >> "$central_log"
 }
 
 # 6. 显示欢迎信息
@@ -149,7 +149,7 @@ show_welcome() {
     echo "╠════════════════════════════════════════╣"
     echo "║  Session: ${SESSION_ID:0:30}"
     echo "║  Time:   $(date '+%Y-%m-%d %H:%M:%S')"
-    echo "║  Mode:   ${ECC_HOOK_PROFILE:-standard}"
+    echo "║  Mode:   ${AHARNESS_HOOK_PROFILE:-standard}"
     echo "╚════════════════════════════════════════╝"
     echo ""
 }

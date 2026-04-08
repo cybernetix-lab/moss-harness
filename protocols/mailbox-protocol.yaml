@@ -15,7 +15,7 @@ message_format:
       - body
       - status
       - created_at
-    
+
     properties:
       header:
         type: object
@@ -32,7 +32,7 @@ message_format:
             type: string
             pattern: "^msg-[0-9]{8}-[0-9]{6}-[a-f0-9]{8}$"
             description: 消息唯一标识符
-          
+
           type:
             type: string
             enum:
@@ -42,7 +42,7 @@ message_format:
               - TASK_COMPLETED
               - ERROR_OCCURRED
               - SYSTEM_NOTIFICATION
-              
+
               # 工作流消息
               - PLAN_REQUESTED
               - PLAN_COMPLETED
@@ -52,66 +52,66 @@ message_format:
               - EXECUTION_COMPLETED
               - EVAL_REQUESTED
               - EVAL_COMPLETED
-              
+
               # 协作消息
               - CLARIFICATION_REQUESTED
               - CLARIFICATION_PROVIDED
               - FEEDBACK
               - QUESTION
               - ANSWER
-              
+
               # 状态消息
               - PROGRESS_UPDATE
               - BLOCKED
               - READY
               - BUSY
-              
+
               # 特殊消息
               - REPLY
               - FORWARDED
               - BROADCAST
             description: 消息类型
-          
+
           from:
             type: string
             description: 发送方 Agent 名称
-          
+
           to:
             type: string
             description: 接收方 Agent 名称
-          
+
           timestamp:
             type: string
             format: date-time
             description: ISO 8601 格式时间戳
-          
+
           priority:
             type: string
             enum: [low, normal, high, urgent]
             default: normal
             description: 消息优先级
-          
+
           thread_id:
             type: string
             description: 线程/任务唯一标识符
-          
+
           in_reply_to:
             type: string
             description: 回复的消息ID（可选）
-          
+
           forwarded_from:
             type: string
             description: 转发的原始消息ID（可选）
-          
+
           broadcast:
             type: boolean
             default: false
             description: 是否为广播消息
-      
+
       body:
         type: object
         description: 消息正文，根据消息类型有不同的结构
-      
+
       metadata:
         type: object
         properties:
@@ -119,20 +119,20 @@ message_format:
             type: integer
             minimum: 1
             description: 投递尝试次数
-          
+
           timeout:
             type: integer
             description: 超时时间（秒）
-          
+
           retry_policy:
             type: string
             enum: [immediate, exponential_backoff, linear_backoff]
             description: 重试策略
-          
+
           original_message:
             type: string
             description: 原始消息ID（用于回复或转发）
-      
+
       status:
         type: string
         enum:
@@ -147,27 +147,27 @@ message_format:
           - failed          # 失败
           - archived        # 已归档
         description: 消息状态
-      
+
       created_at:
         type: string
         format: date-time
         description: 创建时间
-      
+
       sent_at:
         type: string
         format: date-time
         description: 发送时间（可选）
-      
+
       delivered_at:
         type: string
         format: date-time
         description: 送达时间（可选）
-      
+
       read_at:
         type: string
         format: date-time
         description: 阅读时间（可选）
-      
+
       processed_at:
         type: string
         format: date-time
@@ -184,20 +184,20 @@ message_types:
         requirements: string
         constraints: array
         deadline: string
-    
+
     TASK_CANCELLED:
       description: 任务取消通知
       body_schema:
         task_id: string
         reason: string
-    
+
     TASK_COMPLETED:
       description: 任务完成通知
       body_schema:
         task_id: string
         summary: string
         result: object
-    
+
     ERROR_OCCURRED:
       description: 错误通知
       body_schema:
@@ -205,7 +205,7 @@ message_types:
         error_message: string
         stack_trace: string
         context: object
-  
+
   # 工作流消息
   workflow:
     PLAN_REQUESTED:
@@ -214,7 +214,7 @@ message_types:
         task_id: string
         requirements: string
         context: object
-    
+
     PLAN_COMPLETED:
       description: 计划已完成
       body_schema:
@@ -223,13 +223,13 @@ message_types:
           summary: string
           tasks: array
           risks: array
-    
+
     REVIEW_REQUESTED:
       description: 请求审查计划
       body_schema:
         task_id: string
         execution_plan: object
-    
+
     REVIEW_COMPLETED:
       description: 审查已完成
       body_schema:
@@ -237,14 +237,14 @@ message_types:
         verdict: string
         issues_found: array
         suggestions: array
-    
+
     EXECUTION_REQUESTED:
       description: 请求执行任务
       body_schema:
         task_id: string
         task: object
         context: object
-    
+
     EXECUTION_COMPLETED:
       description: 任务执行完成
       body_schema:
@@ -252,7 +252,7 @@ message_types:
         task_id_completed: string
         code_changes: array
         test_results: object
-    
+
     EVAL_REQUESTED:
       description: 请求评估
       body_schema:
@@ -260,7 +260,7 @@ message_types:
         requirements: array
         plan: object
         result: object
-    
+
     EVAL_COMPLETED:
       description: 评估完成
       body_schema:
@@ -269,7 +269,7 @@ message_types:
         requirements_check: array
         test_validation: object
         issues_found: object
-  
+
   # 协作消息
   collaboration:
     CLARIFICATION_REQUESTED:
@@ -277,26 +277,26 @@ message_types:
       body_schema:
         question: string
         context: string
-    
+
     CLARIFICATION_PROVIDED:
       description: 提供澄清
       body_schema:
         answer: string
         examples: array
-    
+
     FEEDBACK:
       description: 反馈
       body_schema:
         type: string
         content: string
         severity: string
-    
+
     QUESTION:
       description: 问题
       body_schema:
         question: string
         context: object
-    
+
     ANSWER:
       description: 回答
       body_schema:
@@ -310,20 +310,20 @@ communication_rules:
     at_least_once: true
     exactly_once: false
     ordering: causal
-  
+
   # 重试策略
   retry_policy:
     max_attempts: 3
     initial_delay: 1
     backoff_multiplier: 2
     max_delay: 60
-  
+
   # 超时设置
   timeout:
     delivery: 30
     processing: 300
     response: 600
-  
+
   # 优先级处理
   priority:
     urgent:
@@ -343,33 +343,33 @@ communication_rules:
 state_transitions:
   draft:
     - pending_delivery
-  
+
   pending_delivery:
     - sending
     - failed
-  
+
   sending:
     - delivered
     - failed
-  
+
   delivered:
     - unread
-  
+
   unread:
     - read
-  
+
   read:
     - processing
     - completed
     - failed
-  
+
   processing:
     - completed
     - failed
-  
+
   completed:
     - archived
-  
+
   failed:
     - pending_delivery  # 重试
     - archived
@@ -382,21 +382,21 @@ agent_permissions:
     message_types:
       send: [PLAN_COMPLETED, CLARIFICATION_REQUESTED, QUESTION]
       receive: [TASK_CREATED, REVIEW_COMPLETED, CLARIFICATION_PROVIDED, ANSWER]
-  
+
   reviewer:
     can_send_to: [planner, executor, system]
     can_receive_from: [planner, system]
     message_types:
       send: [REVIEW_COMPLETED, CLARIFICATION_REQUESTED, FEEDBACK]
       receive: [PLAN_COMPLETED, CLARIFICATION_PROVIDED]
-  
+
   executor:
     can_send_to: [evaluator, planner, system]
     can_receive_from: [reviewer, evaluator, system]
     message_types:
       send: [EXECUTION_COMPLETED, CLARIFICATION_REQUESTED, PROGRESS_UPDATE]
       receive: [EXECUTION_REQUESTED, EVAL_COMPLETED, CLARIFICATION_PROVIDED]
-  
+
   evaluator:
     can_send_to: [executor, planner, system]
     can_receive_from: [executor, system]
@@ -407,7 +407,7 @@ agent_permissions:
 # 邮箱目录结构
 mailbox_structure:
   root: runtime/mailbox
-  
+
   agent_mailbox:
     required_boxes:
       - inbox      # 收件箱
@@ -418,7 +418,7 @@ mailbox_structure:
     optional_boxes:
       - archive    # 归档
       - failed     # 失败消息
-  
+
   shared_space:
     - context     # 共享上下文
     - state       # 全局状态

@@ -111,7 +111,7 @@ scoring:
     test_assessment: 0.2
     code_quality_review: 0.3
     objectivity: 0.2
-  
+
   thresholds:
     pass: 80
     excellent: 95
@@ -120,11 +120,11 @@ metrics:
   - name: verdict_accuracy
     description: 评估结论准确性
     target: ">= 90%"
-  
+
   - name: issue_detection_completeness
     description: 问题检出完整性
     target: ">= 85%"
-  
+
   - name: objectivity_score
     description: 客观性评分
     target: ">= 90%"

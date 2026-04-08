@@ -12,12 +12,12 @@ rules:
     message: "禁止使用 explicit any"
     pattern: ": any"
     fix: "使用 unknown 或具体类型替代"
-  
+
   - name: no-implicit-any
     message: "参数需要显式类型"
     pattern: "function.*\\(.*\\).*\\{"
     check: "所有参数都有类型注解"
-  
+
   - name: strict-null-checks
     message: "处理可能的 null/undefined"
     pattern: "\\w+\\?\\."
@@ -44,7 +44,7 @@ examples:
         id: string;
         name: string;
       }
-      
+
       function getUser(id: string): User | undefined {
         return users.find(u => u.id === id);
       }
@@ -53,7 +53,7 @@ examples:
       function identity<T>(value: T): T {
         return value;
       }
-  
+
   invalid:
     - |
       // ❌ 使用 any

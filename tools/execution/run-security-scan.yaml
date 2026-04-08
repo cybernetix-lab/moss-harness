@@ -1,0 +1,205 @@
+name: execution_run_security_scan
+description: |
+  运行安全扫描工具。检测代码中的安全漏洞、敏感信息泄露、
+  依赖项漏洞等安全问题。
+
+input:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 扫描路径
+      default: "."
+
+    scanner:
+      type: string
+      description: 扫描工具（可选，自动检测）
+      enum: [auto, bandit, safety, npm-audit, snyk, semgrep, trivy, codeql]
+      default: auto
+
+    scan_type:
+      type: array
+      description: 扫描类型
+      items:
+        type: string
+        enum: [vulnerabilities, secrets, dependencies, sast, iac]
+      default: [vulnerabilities, secrets]
+
+    severity_threshold:
+      type: string
+      description: 严重程度阈值
+      default: medium
+      enum: [low, medium, high, critical]
+
+    include_dev_dependencies:
+      type: boolean
+      description: 是否包含开发依赖
+      default: false
+
+    output_format:
+      type: string
+      description: 输出格式
+      default: json
+      enum: [json, sarif, html]
+
+  required: []
+
+output:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: 扫描是否通过（无严重漏洞）
+
+    scanner_used:
+      type: string
+      description: 实际使用的扫描工具
+
+    summary:
+      type: object
+      description: 漏洞汇总
+      properties:
+        critical:
+          type: integer
+          description: 严重漏洞数
+        high:
+          type: integer
+          description: 高危漏洞数
+        medium:
+          type: integer
+          description: 中危漏洞数
+        low:
+          type: integer
+          description: 低危漏洞数
+        info:
+          type: integer
+          description: 信息数
+
+    vulnerabilities:
+      type: array
+      description: 漏洞详情列表
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: 漏洞 ID (CVE/SNYK 等)
+          title:
+            type: string
+            description: 漏洞标题
+          description:
+            type: string
+            description: 漏洞描述
+          severity:
+            type: string
+            description: 严重程度
+            enum: [critical, high, medium, low, info]
+          file:
+            type: string
+            description: 受影响文件
+          line:
+            type: integer
+            description: 行号
+          category:
+            type: string
+            description: 漏洞类别
+          remediation:
+            type: string
+            description: 修复建议
+          references:
+            type: array
+            description: 参考链接
+            items:
+              type: string
+
+    secrets_found:
+      type: array
+      description: 发现的敏感信息
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            description: 敏感信息类型
+          file:
+            type: string
+            description: 文件路径
+          line:
+            type: integer
+            description: 行号
+          snippet:
+            type: string
+            description: 代码片段（脱敏）
+
+    duration_ms:
+      type: integer
+      description: 扫描耗时
+
+  required: [success, scanner_used, summary]
+
+auto_detection:
+  scanners:
+    - name: bandit
+      indicators: ["requirements.txt", "setup.py", "pyproject.toml"]
+      languages: ["python"]
+      command: "bandit -r ."
+
+    - name: npm-audit
+      indicators: ["package.json", "package-lock.json"]
+      languages: ["javascript", "typescript"]
+      command: "npm audit --json"
+
+    - name: semgrep
+      indicators: [".semgrep.yml", ".semgreprc"]
+      languages: ["*"]
+      command: "semgrep --config=auto"
+
+    - name: trivy
+      indicators: ["Dockerfile", "docker-compose.yml"]
+      scan_types: ["iac", "container"]
+      command: "trivy fs ."
+
+errors:
+  - name: ScannerNotFoundError
+    code: SCANNER_NOT_FOUND
+    description: 未找到合适的扫描工具
+
+  - name: ScanFailedError
+    code: SCAN_FAILED
+    description: 扫描执行失败
+
+  - name: CriticalVulnerabilityFound
+    code: CRITICAL_VULNERABILITY
+    description: 发现严重漏洞
+
+examples:
+  - name: 自动扫描项目
+    input:
+      path: "."
+      scan_type: ["vulnerabilities", "secrets"]
+      severity_threshold: medium
+    output:
+      success: false
+      scanner_used: "npm-audit"
+      summary:
+        critical: 0
+        high: 2
+        medium: 5
+        low: 3
+        info: 0
+      vulnerabilities:
+        - id: "GHSA-xxxx-xxxx-xxxx"
+          title: "Prototype Pollution"
+          description: "..."
+          severity: high
+          file: "package.json"
+          category: "dependency"
+          remediation: "Upgrade to version >= 2.0.0"
+      secrets_found: []
+      duration_ms: 5000
+
+constraints:
+  max_file_size_mb: 50
+  timeout_seconds: 300
+  fail_on_critical: true
+  mask_secrets: true

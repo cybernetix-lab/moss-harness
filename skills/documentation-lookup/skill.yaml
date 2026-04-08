@@ -46,25 +46,25 @@ sources:
     type: web
     priority: high
     tags: [frontend, javascript, web-api]
-  
+
   - name: typescript-docs
     url: "https://www.typescriptlang.org/docs"
     type: web
     priority: high
     tags: [typescript]
-  
+
   - name: react-docs
     url: "https://react.dev"
     type: web
     priority: high
     tags: [react, frontend]
-  
+
   - name: local-readme
     pattern: "README.md"
     type: local
     priority: highest
     tags: [project-specific]
-  
+
   - name: local-docs
     pattern: "docs/**/*.md"
     type: local
@@ -80,7 +80,7 @@ actions:
       - 搜索本地文档
       - 搜索在线文档
       - 汇总结果
-  
+
   - type: summarize
     description: 总结文档要点
     tags: [summarization]
@@ -88,7 +88,7 @@ actions:
       - 提取关键信息
       - 生成简洁摘要
       - 提供代码示例
-  
+
   - type: compare
     description: 比较不同版本/方案
     tags: [comparison, analysis]

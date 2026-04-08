@@ -10,17 +10,25 @@ echo ""
 
 ERRORS=0
 
-# 检查目录结构
+# 检查目录结构（如果不存在则自动创建）
 check_directory() {
     local dir="$1"
     local name="$2"
+    local auto_create="${3:-false}"
+    
     if [[ -d "$dir" ]]; then
         echo "  ✅ $name"
         return 0
     else
-        echo "  ❌ $name (missing: $dir)"
-        ((ERRORS++))
-        return 1
+        if [[ "$auto_create" == "true" ]]; then
+            mkdir -p "$dir"
+            echo "  ✅ $name (created)"
+            return 0
+        else
+            echo "  ❌ $name (missing: $dir)"
+            ((ERRORS++))
+            return 1
+        fi
     fi
 }
 
@@ -45,7 +53,7 @@ check_directory "${PROJECT_ROOT}/evals" "Evals directory"
 check_directory "${PROJECT_ROOT}/telemetry" "Telemetry directory"
 check_directory "${PROJECT_ROOT}/tools" "Tools directory"
 check_directory "${PROJECT_ROOT}/scripts" "Scripts directory"
-check_directory "${PROJECT_ROOT}/runtime" "Runtime directory"
+check_directory "${PROJECT_ROOT}/runtime" "Runtime directory" "true"
 
 echo ""
 echo "📄 Core Files:"

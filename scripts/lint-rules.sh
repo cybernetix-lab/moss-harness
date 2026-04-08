@@ -187,14 +187,16 @@ check_directory() {
     
     log_info "检查目录: $dir"
     
-    # 查找所有代码文件
+    # 查找所有代码文件和 YAML 文件
     find "$dir" -type f \( \
         -name "*.ts" -o \
         -name "*.tsx" -o \
         -name "*.js" -o \
         -name "*.jsx" -o \
         -name "*.py" -o \
-        -name "*.sh" \
+        -name "*.sh" -o \
+        -name "*.yaml" -o \
+        -name "*.yml" \
     \) -not -path "*/node_modules/*" -not -path "*/.git/*" | while read -r file; do
         check_file "$file" "$specific_rule" "$fix_mode"
     done

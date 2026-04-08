@@ -4,11 +4,8 @@ description: |
   规划 Agent。专注于需求分析、任务拆解、方案设计和风险评估。
   不负责具体实现，只输出清晰、可执行的计划。
 
-model:
-  provider: anthropic
-  model: claude-3-opus
-  temperature: 0.3
-  max_tokens: 8192
+# 模型配置已移至 config/models.yaml
+# 本 Agent 使用 profile: high-capability
 
 system_prompt: |
   你是 Planner，一名专业的技术规划师，专注于制定清晰、可执行的技术方案。
@@ -108,3 +105,136 @@ output:
     - risk_assessment
     - execution_plan
     - success_criteria
+
+# ============== 原子能力声明 ==============
+
+atomic_capabilities:
+  # 执行能力 - 该 Agent 能执行什么任务
+  execution:
+    task_types:
+      - requirement_analysis      # 需求分析
+      - task_decomposition        # 任务拆解
+      - architecture_design       # 架构设计
+      - risk_assessment           # 风险评估
+      - effort_estimation         # 工时估算
+      - plan_refinement           # 计划修正（基于反馈）
+
+    input_patterns:
+      - type: raw_requirement
+        description: 原始用户需求
+        required: true
+      - type: review_feedback
+        description: 审查反馈（用于重规划）
+        required: false
+      - type: execution_feedback
+        description: 执行反馈（发现计划缺陷）
+        required: false
+
+    output_schema:
+      plan:
+        type: object
+        required: true
+        fields:
+          - summary
+          - tasks
+          - risks
+          - estimated_total_hours
+      confidence:
+        type: float
+        range: [0.0, 1.0]
+        description: 对计划的置信度
+      limitations:
+        type: array
+        description: 计划的局限性或假设
+
+  # 决策能力 - 该 Agent 能做出什么决策
+  decision:
+    output_signals:
+      - name: plan_complete
+        description: 计划已完成，可以进入审查
+        trigger: 正常完成规划
+      - name: need_more_info
+        description: 需要更多信息才能规划
+        trigger: 需求不明确
+      - name: scope_too_large
+        description: 任务范围过大，需要拆分
+        trigger: 预估工时超过阈值
+
+    routing_hints:
+      next_agents:
+        - reviewer    # 默认下一节点
+      conditions:
+        - condition: plan_complete
+          next: reviewer
+        - condition: need_more_info
+          next: user    # 需要用户输入
+        - condition: scope_too_large
+          next: planner  # 自我递归，拆分任务
+
+  # 反馈能力 - 该 Agent 如何反馈状态
+  feedback:
+    status_reporting:
+      - planning_in_progress    # 规划中
+      - planning_blocked        # 规划受阻
+      - planning_complete       # 规划完成
+
+    issue_escalation:
+      - type: requirement_ambiguous
+        description: 需求不明确
+        action: request_clarification
+      - type: technical_constraint
+        description: 技术约束无法满足
+        action: escalate_to_user
+      - type: scope_creep
+        description: 范围蔓延
+        action: flag_for_review
+
+    suggestions:
+      enabled: true
+      max_suggestions: 5
+
+  # 自省能力 - 该 Agent 如何评估自己
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - requirement_clarity     # 需求清晰度
+        - domain_familiarity      # 领域熟悉度
+        - technical_feasibility   # 技术可行性
+
+    limitations:
+      - 无法执行实际代码编写
+      - 无法访问外部实时数据
+      - 无法验证第三方库的最新状态
+
+    self_assessment:
+      - plan_quality_score        # 计划质量自评
+      - risk_coverage_score       # 风险覆盖度
+      - estimation_accuracy       # 估算准确度
+
+  # 协作能力 - 该 Agent 如何与其他 Agent 协作
+  collaboration:
+    dependencies:
+      - agent: reviewer
+        relationship: output_to
+        description: 计划输出给 Reviewer 审查
+      - agent: executor
+        relationship: informs
+        description: 计划指导 Executor 执行
+
+    collaboration_interfaces:
+      - name: plan_delivery
+        format: structured_yaml
+        content: execution_plan
+      - name: feedback_reception
+        format: structured_yaml
+        content: review_feedback
+
+    context_sharing:
+      shared_context:
+        - requirements
+        - constraints
+        - assumptions
+      private_context:
+        - draft_notes
+        - alternative_approaches

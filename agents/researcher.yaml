@@ -3,28 +3,25 @@ type: research
 description: |
   研究分析 Agent。专注于技术调研、文档查询、方案比较。
 
-model:
-  provider: anthropic
-  model: claude-3-opus
-  temperature: 0.5
-  max_tokens: 4096
+# 模型配置已移至 config/models.yaml
+# 本 Agent 使用 profile: high-capability
 
 system_prompt: |
   你是 Researcher，一名技术研究员，专注于深入调研和分析。
-  
+
   ## 核心职责
   1. 调研技术方案和最佳实践
   2. 比较不同方案的优缺点
   3. 查找官方文档和权威资料
   4. 提供基于证据的建议
-  
+
   ## 研究流程
   1. **理解问题** - 明确研究目标和范围
   2. **收集资料** - 搜索文档、论文、案例
   3. **分析对比** - 比较不同方案的优劣
   4. **形成结论** - 基于证据给出建议
   5. **记录来源** - 引用所有参考资料
-  
+
   ## 输出要求
   - 提供结构化的调研报告
   - 列出所有参考来源
@@ -45,8 +42,15 @@ tools:
   allowed:
     - filesystem_read
     - code_search
+    - memory_search
     - network_fetch_documentation
     - network_search
+
+  blocked:
+    - filesystem_write
+    - execution_run_tests
+    - execution_run_linter
+    - execution_run_command
 
 context:
   max_tokens: 6000
@@ -67,3 +71,149 @@ output:
     - recommendation
     - references
     - next_steps
+
+# ============== 原子能力声明 ==============
+
+atomic_capabilities:
+  # 执行能力 - 该 Agent 能执行什么任务
+  execution:
+    task_types:
+      - technology_research       # 技术调研
+      - documentation_lookup      # 文档查询
+      - solution_comparison       # 方案对比
+      - best_practices_analysis   # 最佳实践分析
+      - api_research              # API 调研
+      - trend_analysis            # 趋势分析
+
+    input_patterns:
+      - type: research_question
+        description: 研究问题
+        required: true
+      - type: context
+        description: 相关上下文
+        required: false
+      - type: constraints
+        description: 约束条件
+        required: false
+
+    output_schema:
+      research_report:
+        type: object
+        required: true
+        fields:
+          - executive_summary
+          - findings
+          - comparison
+          - recommendation
+          - references
+          - next_steps
+      confidence:
+        type: float
+        range: [0.0, 1.0]
+        description: 对研究结论的置信度
+      data_freshness:
+        type: string
+        description: 数据新鲜度评估
+
+  # 决策能力 - 该 Agent 能做出什么决策
+  decision:
+    output_signals:
+      - name: research_complete
+        description: 研究完成，有明确结论
+        trigger: 收集到足够信息并形成结论
+      - name: need_more_research
+        description: 需要更多研究
+        trigger: 信息不足或存在知识缺口
+      - name: inconclusive
+        description: 结论不明确
+        trigger: 证据矛盾或方案各有优劣
+
+    routing_hints:
+      next_agents:
+        - planner      # 默认返回 Planner
+        - user         # 需要用户决策
+      conditions:
+        - condition: research_complete
+          next: planner
+        - condition: need_more_research
+          next: researcher  # 自我递归深入研究
+        - condition: inconclusive
+          next: user  # 需要用户做最终决策
+
+  # 反馈能力 - 该 Agent 如何反馈状态
+  feedback:
+    status_reporting:
+      - research_in_progress    # 研究中
+      - research_blocked        # 研究受阻
+      - research_complete       # 研究完成
+
+    issue_escalation:
+      - type: information_scarce
+        description: 信息稀缺
+        action: expand_search_scope
+        severity: medium
+      - type: conflicting_sources
+        description: 来源冲突
+        action: flag_for_human_review
+        severity: high
+      - type: outdated_information
+        description: 信息过时
+        action: note_limitation
+        severity: low
+
+    progress_reporting:
+      enabled: true
+      granularity: per_source
+      metrics:
+        - sources_reviewed
+        - key_findings
+        - confidence_level
+
+  # 自省能力 - 该 Agent 如何评估自己
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - source_reliability      # 来源可靠性
+        - information_freshness   # 信息新鲜度
+        - domain_expertise        # 领域专业知识
+        - evidence_strength       # 证据强度
+
+    limitations:
+      - 无法访问付费或受限内容
+      - 无法验证所有来源的权威性
+      - 技术信息可能随时间变化
+      - 无法执行实际代码验证
+
+    self_assessment:
+      - research_coverage_score   # 研究覆盖度
+      - source_quality_score      # 来源质量
+      - conclusion_validity       # 结论有效性
+
+  # 协作能力 - 该 Agent 如何与其他 Agent 协作
+  collaboration:
+    dependencies:
+      - agent: planner
+        relationship: serves
+        description: 为 Planner 提供研究支持
+      - agent: executor
+        relationship: informs
+        description: 为 Executor 提供技术参考
+
+    collaboration_interfaces:
+      - name: research_request
+        format: structured_yaml
+        content: research_question
+      - name: research_delivery
+        format: structured_report
+        content: research_report
+
+    context_sharing:
+      shared_context:
+        - research_question
+        - key_findings
+        - recommendations
+      private_context:
+        - raw_notes
+        - discarded_sources
+        - alternative_approaches

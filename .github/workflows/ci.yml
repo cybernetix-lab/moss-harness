@@ -9,10 +9,10 @@ on:
 jobs:
   health-check:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Run health check
       run: |
         chmod +x scripts/*.sh
@@ -20,19 +20,19 @@ jobs:
 
   validate-configs:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Install yamllint
       run: |
         sudo apt-get update
         sudo apt-get install -y yamllint
-    
+
     - name: Validate YAML files
       run: |
         find . -name "*.yaml" -o -name "*.yml" | grep -v node_modules | xargs yamllint -d relaxed
-    
+
     - name: Validate skill definitions
       run: |
         for skill in skills/*/*/skill.yaml; do
@@ -41,7 +41,7 @@ jobs:
             # 这里可以添加更复杂的验证
           fi
         done
-    
+
     - name: Validate agent definitions
       run: |
         for agent in agents/*.yaml; do
@@ -52,43 +52,43 @@ jobs:
 
   shellcheck:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Install shellcheck
       run: |
         sudo apt-get update
         sudo apt-get install -y shellcheck
-    
+
     - name: Run shellcheck
       run: |
         find . -name "*.sh" | grep -v node_modules | xargs shellcheck --severity=warning || true
 
   test-scripts:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Test scripts
       run: |
         chmod +x scripts/*.sh hooks/*.sh
-        
+
         # 测试技能列表
         ./scripts/skill-list.sh
-        
+
         # 测试 Agent 列表
         ./scripts/agent-list.sh
-        
+
         # 初始化项目
         ./init.sh
-        
+
         # 测试会话启动
         ./scripts/start-session.sh
-        
+
         # 测试技能激活
         ./scripts/skill-activate.sh typescript-patterns || true
-        
+
         # 测试验证
         ./scripts/verify.sh

@@ -4,11 +4,8 @@ description: |
   评估 Agent。专注于客观评估实现是否符合需求和验收标准。
   作为独立的第三方，公正地评估完成质量，提供改进建议。
 
-model:
-  provider: anthropic
-  model: claude-3-opus
-  temperature: 0.2
-  max_tokens: 8192
+# 模型配置已移至 config/models.yaml
+# 本 Agent 使用 profile: high-capability
 
 system_prompt: |
   你是 Evaluator，一名专业的质量评估员，专注于客观评估任务完成质量。
@@ -139,3 +136,191 @@ output:
     - issues_found
     - recommendations
     - next_steps
+
+# ============== 原子能力声明 ==============
+
+atomic_capabilities:
+  # 执行能力 - 该 Agent 能执行什么任务
+  execution:
+    task_types:
+      - requirement_validation    # 需求验证
+      - test_coverage_analysis    # 测试覆盖分析
+      - code_quality_review       # 代码质量审查
+      - security_assessment       # 安全评估
+      - performance_evaluation    # 性能评估
+      - compliance_check          # 合规检查
+
+    input_patterns:
+      - type: execution_result
+        description: 执行结果（来自 Executor）
+        required: true
+      - type: execution_plan
+        description: 执行计划（来自 Planner）
+        required: true
+      - type: requirements
+        description: 原始需求
+        required: true
+      - type: review_result
+        description: 审查结果（来自 Reviewer）
+        required: false
+
+    output_schema:
+      evaluation_result:
+        type: object
+        required: true
+        fields:
+          - verdict
+          - summary
+          - requirements_check
+          - test_validation
+          - code_quality_review
+          - issues_found
+          - recommendations
+          - next_steps
+      confidence:
+        type: float
+        range: [0.0, 1.0]
+        description: 对评估结论的置信度
+      issue_classification:
+        type: object
+        fields:
+          - implementation_issues   # 实现问题
+          - planning_issues         # 计划问题
+          - requirement_issues      # 需求问题
+
+  # 决策能力 - 该 Agent 能做出什么决策
+  decision:
+    output_signals:
+      - name: excellent
+        description: 优秀，超出预期
+        trigger: 所有标准都达到优秀水平
+      - name: pass
+        description: 通过，满足所有要求
+        trigger: 需求实现且测试通过
+      - name: pass_with_warnings
+        description: 有条件通过，存在小问题
+        trigger: 核心功能实现，存在非关键问题
+      - name: needs_improvement
+        description: 需要改进
+        trigger: 存在必须修复的问题
+      - name: critical_failure
+        description: 严重失败
+        trigger: 核心功能未实现或测试大面积失败
+
+    routing_hints:
+      next_agents:
+        - end           # 默认结束（通过时）
+        - executor      # 实现问题，返回修复
+        - planner       # 计划问题，返回重规划
+        - user          # 需求问题，需要用户确认
+      conditions:
+        - condition: excellent
+          next: end
+        - condition: pass
+          next: end
+        - condition: pass_with_warnings
+          next: end
+        - condition: needs_improvement
+          next: classify_and_route  # 需要分类后路由
+        - condition: critical_failure
+          next: classify_and_route
+
+  # 反馈能力 - 该 Agent 如何反馈状态
+  feedback:
+    status_reporting:
+      - evaluation_in_progress  # 评估中
+      - evaluation_blocked      # 评估受阻
+      - evaluation_complete     # 评估完成
+
+    issue_escalation:
+      - type: critical_functionality_missing
+        description: 关键功能缺失
+        action: escalate_to_executor
+        severity: critical
+      - type: security_vulnerability
+        description: 安全漏洞
+        action: escalate_immediately
+        severity: critical
+      - type: test_coverage_insufficient
+        description: 测试覆盖不足
+        action: request_additional_tests
+        severity: high
+      - type: code_quality_issues
+        description: 代码质量问题
+        action: suggest_refactoring
+        severity: medium
+      - type: plan_deviation
+        description: 实现偏离计划
+        action: flag_for_review
+        severity: high
+
+    progress_reporting:
+      enabled: true
+      granularity: per_requirement
+      metrics:
+        - requirements_met
+        - tests_passed
+        - code_coverage
+        - issues_by_severity
+
+    issue_classification:
+      enabled: true
+      categories:
+        - implementation    # 实现问题 → Executor
+        - planning          # 计划问题 → Planner
+        - requirements      # 需求问题 → User
+
+  # 自省能力 - 该 Agent 如何评估自己
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - test_reliability        # 测试可靠性
+        - code_review_thoroughness # 代码审查彻底性
+        - requirements_clarity    # 需求清晰度
+        - execution_quality       # 执行质量
+
+    limitations:
+      - 无法执行实际运行环境测试
+      - 无法预测生产环境的所有边界情况
+      - 受限于静态分析工具的能力
+      - 无法验证业务逻辑的正确性（只能验证实现）
+
+    self_assessment:
+      - evaluation_coverage_score   # 评估覆盖度
+      - issue_detection_accuracy  # 问题检测准确度
+      - false_positive_rate       # 误报率
+
+  # 协作能力 - 该 Agent 如何与其他 Agent 协作
+  collaboration:
+    dependencies:
+      - agent: executor
+        relationship: receives_from
+        description: 从 Executor 接收执行结果
+      - agent: planner
+        relationship: references
+        description: 参考 Planner 的计划进行验证
+      - agent: reviewer
+        relationship: references
+        description: 参考 Reviewer 的审查意见
+
+    collaboration_interfaces:
+      - name: result_reception
+        format: structured_yaml
+        content: execution_result
+      - name: evaluation_delivery
+        format: structured_yaml
+        content: evaluation_result
+      - name: feedback_to_executor
+        format: structured_yaml
+        content: fix_instructions
+
+    context_sharing:
+      shared_context:
+        - requirements
+        - execution_plan
+        - execution_result
+        - evaluation_findings
+      private_context:
+        - evaluation_notes
+        - comparison_benchmarks

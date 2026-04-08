@@ -14,13 +14,13 @@ if [[ -z "$ACTION_TYPE" ]]; then
     exit 0
 fi
 
-SESSION_ID="${ECC_SESSION_ID:-unknown}"
+SESSION_ID="${AHARNESS_SESSION_ID:-unknown}"
 TELEMETRY_DIR="${PROJECT_ROOT}/runtime/telemetry/${SESSION_ID}"
 mkdir -p "$TELEMETRY_DIR"
 
 # 生成唯一的动作 ID
 ACTION_ID="action-$(date +%s%N | cut -b1-16)-$(openssl rand -hex 4 2>/dev/null || echo $RANDOM)"
-export ECC_CURRENT_ACTION_ID="$ACTION_ID"
+export AHARNESS_CURRENT_ACTION_ID="$ACTION_ID"
 
 # 记录动作开始时间
 echo "$(date +%s%N | cut -b1-13)" > "${TELEMETRY_DIR}/.action_${ACTION_ID}_start"

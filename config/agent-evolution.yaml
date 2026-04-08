@@ -5,16 +5,16 @@
 thresholds:
   # 最小评估次数（达到此次数后才考虑进化）
   min_evaluations: 3
-  
+
   # 最低成功率（低于此值触发 prompt 优化）
   min_success_rate: 70
-  
+
   # 最低质量评分（低于此值触发模型调优）
   min_quality_score: 75
-  
+
   # 最低约束遵守度（低于此值触发工具调整）
   min_constraint_compliance: 90
-  
+
   # 最大进化频率（两次进化间隔至少 7 天）
   max_evolution_frequency: 7d
 
@@ -36,7 +36,7 @@ strategies:
       - 添加更详细的步骤说明
       - 强化约束提醒
       - 增加示例和最佳实践
-    
+
   # 工具权限调整策略
   tool_adjustment:
     enabled: true
@@ -47,7 +47,7 @@ strategies:
       - 重新评估 allowed/blocked 工具
       - 添加或移除特定工具权限
       - 调整工具使用指导
-    
+
   # 模型参数调优策略
   model_tuning:
     enabled: true
@@ -62,7 +62,7 @@ strategies:
       temperature_step: -0.1
       min_temperature: 0.1
       max_temperature: 1.0
-    
+
   # 上下文优化策略
   context_optimization:
     enabled: true
@@ -82,13 +82,13 @@ constraints:
   # 温度参数边界
   max_temperature: 1.0
   min_temperature: 0.1
-  
+
   # Token 调整步长
   max_tokens_step: 1024
-  
+
   # 最大进化次数（防止过度进化）
   max_evolutions_per_month: 4
-  
+
   # 必须保留的原始配置项
   preserve_fields:
     - name
@@ -99,10 +99,10 @@ constraints:
 history:
   # 保留备份数量
   max_backups: 10
-  
+
   # 保留提案数量
   max_proposals: 50
-  
+
   # 历史数据保留天数
   retention_days: 90
 
@@ -110,10 +110,10 @@ history:
 notifications:
   # 进化完成时通知
   on_evolution_complete: true
-  
+
   # 进化失败时通知
   on_evolution_failed: true
-  
+
   # 需要人工审查时通知
   on_manual_review_required: true
 
@@ -121,6 +121,6 @@ notifications:
 skill_integration:
   # 是否考虑 Skill 评估结果
   consider_skill_performance: true
-  
+
   # Skill 权重
   skill_weight: 0.3

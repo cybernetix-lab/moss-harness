@@ -8,12 +8,12 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    
+
     - name: Generate changelog
       id: changelog
       run: |
@@ -21,7 +21,7 @@ jobs:
         git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
-    
+
     - name: Create Release
       uses: actions/create-release@v1
       env:
@@ -32,7 +32,7 @@ jobs:
         body: |
           ## Changes
           ${{ steps.changelog.outputs.CHANGELOG }}
-          
+
           ## Installation
           ```bash
           git clone https://github.com/${{ github.repository }}.git

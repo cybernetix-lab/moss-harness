@@ -1,0 +1,92 @@
+name: yaml-style
+severity: warning
+category: style
+language: yaml
+
+description: |
+  YAML files should follow consistent style guidelines.
+  This includes proper indentation, no trailing spaces, and consistent formatting.
+
+# 检测逻辑
+detection:
+  # 尾随空格
+  trailing_spaces:
+    pattern: " $"
+    message: "Trailing spaces found"
+
+  # 制表符缩进
+  tab_indentation:
+    pattern: "^\\t+"
+    message: "Use spaces instead of tabs for indentation"
+
+  # 空行中的空格
+  empty_line_spaces:
+    pattern: "^ +$"
+    message: "Empty lines should not contain spaces"
+
+  # 缺少文件末尾换行
+  missing_final_newline:
+    pattern: "[^\\n]$"
+    message: "File should end with a newline"
+
+  # 多余空行
+  multiple_empty_lines:
+    pattern: "\\n\\n\\n+"
+    message: "Multiple consecutive empty lines"
+
+# 修复建议
+fix:
+  description: |
+    1. Remove trailing spaces
+    2. Use 2 spaces for indentation
+    3. Ensure file ends with a single newline
+    4. Remove spaces from empty lines
+
+  commands:
+    - "sed -i 's/[[:space:]]*$//' <file>"
+    - "sed -i 's/^\\t/  /g' <file>"
+
+# 示例
+examples:
+  valid:
+    - |
+      # Good YAML
+      key: value
+      nested:
+        child: value
+
+  invalid:
+    - |
+      # Bad YAML - trailing spaces
+      key: value
+    - |
+      # Bad YAML - tabs
+      key:
+      \tvalue
+
+# 配置
+config:
+  indentation:
+    spaces: 2
+    indent_sequences: true
+
+  line_length:
+    max: 120
+    allow_non_breaking_words: true
+
+  empty_lines:
+    max: 1
+
+  trailing_spaces: forbid
+
+  newlines:
+    type: unix
+    require_final_newline: true
+
+# 例外情况
+exceptions:
+  - condition: "Generated files (marked with # Generated or # Auto-generated)"
+    reason: "Generated files may have different formatting"
+
+  - condition: "Third-party configuration files"
+    reason: "External files should not be modified"

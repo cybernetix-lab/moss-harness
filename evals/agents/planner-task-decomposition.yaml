@@ -66,7 +66,7 @@ scoring:
     dependency_clarity: 0.2
     acceptance_criteria: 0.3
     edge_case_coverage: 0.2
-  
+
   thresholds:
     pass: 75
     excellent: 90
@@ -75,11 +75,11 @@ metrics:
   - name: average_task_hours
     description: 平均任务工时
     target: "2-4 hours"
-  
+
   - name: dependency_accuracy
     description: 依赖关系准确性
     target: ">= 90%"
-  
+
   - name: criteria_completeness
     description: 验收标准完整性
     target: ">= 85%"

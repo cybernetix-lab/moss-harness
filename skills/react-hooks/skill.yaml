@@ -57,7 +57,7 @@ patterns:
         const [data, setData] = useState<T | null>(null);
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<Error | null>(null);
-        
+
         useEffect(() => {
           setLoading(true);
           fetcher()
@@ -65,10 +65,10 @@ patterns:
             .catch(setError)
             .finally(() => setLoading(false));
         }, [fetcher]);
-        
+
         return { data, loading, error };
       }
-  
+
   - name: local-storage-hook
     description: LocalStorage 同步 Hook
     tags: [storage, browser-api]
@@ -78,26 +78,26 @@ patterns:
           const stored = localStorage.getItem(key);
           return stored ? JSON.parse(stored) : initialValue;
         });
-        
+
         useEffect(() => {
           localStorage.setItem(key, JSON.stringify(value));
         }, [key, value]);
-        
+
         return [value, setValue] as const;
       }
-  
+
   - name: debounce-hook
     description: 防抖 Hook
     tags: [performance, utility]
     template: |
       function useDebounce<T>(value: T, delay: number): T {
         const [debounced, setDebounced] = useState(value);
-        
+
         useEffect(() => {
           const timer = setTimeout(() => setDebounced(value), delay);
           return () => clearTimeout(timer);
         }, [value, delay]);
-        
+
         return debounced;
       }
 
@@ -105,11 +105,11 @@ rules:
   - name: hook-naming
     pattern: "^use[A-Z][a-zA-Z0-9]*$"
     description: Hook 必须以 use 开头，后跟大写字母
-  
+
   - name: hook-dependency
     description: useEffect 必须包含所有依赖
     check: exhaustive-deps
-  
+
   - name: hook-purity
     description: Hook 应该是纯函数，避免副作用
 

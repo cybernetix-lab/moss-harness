@@ -83,7 +83,7 @@ scoring:
     issue_detection: 0.4
     risk_assessment: 0.3
     improvement_suggestions: 0.3
-  
+
   thresholds:
     pass: 75
     excellent: 90
@@ -92,11 +92,11 @@ metrics:
   - name: issue_detection_rate
     description: 问题检出率
     target: ">= 85%"
-  
+
   - name: false_positive_rate
     description: 误报率
     target: "<= 10%"
-  
+
   - name: suggestion_quality
     description: 建议质量评分
     target: ">= 80%"

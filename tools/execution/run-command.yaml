@@ -1,0 +1,170 @@
+name: execution_run_command
+description: |
+  执行系统命令。支持命令行工具调用，具有安全沙箱和超时控制。
+  谨慎使用，默认只允许安全的只读命令。
+
+input:
+  type: object
+  properties:
+    command:
+      type: string
+      description: 要执行的命令
+
+    args:
+      type: array
+      description: 命令参数
+      items:
+        type: string
+      default: []
+
+    cwd:
+      type: string
+      description: 工作目录
+      default: "."
+
+    env:
+      type: object
+      description: 环境变量
+      additionalProperties:
+        type: string
+      default: {}
+
+    timeout:
+      type: integer
+      description: 超时时间（秒）
+      default: 60
+      maximum: 300
+
+    capture_output:
+      type: boolean
+      description: 是否捕获输出
+      default: true
+
+    shell:
+      type: boolean
+      description: 是否使用 shell 执行
+      default: false
+
+  required: [command]
+
+output:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: 命令是否成功执行（退出码为 0）
+
+    exit_code:
+      type: integer
+      description: 进程退出码
+
+    stdout:
+      type: string
+      description: 标准输出
+
+    stderr:
+      type: string
+      description: 标准错误
+
+    duration_ms:
+      type: integer
+      description: 执行耗时
+
+    command:
+      type: string
+      description: 实际执行的命令
+
+  required: [success, exit_code, duration_ms]
+
+errors:
+  - name: CommandBlockedError
+    code: COMMAND_BLOCKED
+    description: 命令被安全策略阻止
+
+  - name: CommandTimeoutError
+    code: TIMEOUT
+    description: 命令执行超时
+
+  - name: CommandExecutionError
+    code: EXECUTION_ERROR
+    description: 命令执行失败
+
+  - name: PermissionDeniedError
+    code: PERMISSION_DENIED
+    description: 权限不足
+
+security:
+  blocked_commands:
+    - "rm"
+    - "sudo"
+    - "su"
+    - "chmod"
+    - "chown"
+    - "mkfs"
+    - "dd"
+    - "format"
+    - "fdisk"
+    - "mount"
+    - "umount"
+
+  blocked_patterns:
+    - "*;*"
+    - "*|*"
+    - "*`*"
+    - "*$("
+    - "*${"
+
+  allowed_commands:
+    - "ls"
+    - "cat"
+    - "echo"
+    - "grep"
+    - "find"
+    - "pwd"
+    - "cd"
+    - "git"
+    - "npm"
+    - "pnpm"
+    - "yarn"
+    - "node"
+    - "python"
+    - "python3"
+    - "pip"
+    - "cargo"
+    - "go"
+    - "make"
+    - "mkdir"
+    - "touch"
+    - "cp"
+    - "mv"
+
+examples:
+  - name: 列出文件
+    input:
+      command: "ls"
+      args: ["-la", "./src"]
+    output:
+      success: true
+      exit_code: 0
+      stdout: "total 32\ndrwxr-xr-x  5 user  staff   160 Jan 15 10:00 .\n..."
+      stderr: ""
+      duration_ms: 45
+      command: "ls -la ./src"
+
+  - name: 运行构建命令
+    input:
+      command: "npm"
+      args: ["run", "build"]
+      timeout: 120
+    output:
+      success: true
+      exit_code: 0
+      stdout: "> build\n> tsc\n\nBuild completed successfully"
+      stderr: ""
+      duration_ms: 15000
+      command: "npm run build"
+
+constraints:
+  sandbox: preferred
+  max_output_size_mb: 10
+  log_commands: true

@@ -11,10 +11,10 @@ eval_config:
     - on_skill_usage  # 技能使用时评估
     - on_skill_evolve # 技能进化前评估
     - scheduled       # 定时评估
-  
+
   # 评估频率
   frequency: "on_change"
-  
+
   # 评估超时
   timeout_seconds: 30
 
@@ -32,7 +32,7 @@ test_cases:
         output_not_contains: ["不期望的输出"]
         format: "json"  # 或 "markdown", "code"
       weight: 0.4
-    
+
     - name: "edge_cases"
       description: "边界情况测试"
       input:
@@ -52,7 +52,7 @@ test_cases:
         max_duration_ms: 5000
         avg_duration_ms: 2000
       weight: 0.15
-    
+
     - name: "memory_usage"
       description: "内存使用测试"
       expected:
@@ -68,7 +68,7 @@ test_cases:
       expected:
         output_not_contains: ["password", "secret", "token"]
       weight: 0.1
-    
+
     - name: "input_validation"
       description: "输入验证"
       input:
@@ -81,10 +81,10 @@ test_cases:
 scoring:
   # 通过阈值
   pass_threshold: 0.8
-  
+
   # 优秀阈值
   excellent_threshold: 0.95
-  
+
   # 权重分配
   weights:
     correctness: 0.5
@@ -96,10 +96,10 @@ scoring:
 result_handling:
   # 失败时是否阻止技能进化
   block_evolution_on_fail: true
-  
+
   # 结果存储
   store_results: true
-  
+
   # 通知设置
   notifications:
     on_fail: true

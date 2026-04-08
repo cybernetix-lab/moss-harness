@@ -9,26 +9,26 @@ input:
     path:
       type: string
       description: 文件路径
-    
+
     content:
       type: string
       description: 文件内容
-    
+
     create_backup:
       type: boolean
       description: 是否创建备份
       default: true
-    
+
     append:
       type: boolean
       description: 是否追加模式
       default: false
-    
+
     encoding:
       type: string
       description: 文件编码
       default: "utf-8"
-  
+
   required: [path, content]
 
 output:
@@ -37,30 +37,30 @@ output:
     success:
       type: boolean
       description: 是否成功
-    
+
     bytes_written:
       type: integer
       description: 写入字节数
-    
+
     backup_path:
       type: string
       description: 备份文件路径（如创建）
-    
+
     previous_size:
       type: integer
       description: 原文件大小（如存在）
-  
+
   required: [success, bytes_written]
 
 errors:
   - name: PermissionDeniedError
     code: PERMISSION_DENIED
     description: 无权限写入
-  
+
   - name: PathBlockedError
     code: PATH_BLOCKED
     description: 路径被安全策略阻止
-  
+
   - name: DiskFullError
     code: DISK_FULL
     description: 磁盘空间不足

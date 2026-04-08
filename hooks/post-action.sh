@@ -14,14 +14,14 @@ if [[ -z "$ACTION_TYPE" ]]; then
     exit 0
 fi
 
-SESSION_ID="${ECC_SESSION_ID:-unknown}"
+SESSION_ID="${AHARNESS_SESSION_ID:-unknown}"
 SESSION_DIR="${PROJECT_ROOT}/runtime/sessions/${SESSION_ID}"
 TELEMETRY_DIR="${PROJECT_ROOT}/runtime/telemetry/${SESSION_ID}"
 
 mkdir -p "$TELEMETRY_DIR"
 
 # 获取当前动作 ID
-ACTION_ID="${ECC_CURRENT_ACTION_ID:-unknown}"
+ACTION_ID="${AHARNESS_CURRENT_ACTION_ID:-unknown}"
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # 1. 记录动作结果（增强版）

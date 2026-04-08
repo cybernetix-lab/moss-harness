@@ -1,0 +1,53 @@
+{
+  "dashboard": {
+    "title": "Token Metrics",
+    "tags": ["token", "cost", "efficiency"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Token Usage Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "token_total_count",
+            "legendFormat": "Total Tokens"
+          },
+          {
+            "expr": "token_input_count",
+            "legendFormat": "Input Tokens"
+          },
+          {
+            "expr": "token_output_count",
+            "legendFormat": "Output Tokens"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Information Density",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "token_information_density",
+            "legendFormat": "Density (bits/token)"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Token Usage by Agent",
+        "type": "bar_chart",
+        "targets": [
+          {
+            "expr": "sum(tokens_per_task) by (agent_type)",
+            "legendFormat": "{{agent_type}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      }
+    ]
+  }
+}

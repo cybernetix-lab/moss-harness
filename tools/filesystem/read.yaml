@@ -9,26 +9,26 @@ input:
     path:
       type: string
       description: 文件路径（绝对或相对）
-    
+
     offset:
       type: integer
       description: 起始行号（从1开始）
       default: 1
       minimum: 1
-    
+
     limit:
       type: integer
       description: 最大读取行数
       default: 200
       minimum: 1
       maximum: 500
-    
+
     encoding:
       type: string
       description: 文件编码
       default: auto
       enum: [auto, utf-8, utf-16, ascii]
-  
+
   required: [path]
 
 output:
@@ -37,38 +37,38 @@ output:
     content:
       type: string
       description: 文件内容
-    
+
     total_lines:
       type: integer
       description: 文件总行数
-    
+
     read_lines:
       type: integer
       description: 实际读取行数
-    
+
     encoding:
       type: string
       description: 检测到的编码
-    
+
     truncated:
       type: boolean
       description: 是否被截断
-  
+
   required: [content, total_lines, read_lines]
 
 errors:
   - name: FileNotFoundError
     code: FILE_NOT_FOUND
     description: 文件不存在
-  
+
   - name: PermissionDeniedError
     code: PERMISSION_DENIED
     description: 无权限读取
-  
+
   - name: FileTooLargeError
     code: FILE_TOO_LARGE
     description: 文件超过大小限制
-  
+
   - name: BinaryFileError
     code: BINARY_FILE
     description: 无法读取二进制文件
