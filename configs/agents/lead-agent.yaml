@@ -1,0 +1,244 @@
+# Lead Agent Configuration
+# 主代理配置 - 负责任务分解、Sub-Agent 协调和结果汇总
+
+agent:
+  name: "Lead Agent"
+  type: orchestration
+  version: "1.0.0"
+
+  description: |
+    Lead Agent 是多 Agent 智能体应用平台的核心协调者。
+    它接收用户请求，进行任务分解，动态创建和管理 Sub-Agent，
+    并汇总结果生成最终输出。
+
+  # 核心职责
+  responsibilities:
+    - task_decomposition
+    - subagent_coordination
+    - result_aggregation
+    - conflict_resolution
+    - quality_assurance
+
+  # 原子能力定义
+  atomic_capabilities:
+    planning:
+      task_analysis:
+        description: "分析任务特征，提取关键信息"
+        inputs:
+          - task_description
+        outputs:
+          - task_characteristics
+          - complexity_assessment
+
+      strategy_selection:
+        description: "基于任务特征选择最优路由策略"
+        inputs:
+          - task_characteristics
+        outputs:
+          - routing_strategy
+          - subagent_configuration
+
+    coordination:
+      subagent_lifecycle:
+        description: "管理 Sub-Agent 的生命周期"
+        operations:
+          - create
+          - monitor
+          - terminate
+          - cleanup
+
+      context_management:
+        description: "管理上下文在 Sub-Agent 间的分发"
+        isolation_levels:
+          - full_isolation
+          - partial_isolation
+          - shared_context
+
+      progress_monitoring:
+        description: "监控 Sub-Agent 执行进度"
+        metrics:
+          - completion_rate
+          - error_rate
+          - execution_time
+
+    aggregation:
+      result_collection:
+        description: "收集所有 Sub-Agent 的执行结果"
+
+      conflict_detection:
+        description: "检测并解决结果间的冲突"
+
+      output_synthesis:
+        description: "将多个结果合成为统一输出"
+
+  # 协作接口
+  collaboration_interfaces:
+    input:
+      - name: user_request
+        format: text
+        description: "用户的原始请求"
+
+      - name: parent_context
+        format: yaml
+        description: "父会话的上下文（如果有）"
+        optional: true
+
+    output:
+      - name: execution_result
+        format: structured_yaml
+        description: "执行结果汇总"
+        schema:
+          status: enum [success, partial_success, failed]
+          subagents: list
+          results: list
+          summary: text
+
+      - name: subagent_status
+        format: yaml
+        description: "Sub-Agent 状态报告"
+
+    events:
+      - name: subagent_created
+        description: "Sub-Agent 创建事件"
+
+      - name: subagent_completed
+        description: "Sub-Agent 完成事件"
+
+      - name: subagent_failed
+        description: "Sub-Agent 失败事件"
+
+      - name: conflict_detected
+        description: "检测到结果冲突"
+
+  # 路由策略配置
+  routing_strategies:
+    enabled:
+      - parallel_decomposition
+      - sequential_pipeline
+      - hierarchical_delegation
+      - specialized_agent
+      - single_agent
+
+    default: single_agent
+
+    selection_criteria:
+      parallel_decomposition:
+        trigger:
+          - condition: complexity > 3
+          - condition: scope == medium
+          - condition: no_dependencies
+
+      sequential_pipeline:
+        trigger:
+          - condition: has_dependencies
+          - condition: requires_review
+
+      hierarchical_delegation:
+        trigger:
+          - condition: scope == large
+          - condition: complexity > 5
+
+      specialized_agent:
+        trigger:
+          - condition: requires_specialization
+
+      single_agent:
+        trigger:
+          - condition: default
+
+  # Sub-Agent 配置模板
+  subagent_templates:
+    default:
+      timeout: 300
+      isolation: partial_isolation
+      retry_count: 2
+
+    planner:
+      timeout: 300
+      isolation: partial_isolation
+
+    reviewer:
+      timeout: 180
+      isolation: full_isolation
+
+    executor:
+      timeout: 600
+      isolation: partial_isolation
+      sandbox: optional
+
+    evaluator:
+      timeout: 300
+      isolation: full_isolation
+
+  # 质量保障
+  quality_assurance:
+    enabled: true
+
+    checkpoints:
+      - stage: pre_decomposition
+        check: task_clarity
+        action: request_clarification_if_needed
+
+      - stage: post_creation
+        check: subagent_health
+        action: recreate_if_failed
+
+      - stage: during_execution
+        check: progress
+        action: escalate_if_stalled
+
+      - stage: post_aggregation
+        check: result_completeness
+        action: retry_incomplete_subagents
+
+  # 反馈机制
+  feedback:
+    issue_escalation:
+      - type: decomposition_failure
+        description: "任务分解失败"
+        action: fallback_to_single_agent
+
+      - type: subagent_timeout
+        description: "Sub-Agent 超时"
+        action: terminate_and_retry
+
+      - type: result_conflict
+        description: "结果冲突"
+        action: escalate_to_user
+
+      - type: quality_threshold_not_met
+        description: "质量阈值未达标"
+        action: request_reexecution
+
+  # 约束遵守
+  constraints:
+    hard:
+      - max_subagents: 10
+      - max_nesting_depth: 3
+      - max_total_execution_time: 3600
+
+    soft:
+      - preferred_subagent_count: 3-5
+      - recommended_timeout_ratio: 0.8
+
+  # 工具权限
+  tools:
+    allowed:
+      - orchestrator/subagents/subagent-manager.sh
+      - orchestrator/routing/router.sh
+      - hooks/token-metrics.sh
+      - scripts/skill-activate.sh
+
+    blocked:
+      - direct_model_access
+      - filesystem_write_outside_workspace
+
+  # 内省能力
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - task_clarity
+        - decomposition_quality
+        - subagent_coordination_confidence
+        - aggregation_confidence

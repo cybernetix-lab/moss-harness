@@ -1,0 +1,306 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Agent Harness - SCI Theory Observability",
+    "tags": ["agent-harness", "sci-theory", "observability"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Emergence Score",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "harness_system_emergence_score",
+            "legendFormat": "Emergence Score",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 2,
+            "unit": "none",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.8},
+                {"color": "green", "value": 1.0},
+                {"color": "blue", "value": 1.2}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Component Synergy",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "harness_component_synergy",
+            "legendFormat": "Synergy",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.6},
+                {"color": "green", "value": 0.8}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Adaptive Capacity",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "harness_adaptive_capacity",
+            "legendFormat": "Adaptability",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.5},
+                {"color": "green", "value": 0.7}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Information Entropy",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_information_entropy",
+            "legendFormat": "Entropy (bits)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "pointSize": 3
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Token Information Density",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_token_information_density",
+            "legendFormat": "Density",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.001},
+                {"color": "green", "value": 0.003}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Signal-to-Noise Ratio",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_signal_to_noise_ratio",
+            "legendFormat": "SNR",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Confidence Calibration",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_confidence_calibration",
+            "legendFormat": "Calibration",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Feedback Response Time",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_feedback_response_time",
+            "legendFormat": "Response Time",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "Stability Index",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_stability_index",
+            "legendFormat": "Stability",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.6},
+                {"color": "green", "value": 0.8}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Convergence Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_convergence_rate",
+            "legendFormat": "Convergence",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+      },
+      {
+        "id": 11,
+        "title": "Negative Feedback Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "harness_negative_feedback_rate",
+            "legendFormat": "Negative Feedback %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.3},
+                {"color": "red", "value": 0.5}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      },
+      {
+        "id": 12,
+        "title": "SCI Theory Overview",
+        "type": "text",
+        "options": {
+          "content": "## SCI Theory Metrics\n\n### Systems Theory (整体性)\n- **Emergence Score**: System output vs sum of individual agents\n- **Component Synergy**: Successful collaborations / total collaborations\n- **Adaptive Capacity**: Successful adaptations / total changes\n\n### Information Theory (信息质量)\n- **Entropy**: Shannon entropy H(X) = -Σ p(x)log₂p(x)\n- **Information Density**: Entropy / Token count\n- **SNR**: Signal (meaningful content) / Noise (redundancy)\n- **Confidence Calibration**: Predicted vs actual accuracy\n\n### Cybernetics (反馈控制)\n- **Feedback Response Time**: Time from issue detection to resolution\n- **Stability Index**: 1 - (oscillation amplitude / target)\n- **Convergence Rate**: Iterations / time to steady-state\n- **Negative Feedback Rate**: Correction signals / total signals"
+        },
+        "gridPos": {"h": 16, "w": 24, "x": 0, "y": 40}
+      }
+    ]
+  }
+}

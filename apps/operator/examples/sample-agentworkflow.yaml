@@ -1,0 +1,55 @@
+apiVersion: agent-harness.io/v1
+kind: AgentWorkflow
+metadata:
+  name: feature-development-workflow
+  labels:
+    app: feature-development
+spec:
+  workflow:
+    name: feature-development
+    description: Feature development workflow with multiple agents
+    variables:
+      featureName: "new-feature"
+      requirements: "Implement user authentication with JWT"
+    steps:
+      - name: planning
+        agent: planner
+        input:
+          requirements: {{.workflow.variables.requirements}}
+        retryPolicy:
+          maxRetries: 2
+          backoffSeconds: 10
+
+      - name: review-plan
+        agent: reviewer
+        dependsOn:
+          - planning
+        input:
+          plan: {{.steps.planning.output}}
+
+      - name: implementation
+        agent: executor
+        dependsOn:
+          - planning
+          - review-plan
+        input:
+          plan: {{.steps.planning.output}}
+          review: {{.steps.review-plan.output}}
+        timeout: 3600
+
+      - name: evaluation
+        agent: evaluator
+        dependsOn:
+          - implementation
+        input:
+          implementation: {{.steps.implementation.output}}
+
+    triggers:
+      - type: webhook
+        config:
+          path: /webhook/trigger/{{.metadata.name}}
+          enabled: true
+
+  resources:
+    cpu: 1000m
+    memory: 2Gi

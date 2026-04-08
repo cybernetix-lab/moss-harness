@@ -1,9 +1,9 @@
-# Runtime directories
-runtime/
+# Runtime directories - 运行时数据（忽略）
+.runtime/*
 logs/
 *.log
 
-# Session data
+# Session data (legacy paths - to be removed after migration)
 sessions/
 checkpoints/
 
@@ -12,7 +12,7 @@ telemetry/data/
 *.trace
 *.metrics
 
-# Memory
+# Memory (legacy paths)
 memory/sessions/
 memory/telemetry/
 
@@ -28,6 +28,7 @@ memory/telemetry/
 # IDE
 .vscode/
 .idea/
+docs/superpowers/*
 *.swp
 *.swo
 *~

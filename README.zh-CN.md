@@ -6,7 +6,7 @@
 
 > 一个生产级完备的 AI Agent Harness 工程模板，提供可靠、可观测、可恢复的 Agent 运行环境。
 
-**基于系统论、控制论、信息论（SCI 论）设计的下一代 Agent 协作框架**
+本项目是一个基于**系统论、控制论、信息论（SCI 论）**设计的模块化、可扩展的 AI Agent 平台基座，提供强大的运行时编排、观测与沙箱能力，为构建类似 LangGraph、DeerFlow 的多智能体协作框架提供底层支撑。
 
 [English](./README.md) | [中文](./README.zh-CN.md)
 
@@ -14,11 +14,19 @@
 
 ## ✨ 核心特性
 
+- 🤖 **六角色多 Agent 架构**：通过职责分离与信息控制机制避免大模型自评乐观偏差。
+  - `Coordinator`（协调者）：系统边界，负责澄清模糊意图（防范外部噪声）。
+  - `Planner`（规划师）：负责需求分析和任务分解。
+  - `Reviewer`（审查员）：提供独立客观的计划审查（负反馈）。
+  - `Executor`（执行者）：专注于代码实现与自测。
+  - `Evaluator`（评估员）：负责代码质量和需求实现度评估（负反馈）。
+  - `Memory Curator`（记忆策展）：负责上下文压缩与归档，降低系统信息熵（防退化）。
+
 ### 科学的设计哲学
 
 本项目以"老三论"（系统论、控制论、信息论）为理论基础，构建了一套科学、严谨的 Agent 协作框架：
 
-- **系统论** — 看见整体：四角色分离架构，实现涌现性（1+1>2）
+- **系统论** — 看见整体：六角色多 Agent 架构，实现涌现性（1+1>2）
 - **信息论** — 理解沟通：结构化信息传递，信息质量量化与优化
 - **控制论** — 实现目的：反馈驱动闭环，自适应质量控制
 
@@ -26,7 +34,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        Agent Harness 架构                               │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  系统论层 │  Orchestrator → Planner → Reviewer → Executor → Evaluator  │
+│  系统论层 │  Coordinator → Planner → Reviewer → Executor → Evaluator → Memory Curator  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  信息论层 │  结构化通信 │ 置信度评分 │ 信息质量反馈闭环 │ Token 优化     │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -64,18 +72,20 @@
 
 ### 2. 避免自评乐观偏差
 
-四角色分离架构确保质量：
+六角色分离架构确保质量：
 
 ```
-Planner（规划） → Reviewer（审查） → Executor（执行） → Evaluator（评估）
-                      ↑                                              │
-                      └────────────── 反馈回路 ────────────────────────┘
+Coordinator → Planner → Reviewer → Executor → Evaluator → Memory Curator
+                       ↑                                              │
+                       └────────────── 反馈回路 ────────────────────────┘
 ```
 
+- **Coordinator**：只读权限，专注意图澄清和任务分发
 - **Planner**：只读权限，专注需求分析和方案设计
 - **Reviewer**：只读权限，独立审查计划可行性
 - **Executor**：读写+执行权限，专注实现
 - **Evaluator**：只读+测试权限，独立评估质量
+- **Memory Curator**：只读+执行权限，专注记忆归档和上下文压缩
 
 ### 3. 信息质量反馈闭环
 
@@ -118,20 +128,20 @@ cd harness-spec
 
 ```bash
 # 启动新会话
-./scripts/start-session.sh
+./tooling/scripts/start-session.sh
 
 # 激活技能
-./scripts/skill-activate.sh typescript-patterns
+./tooling/scripts/skill-activate.sh typescript-patterns
 
 # 更新任务状态
-./scripts/update-context.sh task "实现用户认证功能"
-./scripts/update-context.sh progress "完成登录表单设计"
+./tooling/scripts/update-context.sh task "实现用户认证功能"
+./tooling/scripts/update-context.sh progress "完成登录表单设计"
 
 # 创建检查点
-./scripts/create-checkpoint.sh "完成基础架构"
+./tooling/scripts/create-checkpoint.sh "完成基础架构"
 
 # 运行验证
-./scripts/verify.sh
+./tooling/scripts/verify.sh
 ```
 
 ### Token 指标观测
@@ -170,7 +180,8 @@ awesome-agent-harness/
 │   └── model-call-wrapper.sh       # 模型调用包装器
 ├── rules/                     # 代码规则
 ├── verification/              # 验证循环
-├── context/                   # 上下文管理
+├── .runtime/                  # 运行时数据
+│   └── context/              # 上下文管理
 ├── constraints/               # 约束与护栏
 ├── evals/                     # 评估框架
 ├── telemetry/                 # 可观测性
@@ -194,11 +205,11 @@ awesome-agent-harness/
 
 ```bash
 # 列出所有技能
-./scripts/skill-list.sh
+./tooling/scripts/skill-list.sh
 
 # 激活技能
-./scripts/skill-activate.sh typescript-patterns
-./scripts/skill-activate.sh security-scan
+./tooling/scripts/skill-activate.sh typescript-patterns
+./tooling/scripts/skill-activate.sh security-scan
 ```
 
 ### 内置技能
@@ -214,21 +225,25 @@ awesome-agent-harness/
 
 ## 🤖 Agent 类型
 
-本项目采用**四角色分离架构**，通过职责分离避免自评乐观偏差：
+本项目采用**六角色多 Agent 架构**，通过职责分离避免自评乐观偏差：
 
 | Agent | 类型 | 职责 | 工具权限 |
 |-------|------|------|----------|
+| `coordinator` | orchestration | 用户交互、意图识别、需求澄清、任务分发 | 只读 |
 | `planner` | planning | 需求分析、任务分解、方案设计 | 只读 |
 | `reviewer` | plan_review | 风险识别、方案评估、改进建议 | 只读 |
 | `executor` | execution | 代码实现、测试编写、自测验证 | 读写+执行 |
 | `evaluator` | evaluation | 质量评估、需求验证、结论输出 | 只读+测试 |
+| `memory_curator` | memory_management | 上下文压缩、信息归档、信噪比控制 | 只读+执行 |
 | `researcher` | research | 技术调研、文档查询 | 只读+网络 |
 | `orchestrator` | orchestration | 动态编排、路由决策、状态管理 | 协调层 |
 
 ### 工作流程
 
 ```
-用户提交需求
+用户提交意图
+    ↓
+Coordinator 澄清意图
     ↓
 Planner 分析并制定计划
     ↓
@@ -242,8 +257,10 @@ Evaluator 评估质量
 │                     │
 PASS/EXCELLENT    NEEDS_IMPROVEMENT
 │                     │
-任务完成          返回 Executor 修复
-                  或返回 Planner 重新规划
+Memory Curator        返回 Executor 修复
+知识沉淀与归档        或返回 Planner 重新规划
+│
+任务彻底完成
 ```
 
 详细的 Agent 配置请参考 [AGENTS.md](./AGENTS.md)。
@@ -256,36 +273,36 @@ PASS/EXCELLENT    NEEDS_IMPROVEMENT
 
 ```bash
 # 评估单个 Agent
-./scripts/agent-eval.sh run planner
+./tooling/scripts/agent-eval.sh run planner
 
 # 评估所有 Agent
-./scripts/agent-eval.sh run-all
+./tooling/scripts/agent-eval.sh run-all
 
 # 查看评估报告
-./scripts/agent-eval.sh report planner
+./tooling/scripts/agent-eval.sh report planner
 ```
 
 ### Agent 进化
 
 ```bash
 # 分析 Agent 性能
-./scripts/agent-evolve.sh analyze planner
+./tooling/scripts/agent-evolve.sh analyze planner
 
 # 模拟进化
-./scripts/agent-evolve.sh dry-run planner
+./tooling/scripts/agent-evolve.sh dry-run planner
 
 # 执行进化
-./scripts/agent-evolve.sh evolve planner
+./tooling/scripts/agent-evolve.sh evolve planner
 ```
 
 ### 技能评估与进化
 
 ```bash
 # 评估技能
-./scripts/skill-eval.sh run typescript-patterns
+./tooling/scripts/skill-eval.sh run typescript-patterns
 
 # 进化技能
-./scripts/skill-evolve.sh evolve typescript-patterns
+./tooling/scripts/skill-evolve.sh evolve typescript-patterns
 ```
 
 ---

@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agent-harness.fullname" . }}-config
+  labels:
+    {{- include "agent-harness.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    app:
+      name: {{ .Values.config.app.name | quote }}
+      env: {{ .Values.config.app.env | quote }}
+      logLevel: {{ .Values.config.app.logLevel | quote }}
+
+    agents:
+      defaultAgent: {{ .Values.config.agents.defaultAgent | quote }}
+      maxConcurrentTasks: {{ .Values.config.agents.maxConcurrentTasks }}
+      taskTimeout: {{ .Values.config.agents.taskTimeout }}
+
+    memory:
+      backend: {{ .Values.config.memory.backend | quote }}
+      redis:
+        host: {{ .Values.config.memory.redis.host | quote }}
+        port: {{ .Values.config.memory.redis.port }}
+        db: {{ .Values.config.memory.redis.db }}
+
+    storage:
+      backend: {{ .Values.config.storage.backend | quote }}
+      postgresql:
+        host: {{ .Values.config.storage.postgresql.host | quote }}
+        port: {{ .Values.config.storage.postgresql.port }}
+        database: {{ .Values.config.storage.postgresql.database | quote }}
+        username: {{ .Values.config.storage.postgresql.username | quote }}
+
+    sandbox:
+      mode: {{ .Values.config.sandbox.mode | quote }}
+      resourceLimits:
+        cpu: {{ .Values.config.sandbox.resourceLimits.cpu | quote }}
+        memory: {{ .Values.config.sandbox.resourceLimits.memory | quote }}
+        timeout: {{ .Values.config.sandbox.resourceLimits.timeout }}
+
+    channels:
+      feishu:
+        enabled: {{ .Values.config.channels.feishu.enabled }}
+        webhookPath: {{ .Values.config.channels.feishu.webhookPath | quote }}
+
+    telemetry:
+      enabled: {{ .Values.config.telemetry.enabled }}
+      prometheus:
+        enabled: {{ .Values.config.telemetry.prometheus.enabled }}
+        port: {{ .Values.config.telemetry.prometheus.port }}
+      grafana:
+        enabled: {{ .Values.config.telemetry.grafana.enabled }}
+
+    models:
+      defaultProvider: {{ .Values.config.models.defaultProvider | quote }}
+      providers:
+        anthropic:
+          model: {{ .Values.config.models.providers.anthropic.model | quote }}
+          temperature: {{ .Values.config.models.providers.anthropic.temperature }}
+          maxTokens: {{ .Values.config.models.providers.anthropic.maxTokens }}

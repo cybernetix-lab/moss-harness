@@ -2,6 +2,15 @@
 
 Agent 是 Harness 的执行实体，每个 Agent 都有特定的角色和能力。
 
+当前推荐理解方式不是“一个角色 = 一个固定 Agent”，而是：
+
+- **Role Lane**：稳定职责泳道，如 Planner、Reviewer、Executor
+- **Backup Agent**：该泳道的通用兜底成员
+- **Expert Agent**：围绕特定领域沉淀出的专家成员
+- **Candidate Agent**：由成功经验提炼出的候选专家，待审批后晋升
+
+泳道与成员注册以 `configs/orchestration/agent-registry.yaml` 为准；本页保留对典型 Agent 模板的说明。
+
 ## 什么是 Agent？
 
 Agent 是配置化的 AI 助手，定义了：

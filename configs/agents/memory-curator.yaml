@@ -1,0 +1,42 @@
+name: memory-curator
+type: memory_management
+description: "信息熵控制器，负责上下文的压缩、摘要、归档和检索，维持系统的高信噪比"
+
+atomic_capabilities:
+  memory:
+    task_types:
+      - context_compression
+      - summarization
+      - knowledge_archiving
+      - signal_extraction
+
+system_prompt: |
+  You are the Memory Curator Agent.
+  According to Information Theory, as a multi-agent system runs, context window entropy increases and Signal-to-Noise Ratio (SNR) drops.
+  Your role is to act as the Maxwell's Demon of the system: actively reducing entropy by organizing, compressing, and curating information.
+  
+  Your responsibilities:
+  1. Monitor the context window size and information density.
+  2. When context grows too large, summarize past interactions into compact state representations.
+  3. Archive completed sub-tasks into long-term memory.
+  4. Extract key decisions, rules, and facts to maintain a high-signal knowledge base.
+
+input_schema:
+  type: object
+  properties:
+    raw_context:
+      type: string
+    metrics:
+      type: object
+
+output_schema:
+  type: object
+  properties:
+    compressed_context:
+      type: string
+    extracted_knowledge:
+      type: array
+      items:
+        type: string
+    entropy_reduction_ratio:
+      type: number

@@ -1,0 +1,179 @@
+# Default values for agent-harness
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image settings
+image:
+  repository: agent-harness
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Service settings
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# Ingress settings
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: agent-harness.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Resource settings
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Autoscaling settings
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Pod settings
+replicaCount: 1
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Node selector
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Configuration
+config:
+  # Application settings
+  app:
+    name: agent-harness
+    env: production
+    logLevel: info
+
+  # Agent settings
+  agents:
+    defaultAgent: orchestrator
+    maxConcurrentTasks: 10
+    taskTimeout: 3600
+
+  # Memory settings
+  memory:
+    backend: redis
+    redis:
+      host: agent-harness-redis
+      port: 6379
+      db: 0
+
+  # Storage settings
+  storage:
+    backend: postgresql
+    postgresql:
+      host: agent-harness-postgresql
+      port: 5432
+      database: agent_harness
+      username: agent_harness
+
+  # Sandbox settings
+  sandbox:
+    mode: docker
+    resourceLimits:
+      cpu: 1000m
+      memory: 2Gi
+      timeout: 300
+
+  # Channels settings
+  channels:
+    feishu:
+      enabled: false
+      webhookPath: /webhook/feishu
+
+  # Telemetry settings
+  telemetry:
+    enabled: true
+    prometheus:
+      enabled: true
+      port: 9090
+    grafana:
+      enabled: false
+
+  # Model settings
+  models:
+    defaultProvider: anthropic
+    providers:
+      anthropic:
+        model: claude-3-5-sonnet
+        temperature: 0.2
+        maxTokens: 4096
+
+# Secrets (should be overridden in production)
+secrets:
+  postgresql:
+    password: change-me-in-production
+  redis:
+    password: change-me-in-production
+  feishu:
+    appId: ""
+    appSecret: ""
+    encryptKey: ""
+  modelProviders:
+    anthropic:
+      apiKey: ""
+    openai:
+      apiKey: ""
+
+# PostgreSQL subchart
+postgresql:
+  enabled: true
+  auth:
+    username: agent_harness
+    password: change-me-in-production
+    database: agent_harness
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# Redis subchart
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: change-me-in-production
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+
+# MinIO subchart
+minio:
+  enabled: true
+  auth:
+    rootUser: agent-harness
+    rootPassword: change-me-in-production
+  persistence:
+    enabled: true
+    size: 10Gi

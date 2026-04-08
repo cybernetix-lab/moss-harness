@@ -65,9 +65,10 @@ awesome-agent-harness/
 │   ├── pre-action.sh            # 动作前验证
 │   └── post-action.sh           # 动作后记录
 │
-├── context/                     # 上下文管理
-│   ├── PROGRESS.md
-│   └── DECISIONS.md
+├── .runtime/                    # 运行时数据
+│   └── context/                # 上下文管理
+│       ├── PROGRESS.md
+│       └── DECISIONS.md
 │
 ├── constraints/                 # 约束与护栏
 │   ├── hard-constraints.yaml    # 硬约束

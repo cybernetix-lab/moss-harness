@@ -1,0 +1,31 @@
+apiVersion: v2
+name: agent-harness
+version: 1.0.0
+appVersion: "1.0.0"
+description: Agent Harness - 多 Agent 智能体应用平台
+type: application
+keywords:
+  - agent
+  - ai
+  - orchestration
+  - langgraph
+  - multi-agent
+home: https://github.com/bytedance/agent-harness-spec
+sources:
+  - https://github.com/bytedance/agent-harness-spec
+maintainers:
+  - name: Agent Harness Team
+    email: agent-harness@bytedance.com
+dependencies:
+  - name: postgresql
+    version: 12.12.10
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 18.6.1
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: minio
+    version: 12.10.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled

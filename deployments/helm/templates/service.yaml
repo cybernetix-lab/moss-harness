@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agent-harness.fullname" . }}
+  labels:
+    {{- include "agent-harness.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.config.telemetry.prometheus.enabled }}
+    - port: {{ .Values.config.telemetry.prometheus.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
+  selector:
+    {{- include "agent-harness.selectorLabels" . | nindent 4 }}

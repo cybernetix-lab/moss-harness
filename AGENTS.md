@@ -2,72 +2,124 @@
 
 本文档详细说明项目中所有 Agent 的配置、职责和使用方法。
 
-## Agent 概述
+## Agent 概述与自组织架构
 
-本项目采用**四角色分离架构**，通过职责分离避免自评乐观偏差：
+本项目采用**六角色多 Agent 架构**，基于系统论、控制论和信息论设计，通过职责分离避免自评乐观偏差，同时维持高信噪比。
 
-| Agent | 职责 | 核心能力 | 工具权限 |
-|-------|------|----------|----------|
-| **Planner** | 规划 | 需求分析、任务分解、方案设计 | 只读 |
-| **Reviewer** | 计划审查 | 风险识别、方案评估、改进建议 | 只读 |
-| **Executor** | 执行 | 代码实现、测试编写、自测验证 | 读写+执行 |
-| **Evaluator** | 评估 | 质量评估、需求验证、结论输出 | 只读+测试 |
+**架构演进**：当前的六个角色（Coordinator, Planner, Reviewer, Executor, Evaluator, Memory Curator）在系统设计中作为**角色分类（Role Categories/Lanes）**。针对不同场景的任务，每一角色下会不断沉淀出对应的**专家 Agent（Expert Agents）**，而基础的角色 Agent 则作为通用的 **Backup（兜底）** 存在。这体现了 Agent 系统的自组织和涌现能力。
 
-## 工作流程
+**当前建模约定**：
+- 六角色是**职责泳道**，不是六个固定实例。
+- `configs/orchestration/agent-registry.yaml` 中的 `lanes` 只描述每条泳道的输入、输出、认领策略和选择规则。
+- `members` 是 Team Roster，也是成员唯一真相源，描述 Backup、Expert、Candidate 三类成员。
+- `lanes.member_source` 用于声明某条泳道应从哪一组成员中选择执行者。
+- `agents` 保留为向后兼容模板视图，便于旧脚本或旧文档继续读取基础配置。
+
+| 角色分类 (Role) | 职责 | 核心能力 | 工具权限 | Backup Agent | 专家 Agent 示例 |
+|-------|------|----------|----------|--------------|----------------|
+| **Coordinator** | 协调 | 意图识别、需求澄清、任务分发 | 只读 | `coordinator` | `api_coordinator` |
+| **Planner** | 规划 | 需求分析、任务分解、方案设计 | 只读 | `planner` | `db_planner` |
+| **Reviewer** | 计划审查 | 风险识别、方案评估、改进建议 | 只读 | `reviewer` | `sec_reviewer` |
+| **Executor** | 执行 | 代码实现、测试编写、自测验证 | 读写+执行 | `executor` | `frontend_executor` |
+| **Evaluator** | 评估 | 质量评估、需求验证、结论输出 | 只读+测试 | `evaluator` | `perf_evaluator` |
+| **Memory Curator**| 记忆策展 | 上下文压缩、信息归档、信噪比控制 | 只读+执行 | `memory_curator` | `doc_curator` |
+
+## 团队协作与自组织机制
+
+基于系统进化，团队引入了以下三大核心机制，使得 Agent 团队能够真正地“自主运转”：
+
+### 1. 团队名册与持久化队友 (Team Roster & Teammates)
+- **持久化身份**：Agent 不再是调用完即销毁的临时对象（Subagent），而是长驻的、有明确身份和生命周期的队友（Teammate）。
+- **名册与邮箱**：系统维护一份**团队名册（Team Roster）**。每个 Agent 都有自己独立的**邮箱（Inbox）**和**独立循环（Independent Loop）**，能够反复接手任务并保持上下文隔离。
+
+### 2. 结构化团队协议 (Team Protocols)
+- **协议消息**：团队协作不仅依靠自然语言，还引入了**结构化协议（ProtocolEnvelope）**。
+- **请求与响应**：如“计划审批（plan_approval）”或“优雅关机（shutdown）”等关键协作，必须带有唯一的 `request_id`，并被记录在请求追踪表中（RequestRecord）。
+- **状态机**：每个请求都具备明确的流转状态（如 pending / approved / rejected），确保多 Agent 协作时的过程可检查、状态可恢复。
+
+### 3. 自主认领与执行 (Autonomous Claiming)
+- **自主找活**：Agent 并非总是等待主控者点名分配任务。处于空闲（IDLE）状态的 Agent 会在每轮循环中先检查个人邮箱，随后**带着角色过滤条件**扫描公共任务板（Task Board）。
+- **专家优先**：当任务板出现新任务时，带有对应领域标签的专家 Agent（如 `frontend_executor`）会优先触发认领（claim_task）。
+- **原子化认领与兜底**：认领动作是原子的，且会被记录到事件日志（Claim Event Log）中。若任务长时间无专家认领，则由通用的 Backup Agent（如 `executor`）兜底认领。在认领后，Agent 会重新注入身份提示，带着明确的目标恢复工作（WORK）。
+
+### 4. 候选专家沉淀与晋升 (Candidate Emergence)
+- **模式提取**：Memory Curator 会从高质量成功任务中提取稳定的 prompt、toolchain、领域标签和交付模式。
+- **候选生成**：当某类模式连续多次在同一泳道下成功复现时，系统会将其记录为 Candidate Expert，而不是立刻覆盖现有 Backup。
+- **双重审查**：Candidate 需要经过 Reviewer 与 Evaluator 的结构化审批后，才能晋升为正式 Expert Agent。
+- **渐进演化**：本阶段先在注册表和协议层沉淀这些元数据，后续再把自动晋升和真实 claim loop 接到运行时。
+
+## 工作流程 (基于任务板与协议的异步流转)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        任务开始                                  │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 1: 规划 (Planner)                                        │
-│  ├─ 分析需求                                                     │
-│  ├─ 拆解任务                                                     │
-│  ├─ 设计方案                                                     │
-│  └─ 输出执行计划                                                 │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ 执行计划
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 2: 计划审查 (Reviewer)                                   │
-│  ├─ 审查需求理解                                                 │
-│  ├─ 检查任务分解                                                 │
-│  ├─ 评估技术方案                                                 │
-│  └─ 给出审查结论                                                 │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ 审查通过
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3: 执行 (Executor)                                       │
-│  ├─ 理解任务                                                     │
-│  ├─ 编写实现                                                     │
-│  ├─ 编写测试                                                     │
-│  └─ 自测验证                                                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ 实现结果
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 4: 评估 (Evaluator)                                      │
-│  ├─ 验证需求                                                     │
-│  ├─ 检查测试                                                     │
-│  ├─ 代码审查                                                     │
-│  └─ 给出结论                                                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-              ▼                         ▼
-┌─────────────────────┐    ┌─────────────────────┐
-│  EXCELLENT/PASS     │    │  NEEDS_IMPROVEMENT  │
-│  任务完成           │    │  返回改进           │
-└─────────────────────┘    └─────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                          用户提交意图                                  │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 0: 协调 (Coordinator Role)                                      │
+│  ├─ 专家或 Backup Coordinator 自主扫描并认领意图处理任务                     │
+│  ├─ 澄清模糊需求并输出结构化需求至 Task Board                               │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ 发布 Requirement Task
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 1: 规划 (Planner Role)                                          │
+│  ├─ 专家 Planner (如 db_planner) 或 Backup Planner 自主认领需求任务         │
+│  ├─ 设计方案并输出执行计划 (Execution Plan) 至 Task Board                   │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ 发起 plan_approval 请求 (Protocol)
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 2: 计划审查 (Reviewer Role)                                     │
+│  ├─ 专家 Reviewer 或 Backup Reviewer 从邮箱收到 plan_approval 请求         │
+│  ├─ 结构化响应: APPROVED / APPROVED_WITH_SUGGESTIONS / NEEDS_REVISION     │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ 审查通过，发布 Execution Tasks
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 3: 执行 (Executor Role)                                         │
+│  ├─ IDLE 状态的专家 Executor (如 frontend_executor) 扫描并认领对应领域的 Task │
+│  ├─ (若无专家认领) Backup Executor 兜底认领                                │
+│  ├─ 执行代码实现与自测验证                                                  │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ 提交实现结果，发布 Evaluation Task
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 4: 评估 (Evaluator Role)                                        │
+│  ├─ 专家/Backup Evaluator 认领评估任务                                     │
+│  ├─ 输出评估结论: EXCELLENT / PASS / NEEDS_IMPROVEMENT                     │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+┌─────────────────────────┐    ┌─────────────────────────┐
+│  EXCELLENT/PASS         │    │  NEEDS_IMPROVEMENT      │
+│  发布 Memory Task         │    │  返回 Executor 重新处理   │
+└─────────────────────────┘    └─────────────────────────┘
+              │
+              ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 5: 知识沉淀 (Memory Curator Role)                               │
+│  ├─ 专家/Backup Memory Curator 认领沉淀任务                                │
+│  ├─ 提取关键知识、归档成功模式、识别候选专家                                  │
+│  ├─ 发起 memory_archive / member_promotion 协议请求                           │
+│  └─ 发起 shutdown 请求 (Protocol) 结束协作流程                               │
+└────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 配置落点
+
+- **泳道与成员注册**：`configs/orchestration/agent-registry.yaml`
+- **邮箱与协议规范**：`configs/protocols/mailbox-protocol.yaml`
+- **Agent 模板配置**：`configs/agents/*.yaml`
+- **自组织/协作文档**：`docs/agent-collaboration.md`
+- **专题设计说明**：`docs/role-lane-expert-emergence.md`
 
 ## Agent 详细说明
 
-### 1. Planner（规划师）
+### 2. Planner（规划师）
 
 **配置文件**: [`agents/planner.yaml`](agents/planner.yaml)
 
@@ -133,7 +185,7 @@ export AHARNESS_AGENT=planner
 
 ---
 
-### 2. Reviewer（计划审查员）
+### 3. Reviewer（计划审查员）
 
 **配置文件**: [`agents/reviewer.yaml`](agents/reviewer.yaml)
 
@@ -201,7 +253,7 @@ export AHARNESS_AGENT=reviewer
 
 ---
 
-### 3. Executor（执行者）
+### 4. Executor（执行者）
 
 **配置文件**: [`agents/executor.yaml`](agents/executor.yaml)
 
@@ -270,7 +322,7 @@ export AHARNESS_AGENT=executor
 
 ---
 
-### 4. Evaluator（评估员）
+### 5. Evaluator（评估员）
 
 **配置文件**: [`agents/evaluator.yaml`](agents/evaluator.yaml)
 
@@ -345,7 +397,47 @@ export AHARNESS_AGENT=evaluator
 
 ---
 
-### 5. Researcher（研究员）
+### 6. Memory Curator（记忆策展人）
+
+**配置文件**: [`agents/memory-curator.yaml`](agents/memory-curator.yaml)
+
+**类型**: `memory_management`
+
+**职责**:
+- 在任务执行结束后整理上下文
+- 提取有价值的代码模式、技术决策等
+- 压缩冗长对话，保存关键状态
+- 控制系统的信息熵，防止退化
+
+**核心能力**:
+- context-compression
+- summarization
+- knowledge-archiving
+- signal-extraction
+
+**模型配置**:
+```yaml
+model:
+  provider: anthropic
+  model: claude-3-5-sonnet
+  temperature: 0.1
+  max_tokens: 4096
+```
+
+**工具权限**:
+- ✅ filesystem_read
+- ✅ memory_write
+- ❌ execution_run_command
+
+**使用场景**:
+```bash
+# 评估通过后，自动切换到 Memory Curator 进行知识沉淀
+export AHARNESS_AGENT=memory_curator
+```
+
+---
+
+### 7. Researcher（研究员）
 
 **配置文件**: [`agents/researcher.yaml`](agents/researcher.yaml)
 
@@ -409,7 +501,9 @@ export AHARNESS_AGENT=planner
 在一个完整的任务流程中，Agent 会按以下顺序切换：
 
 ```
-用户提交需求
+用户提交意图
+    ↓
+Coordinator 识别并澄清需求
     ↓
 Planner 分析并制定计划
     ↓
@@ -423,8 +517,10 @@ Evaluator 评估质量
 │                     │
 PASS/EXCELLENT    NEEDS_IMPROVEMENT
 │                     │
-任务完成          返回 Executor 修复
-                  或返回 Planner 重新规划
+Memory Curator        返回 Executor 修复
+知识沉淀与归档        或返回 Planner 重新规划
+│
+任务彻底完成
 ```
 
 ## Agent 评估与进化
@@ -473,25 +569,27 @@ Agent 配置会根据评估结果自动优化：
 
 ## 工具权限对比
 
-| 工具 | Planner | Reviewer | Executor | Evaluator | Researcher |
-|------|---------|----------|----------|-----------|------------|
-| filesystem_read | ✅ | ✅ | ✅ | ✅ | ✅ |
-| filesystem_write | ❌ | ❌ | ✅ | ❌ | ❌ |
-| code_search | ✅ | ✅ | ✅ | ✅ | ✅ |
-| execution_run_tests | ❌ | ❌ | ✅ | ✅ | ❌ |
-| execution_run_linter | ❌ | ❌ | ✅ | ✅ | ❌ |
-| execution_run_command | ❌ | ❌ | ✅ | ❌ | ❌ |
-| network_search | ✅ | ✅ | ❌ | ❌ | ✅ |
-| network_fetch_documentation | ✅ | ✅ | ❌ | ❌ | ✅ |
+| 工具 | Coordinator | Planner | Reviewer | Executor | Evaluator | Memory Curator | Researcher |
+|------|-------------|---------|----------|----------|-----------|----------------|------------|
+| filesystem_read | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| filesystem_write | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
+| code_search | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| execution_run_tests | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| execution_run_linter | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| execution_run_command | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| network_search | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
+| network_fetch_documentation | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
 
 ## 最佳实践
 
 ### 1. 按阶段使用正确的 Agent
 
+- **需求澄清阶段** → 使用 Coordinator
 - **需求分析阶段** → 使用 Planner
 - **计划审查阶段** → 使用 Reviewer
 - **代码实现阶段** → 使用 Executor
 - **质量评估阶段** → 使用 Evaluator
+- **知识沉淀阶段** → 使用 Memory Curator
 - **技术调研阶段** → 使用 Researcher
 
 ### 2. 遵循工作流顺序

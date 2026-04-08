@@ -72,7 +72,8 @@ awesome-agent-harness/
 ├── hooks/           # 会话钩子
 ├── rules/           # 代码规则
 ├── verification/    # 验证循环
-├── context/         # 上下文管理
+├── .runtime/        # 运行时数据
+│   └── context/    # 上下文管理
 ├── constraints/     # 约束配置
 ├── evals/           # 评估框架
 ├── telemetry/       # 可观测性

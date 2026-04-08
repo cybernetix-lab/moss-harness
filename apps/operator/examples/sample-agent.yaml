@@ -1,0 +1,38 @@
+apiVersion: agent-harness.io/v1
+kind: Agent
+metadata:
+  name: planner-agent
+  labels:
+    agent-type: planner
+spec:
+  agentType: planner
+  name: planner
+  description: Planning agent for task decomposition
+  capabilities:
+    - requirement-analysis
+    - task-decomposition
+    - architecture-design
+    - risk-assessment
+    - effort-estimation
+  config:
+    maxTokens: 8192
+    temperature: 0.3
+  model:
+    provider: anthropic
+    model: claude-3-opus
+    temperature: 0.3
+    maxTokens: 8192
+  resources:
+    memory: 512Mi
+    cpu: 500m
+  replicas: 1
+  autoScale:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilization: 70
+  memory:
+    enabled: true
+    backend: redis
+  sandbox:
+    enabled: false

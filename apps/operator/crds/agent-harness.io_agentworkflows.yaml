@@ -1,0 +1,158 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: agentworkflows.agent-harness.io
+spec:
+  group: agent-harness.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - workflow
+              properties:
+                workflow:
+                  type: object
+                  required:
+                    - name
+                    - steps
+                  properties:
+                    name:
+                      type: string
+                      description: Workflow name
+                    description:
+                      type: string
+                      description: Workflow description
+                    steps:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - name
+                          - agent
+                        properties:
+                          name:
+                            type: string
+                            description: Step name
+                          agent:
+                            type: string
+                            description: Agent to execute this step
+                          input:
+                            type: object
+                            description: Input parameters for this step
+                          dependsOn:
+                            type: array
+                            items:
+                              type: string
+                            description: Names of steps this step depends on
+                          condition:
+                            type: string
+                            description: Condition to execute this step
+                          retryPolicy:
+                            type: object
+                            properties:
+                              maxRetries:
+                                type: integer
+                                default: 3
+                              backoffSeconds:
+                                type: integer
+                                default: 5
+                          timeout:
+                            type: integer
+                            description: Timeout in seconds
+                            default: 300
+                    variables:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      description: Workflow variables
+                triggers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                          - webhook
+                          - schedule
+                          - event
+                      config:
+                        type: object
+                        additionalProperties: true
+                resources:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                      default: 512Mi
+                    cpu:
+                      type: string
+                      default: 500m
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Running
+                    - Succeeded
+                    - Failed
+                    - Cancelled
+                startTime:
+                  type: string
+                  format: date-time
+                completionTime:
+                  type: string
+                  format: date-time
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      phase:
+                        type: string
+                      startTime:
+                        type: string
+                        format: date-time
+                      completionTime:
+                        type: string
+                        format: date-time
+                      output:
+                        type: object
+                      error:
+                        type: string
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}
+  scope: Namespaced
+  names:
+    plural: agentworkflows
+    singular: agentworkflow
+    kind: AgentWorkflow
+    shortNames:
+      - awf

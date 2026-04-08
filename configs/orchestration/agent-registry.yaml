@@ -1,0 +1,644 @@
+# Agent Registry - Agent 注册表
+# 管理可用的 Agent 模板和配置
+
+registry:
+  version: "1.1.0"
+  last_updated: "2026-04-08"
+  architecture: "role_lane_with_expert_emergence"
+  description: |
+    六角色架构中的“角色”是稳定职责泳道（Role Lanes），不是固定的单一 Agent 实例。
+    每条泳道至少包含一个通用兜底 Agent（Backup Agent），并允许围绕具体场景持续沉淀专家 Agent（Expert Agents）。
+    专家 Agent 优先处理匹配任务，超时或不可用时自动回退到同泳道的 Backup Agent。
+    第二阶段起，`members` 作为成员唯一真相源；`lanes` 只保留流程规则与选择策略，不再重复列出成员清单。
+
+# 六角色职责泳道（系统主模型）
+lanes:
+  coordinator:
+    lane_type: core
+    required: true
+    description: "系统边界泳道，负责意图识别、需求澄清与结构化输入"
+    member_source: "members.coordinator"
+    input_artifacts:
+      - user_intent
+      - clarification_request
+    output_artifacts:
+      - structured_requirement
+      - routed_task
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 60
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - api
+        - product
+        - requirement
+
+  planner:
+    lane_type: core
+    required: true
+    description: "规划泳道，负责方案设计、任务拆解、风险评估"
+    member_source: "members.planner"
+    input_artifacts:
+      - structured_requirement
+      - research_note
+    output_artifacts:
+      - execution_plan
+      - plan_risks
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 120
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - database
+        - architecture
+        - migration
+
+  reviewer:
+    lane_type: core
+    required: true
+    description: "审查泳道，负责独立审查规划结果并输出修订意见"
+    member_source: "members.reviewer"
+    input_artifacts:
+      - execution_plan
+    output_artifacts:
+      - review_feedback
+      - approval_decision
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 120
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - security
+        - architecture
+        - compliance
+
+  executor:
+    lane_type: core
+    required: true
+    description: "执行泳道，负责实现、修改、验证与结果提交"
+    member_source: "members.executor"
+    input_artifacts:
+      - approved_plan
+      - execution_task
+    output_artifacts:
+      - implementation
+      - test_results
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 180
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - frontend
+        - backend
+        - database
+
+  evaluator:
+    lane_type: core
+    required: true
+    description: "评估泳道，负责质量验证、结论输出与改进反馈"
+    member_source: "members.evaluator"
+    input_artifacts:
+      - implementation
+      - test_results
+    output_artifacts:
+      - evaluation_report
+      - improvement_request
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 120
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - performance
+        - quality
+        - requirement
+
+  memory_curator:
+    lane_type: core
+    required: true
+    description: "记忆策展泳道，负责压缩上下文、提炼模式并推动专家沉淀"
+    member_source: "members.memory_curator"
+    input_artifacts:
+      - evaluation_report
+      - workflow_trace
+      - successful_runs
+    output_artifacts:
+      - archived_knowledge
+      - candidate_expert_pattern
+      - compression_summary
+    claim_policy:
+      mode: expert_first_with_backup_fallback
+      expert_claim_timeout_seconds: 90
+      fallback_to_backup: true
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+      preferred_domain_tags:
+        - documentation
+        - pattern
+        - telemetry
+
+# Team Roster（成员唯一真相源）
+members:
+  coordinator:
+    backup:
+      - id: coordinator
+        config_file: "agents/coordinator.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, clarification, routing]
+    experts:
+      - id: api_coordinator
+        status: candidate
+        mode: expert
+        domain_tags: [api, integration, contract]
+      - id: product_coordinator
+        status: candidate
+        mode: expert
+        domain_tags: [product, workflow, requirement]
+
+  planner:
+    backup:
+      - id: planner
+        config_file: "agents/planner.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, planning, decomposition]
+    experts:
+      - id: db_planner
+        status: candidate
+        mode: expert
+        domain_tags: [database, schema, sql]
+      - id: architecture_planner
+        status: candidate
+        mode: expert
+        domain_tags: [architecture, integration, dependency]
+      - id: migration_planner
+        status: candidate
+        mode: expert
+        domain_tags: [migration, rollout, compatibility]
+
+  reviewer:
+    backup:
+      - id: reviewer
+        config_file: "agents/reviewer.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, review, risk]
+    experts:
+      - id: sec_reviewer
+        status: candidate
+        mode: expert
+        domain_tags: [security, threat_modeling, compliance]
+      - id: architecture_reviewer
+        status: candidate
+        mode: expert
+        domain_tags: [architecture, layering, dependency]
+      - id: compliance_reviewer
+        status: candidate
+        mode: expert
+        domain_tags: [policy, governance, audit]
+
+  executor:
+    backup:
+      - id: executor
+        config_file: "agents/executor.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, implementation, testing]
+    experts:
+      - id: frontend_executor
+        status: candidate
+        mode: expert
+        domain_tags: [frontend, ui, accessibility]
+      - id: backend_executor
+        status: candidate
+        mode: expert
+        domain_tags: [backend, api, service]
+      - id: database_executor
+        status: candidate
+        mode: expert
+        domain_tags: [database, migration, query]
+
+  evaluator:
+    backup:
+      - id: evaluator
+        config_file: "agents/evaluator.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, validation, quality]
+    experts:
+      - id: perf_evaluator
+        status: candidate
+        mode: expert
+        domain_tags: [performance, benchmark, latency]
+      - id: quality_evaluator
+        status: candidate
+        mode: expert
+        domain_tags: [quality, verification, regression]
+      - id: requirement_evaluator
+        status: candidate
+        mode: expert
+        domain_tags: [requirement, acceptance, traceability]
+
+  memory_curator:
+    backup:
+      - id: memory_curator
+        config_file: "agents/memory-curator.yaml"
+        status: active
+        mode: backup
+        domain_tags: [general, summary, archive]
+    experts:
+      - id: doc_curator
+        status: candidate
+        mode: expert
+        domain_tags: [documentation, knowledge, handbook]
+      - id: pattern_curator
+        status: candidate
+        mode: expert
+        domain_tags: [pattern, emergence, replay]
+      - id: telemetry_curator
+        status: candidate
+        mode: expert
+        domain_tags: [telemetry, metrics, signal]
+
+# 专家优先路由策略（跨泳道共享）
+selection_policy:
+  route_score_formula:
+    - role_fit
+    - domain_fit
+    - capability_score
+    - recent_success
+    - availability
+  fallback_order:
+    - same_lane_expert
+    - same_lane_backup
+    - lead_escalation
+  minimum_confidence_to_claim: 0.7
+  allow_manual_override: true
+
+# 自组织演化配置（规范层）
+evolution:
+  strategy_file: "agents/agent-evolution.yaml"
+  candidate_promotion:
+    enabled: true
+    promoted_by: memory_curator
+    reviewed_by:
+      - reviewer
+      - evaluator
+    required_signals:
+      - repeated_success
+      - stable_toolchain
+      - reusable_prompt_pattern
+    promotion_thresholds:
+      min_successful_runs: 3
+      min_quality_score: 80
+      min_domain_confidence: 0.8
+  deprecation_rules:
+    enabled: true
+    triggers:
+      - prolonged_inactivity
+      - repeated_low_quality
+      - obsolete_domain
+  notes:
+    - "候选专家由记忆策展泳道从成功任务中提炼，先进入 candidate 状态，再经评审晋升为正式专家。"
+    - "本文件只定义规范与注册元数据，不直接代表运行时已实现自动晋升逻辑。"
+
+# Agent 模板（向后兼容视图）
+agents:
+  # Coordinator - 系统边界代理，负责需求澄清
+  coordinator:
+    name: "Coordinator Agent"
+    description: "系统边界代理，负责与用户交互、意图识别、需求澄清和全局任务分发"
+    type: orchestration
+    capabilities:
+      - user_intent_recognition
+      - ambiguity_resolution
+      - requirement_clarification
+      - task_routing
+    config_file: "agents/coordinator.yaml"
+
+  # Planner - 通用兜底规划代理
+  planner:
+    name: "Planner Agent"
+    description: "规划泳道的通用兜底代理，负责需求分析、方案设计与任务拆解"
+    type: planning
+    capabilities:
+      - requirement_analysis
+      - task_decomposition
+      - architecture_design
+      - risk_assessment
+    config_file: "agents/planner.yaml"
+
+  # Reviewer - 通用兜底审查代理
+  reviewer:
+    name: "Reviewer Agent"
+    description: "审查泳道的通用兜底代理，负责独立评估计划质量与风险"
+    type: review
+    capabilities:
+      - risk_identification
+      - quality_assessment
+      - compliance_check
+      - revision_suggestions
+    config_file: "agents/reviewer.yaml"
+
+  # Executor - 通用兜底执行代理
+  executor:
+    name: "Executor Agent"
+    description: "执行泳道的通用兜底代理，负责实现、调试、自测与交付"
+    type: execution
+    capabilities:
+      - code_implementation
+      - test_writing
+      - debugging
+      - self_verification
+    config_file: "agents/executor.yaml"
+
+  # Evaluator - 通用兜底评估代理
+  evaluator:
+    name: "Evaluator Agent"
+    description: "评估泳道的通用兜底代理，负责验收、验证和改进反馈"
+    type: evaluation
+    capabilities:
+      - requirement_verification
+      - test_validation
+      - code_quality_review
+      - outcome_assessment
+    config_file: "agents/evaluator.yaml"
+
+  # Memory Curator - 记忆策展人，负责信息熵控制
+  memory_curator:
+    name: "Memory Curator Agent"
+    description: "信息熵控制器，负责上下文的压缩、摘要、归档和检索"
+    type: memory_management
+    capabilities:
+      - context_compression
+      - summarization
+      - knowledge_archiving
+      - signal_extraction
+    config_file: "agents/memory-curator.yaml"
+
+  # Researcher - 辅助研究代理（不属于核心六泳道）
+  researcher:
+    name: "Researcher Agent"
+    description: "辅助研究代理，按需为协调、规划、审查泳道提供外部资料与技术调研"
+    type: research_support
+    capabilities:
+      - technology_research
+      - documentation_lookup
+      - best_practice_analysis
+    config_file: "agents/researcher.yaml"
+
+  # Lead Agent - 主代理，负责任务分解和协调
+  lead:
+    name: "Lead Agent"
+    description: "主代理，负责任务分解、Sub-Agent 协调和结果汇总"
+    type: orchestration
+    capabilities:
+      - task_decomposition
+      - subagent_coordination
+      - result_aggregation
+      - conflict_resolution
+    atomic_capabilities:
+      planning:
+        - task_analysis
+        - complexity_assessment
+        - strategy_selection
+      coordination:
+        - subagent_lifecycle_management
+        - context_distribution
+        - progress_monitoring
+      aggregation:
+        - result_collection
+        - conflict_detection
+        - output_synthesis
+    config_file: "agents/lead-agent.yaml"
+
+  # Sub-Agent 模板
+  subagent:
+    name: "Sub-Agent"
+    description: "执行特定子任务的代理"
+    type: execution
+    capabilities:
+      - task_execution
+      - context_isolation
+      - result_reporting
+    parent_types:
+      - planner
+      - reviewer
+      - executor
+      - evaluator
+      - researcher
+    isolation_levels:
+      - full_isolation
+      - partial_isolation
+      - shared_context
+    config_template: "orchestrator/registry/templates/subagent.yaml"
+
+  # 专家模板（保留以兼容旧结构，建议优先读取上方 members）
+  specialized:
+    security:
+      name: "Security Specialist"
+      description: "专注于安全分析和漏洞检测"
+      capabilities:
+        - vulnerability_scanning
+        - security_audit
+        - threat_modeling
+      skills:
+        - security-scan
+        - owasp-top-10
+        - dependency-check
+
+    performance:
+      name: "Performance Specialist"
+      description: "专注于性能分析和优化"
+      capabilities:
+        - profiling
+        - bottleneck_identification
+        - optimization_recommendations
+      skills:
+        - performance-profiling
+        - load-testing
+
+    database:
+      name: "Database Specialist"
+      description: "专注于数据库设计和优化"
+      capabilities:
+        - schema_design
+        - query_optimization
+        - migration_planning
+      skills:
+        - sql-patterns
+        - database-design
+
+    frontend:
+      name: "Frontend Specialist"
+      description: "专注于前端开发和 UI/UX"
+      capabilities:
+        - component_design
+        - responsive_implementation
+        - accessibility_audit
+      skills:
+        - react-hooks
+        - typescript-patterns
+        - css-architecture
+
+    backend:
+      name: "Backend Specialist"
+      description: "专注于后端 API 和系统设计"
+      capabilities:
+        - api_design
+        - service_architecture
+        - integration_patterns
+      skills:
+        - rest-api-design
+        - microservices-patterns
+        - message-queue-patterns
+
+# 内置 Sub-Agent 类型
+builtin_subagents:
+  general:
+    name: "General Purpose"
+    description: "通用目的的 Sub-Agent"
+    agent_type: executor
+    default: true
+
+  bash:
+    name: "Bash Executor"
+    description: "执行 bash 命令和脚本的 Sub-Agent"
+    agent_type: executor
+    sandbox_required: true
+    capabilities:
+      - command_execution
+      - script_running
+      - file_manipulation
+
+  code:
+    name: "Code Generator"
+    description: "生成和修改代码的 Sub-Agent"
+    agent_type: executor
+    capabilities:
+      - code_generation
+      - code_refactoring
+      - code_review
+
+# Agent 能力评分（用于路由决策）
+capability_scores:
+  coordinator:
+    intent_recognition: 0.95
+    requirement_clarification: 0.9
+
+  memory_curator:
+    context_compression: 0.95
+    knowledge_extraction: 0.9
+
+  planner:
+    task_analysis: 0.9
+    architecture_design: 0.85
+    effort_estimation: 0.8
+
+  reviewer:
+    risk_identification: 0.9
+    quality_assessment: 0.85
+    compliance_check: 0.8
+
+  executor:
+    code_implementation: 0.9
+    test_writing: 0.85
+    debugging: 0.8
+
+  evaluator:
+    requirement_verification: 0.9
+    test_validation: 0.85
+    code_quality_review: 0.8
+
+  researcher:
+    technology_research: 0.9
+    documentation_lookup: 0.85
+    best_practice_analysis: 0.8
+
+# Agent 资源需求
+resource_requirements:
+  coordinator:
+    memory: "1GB"
+    timeout: 120
+
+  memory_curator:
+    memory: "2GB"
+    timeout: 300
+
+  planner:
+    memory: "2GB"
+    timeout: 300
+
+  reviewer:
+    memory: "1GB"
+    timeout: 180
+
+  executor:
+    memory: "4GB"
+    timeout: 600
+    sandbox: optional
+
+  evaluator:
+    memory: "2GB"
+    timeout: 300
+
+  researcher:
+    memory: "1GB"
+    timeout: 240
+    network: required
+
+# Agent 依赖关系
+dependencies:
+  coordinator:
+    requires: []
+    provides: [structured_requirement]
+
+  memory_curator:
+    requires: [evaluation_report, workflow_state]
+    provides: [compressed_context, archived_knowledge]
+
+  lead:
+    requires: []
+    provides: [subagent_management]
+
+  subagent:
+    requires: [lead]
+    provides: [task_execution]
+
+  planner:
+    requires: []
+    provides: [execution_plan]
+
+  reviewer:
+    requires: [execution_plan]
+    provides: [review_feedback]
+
+  executor:
+    requires: [review_feedback]
+    provides: [implementation]
+
+  evaluator:
+    requires: [implementation]
+    provides: [evaluation_report]
