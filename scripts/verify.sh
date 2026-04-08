@@ -28,10 +28,28 @@ OUTPUT=""
 PARALLEL=false
 VERBOSE=false
 
-# 验证结果
-declare -A RESULTS
-declare -A SCORES
-declare -A DURATIONS
+# 验证结果 - 使用普通变量而不是关联数组
+RESULTS_syntax=""
+RESULTS_static=""
+RESULTS_unit=""
+RESULTS_integration=""
+RESULTS_security=""
+RESULTS_performance=""
+
+SCORES_syntax=0
+SCORES_static=0
+SCORES_unit=0
+SCORES_integration=0
+SCORES_security=0
+SCORES_performance=0
+
+DURATIONS_syntax=0
+DURATIONS_static=0
+DURATIONS_unit=0
+DURATIONS_integration=0
+DURATIONS_security=0
+DURATIONS_performance=0
+
 TOTAL_SCORE=0
 PASSED_LEVELS=0
 FAILED_LEVELS=0
@@ -74,7 +92,7 @@ log_section() {
 parse_yaml() {
     local file="$1"
     local prefix="$2"
-    
+
     if command -v python3 &> /dev/null; then
         python3 -c "
 import yaml
@@ -121,33 +139,112 @@ check_tool() {
 # 获取项目文件列表
 get_project_files() {
     local extensions=("ts" "tsx" "js" "jsx" "json" "yaml" "yml" "md" "sh")
-    local files=()
-    
+    local files=""
+
     for ext in "${extensions[@]}"; do
-        while IFS= read -r file; do
-            files+=("$file")
-        done < <(find "$PROJECT_ROOT" -type f -name "*.$ext" \
+        files="$files $(find "$PROJECT_ROOT" -type f -name "*.$ext" \
             -not -path "*/node_modules/*" \
             -not -path "*/.git/*" \
-            -not -path "*/runtime/*" 2>/dev/null)
+            -not -path "*/runtime/*" 2>/dev/null)"
     done
-    
-    echo "${files[@]}"
+
+    echo "$files"
 }
 
 # 计算代码行数
 count_lines() {
-    local files=("$@")
+    local files=($@)
     local total=0
-    
+
     for file in "${files[@]}"; do
         if [[ -f "$file" ]]; then
             local lines=$(wc -l < "$file" 2>/dev/null || echo 0)
             total=$((total + lines))
         fi
     done
-    
+
     echo "$total"
+}
+
+# 获取结果
+get_result() {
+    local level="$1"
+    case "$level" in
+        "syntax") echo "$RESULTS_syntax" ;;
+        "static") echo "$RESULTS_static" ;;
+        "unit") echo "$RESULTS_unit" ;;
+        "integration") echo "$RESULTS_integration" ;;
+        "security") echo "$RESULTS_security" ;;
+        "performance") echo "$RESULTS_performance" ;;
+    esac
+}
+
+# 设置结果
+set_result() {
+    local level="$1"
+    local result="$2"
+    case "$level" in
+        "syntax") RESULTS_syntax="$result" ;;
+        "static") RESULTS_static="$result" ;;
+        "unit") RESULTS_unit="$result" ;;
+        "integration") RESULTS_integration="$result" ;;
+        "security") RESULTS_security="$result" ;;
+        "performance") RESULTS_performance="$result" ;;
+    esac
+}
+
+# 获取分数
+get_score() {
+    local level="$1"
+    case "$level" in
+        "syntax") echo "$SCORES_syntax" ;;
+        "static") echo "$SCORES_static" ;;
+        "unit") echo "$SCORES_unit" ;;
+        "integration") echo "$SCORES_integration" ;;
+        "security") echo "$SCORES_security" ;;
+        "performance") echo "$SCORES_performance" ;;
+    esac
+}
+
+# 设置分数
+set_score() {
+    local level="$1"
+    local score="$2"
+    case "$level" in
+        "syntax") SCORES_syntax="$score" ;;
+        "static") SCORES_static="$score" ;;
+        "unit") SCORES_unit="$score" ;;
+        "integration") SCORES_integration="$score" ;;
+        "security") SCORES_security="$score" ;;
+        "performance") SCORES_performance="$score" ;;
+    esac
+}
+
+# 获取持续时间
+get_duration() {
+    local level="$1"
+    case "$level" in
+        "syntax") echo "$DURATIONS_syntax" ;;
+        "static") echo "$DURATIONS_static" ;;
+        "unit") echo "$DURATIONS_unit" ;;
+        "integration") echo "$DURATIONS_integration" ;;
+        "security") echo "$DURATIONS_security" ;;
+        "performance") echo "$DURATIONS_performance" ;;
+    esac
+}
+
+# 设置持续时间
+set_duration() {
+    local level="$1"
+    local duration="$2"
+    case "$level" in
+        "syntax") DURATIONS_syntax="$duration" ;;
+        "static") DURATIONS_static="$duration" ;;
+        "unit") DURATIONS_unit="$duration" ;;
+        "integration") DURATIONS_integration="$duration" ;;
+        "security") DURATIONS_security="$duration" ;;
+        "performance") DURATIONS_performance="$duration" ;;
+    esac
 }
 
 # ==================== 验证级别函数 ====================
@@ -156,14 +253,13 @@ count_lines() {
 run_syntax_check() {
     local level_start=$(date +%s)
     local errors=0
-    local warnings=0
     local files_checked=0
-    
+
     log_section "Level 1: Syntax Check (语法检查)"
-    
+
     local files=($(get_project_files))
     log_info "Checking ${#files[@]} files..."
-    
+
     # Shell 脚本语法检查
     log_info "Checking shell scripts..."
     for file in "${files[@]}"; do
@@ -175,7 +271,7 @@ run_syntax_check() {
             fi
         fi
     done
-    
+
     # YAML 语法检查
     log_info "Checking YAML files..."
     if check_tool python3; then
@@ -191,7 +287,7 @@ run_syntax_check() {
     else
         log_warning "Python3 not available, skipping YAML validation"
     fi
-    
+
     # JSON 语法检查
     log_info "Checking JSON files..."
     for file in "${files[@]}"; do
@@ -203,23 +299,27 @@ run_syntax_check() {
             fi
         fi
     done
-    
+
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["syntax"]=$duration
-    
+    set_duration "syntax" "$duration"
+
     # 计算分数
     if [[ $errors -eq 0 ]]; then
-        SCORES["syntax"]=1.0
-        RESULTS["syntax"]="PASSED"
+        set_score "syntax" 1.0
+        set_result "syntax" "PASSED"
         log_success "Syntax check passed ($files_checked files checked in ${duration}s)"
     else
-        local score=$(echo "scale=2; 1 - ($errors / $files_checked)" | bc 2>/dev/null || echo 0)
-        SCORES["syntax"]=$score
-        RESULTS["syntax"]="FAILED"
+        if [[ $files_checked -gt 0 ]]; then
+            local score=$(echo "scale=2; 1 - ($errors / $files_checked)" | bc 2>/dev/null || echo 0)
+            set_score "syntax" "$score"
+        else
+            set_score "syntax" 1.0
+        fi
+        set_result "syntax" "FAILED"
         log_error "Syntax check failed: $errors errors in $files_checked files"
     fi
-    
+
     return $errors
 }
 
@@ -228,21 +328,22 @@ run_static_analysis() {
     local level_start=$(date +%s)
     local issues=0
     local files_checked=0
-    
+
     log_section "Level 2: Static Analysis (静态分析)"
-    
+
     # 运行 lint-rules.sh 如果存在
     if [[ -f "${SCRIPT_DIR}/lint-rules.sh" ]]; then
         log_info "Running rule-based linting..."
         if bash "${SCRIPT_DIR}/lint-rules.sh" --format summary > /tmp/lint-results.txt 2>&1; then
             log_success "Rule linting passed"
         else
-            local lint_issues=$(grep -c "violated" /tmp/lint-results.txt 2>/dev/null || echo 0)
+            local lint_issues=$(grep -c "violated" /tmp/lint-results.txt 2>/dev/null | tr -d '\n' || echo 0)
+            lint_issues=${lint_issues:-0}
             issues=$((issues + lint_issues))
             log_warning "Rule linting found $lint_issues issues"
         fi
     fi
-    
+
     # 检查文件大小限制
     log_info "Checking file size limits..."
     local files=($(get_project_files))
@@ -256,31 +357,31 @@ run_static_analysis() {
             fi
         fi
     done
-    
-    # 检查重复内容
+
+    # 检查重复内容 (macOS compatible)
     log_info "Checking for duplicates..."
     local duplicates=$(find "$PROJECT_ROOT" -type f -name "*.sh" -exec md5sum {} + 2>/dev/null | \
-        sort | uniq -d -w32 | wc -l)
+        awk '{print $1}' | sort | uniq -d | wc -l)
     if [[ $duplicates -gt 0 ]]; then
         log_warning "Found $duplicates duplicate files"
         issues=$((issues + duplicates))
     fi
-    
+
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["static"]=$duration
-    
+    set_duration "static" "$duration"
+
     if [[ $issues -eq 0 ]]; then
-        SCORES["static"]=1.0
-        RESULTS["static"]="PASSED"
+        set_score "static" 1.0
+        set_result "static" "PASSED"
         log_success "Static analysis passed ($files_checked files in ${duration}s)"
     else
         local score=$(echo "scale=2; 1 - ($issues / 100)" | bc 2>/dev/null || echo 0.9)
-        SCORES["static"]=$score
-        RESULTS["static"]="WARNING"
+        set_score "static" "$score"
+        set_result "static" "WARNING"
         log_warning "Static analysis found $issues issues"
     fi
-    
+
     return 0
 }
 
@@ -289,27 +390,27 @@ run_unit_tests() {
     local level_start=$(date +%s)
     local tests_passed=0
     local tests_failed=0
-    
+
     log_section "Level 3: Unit Tests (单元测试)"
-    
+
     # 查找测试脚本
     local test_scripts=()
     while IFS= read -r file; do
         test_scripts+=("$file")
     done < <(find "$PROJECT_ROOT" -type f -name "*test*.sh" -o -name "*_test.sh" 2>/dev/null | \
         grep -v node_modules | grep -v ".git")
-    
+
     if [[ ${#test_scripts[@]} -eq 0 ]]; then
         log_warning "No test scripts found"
-        SCORES["unit"]=1.0
-        RESULTS["unit"]="SKIPPED"
-        DURATIONS["unit"]=0
+        set_score "unit" 1.0
+        set_result "unit" "SKIPPED"
+        set_duration "unit" 0
         SKIPPED_LEVELS=$((SKIPPED_LEVELS + 1))
         return 0
     fi
-    
+
     log_info "Found ${#test_scripts[@]} test scripts"
-    
+
     for test_script in "${test_scripts[@]}"; do
         log_info "Running: $(basename "$test_script")"
         if bash "$test_script" > /tmp/test-output.txt 2>&1; then
@@ -323,48 +424,48 @@ run_unit_tests() {
             fi
         fi
     done
-    
+
     local total_tests=$((tests_passed + tests_failed))
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["unit"]=$duration
-    
+    set_duration "unit" "$duration"
+
     if [[ $total_tests -gt 0 ]]; then
         local score=$(echo "scale=2; $tests_passed / $total_tests" | bc 2>/dev/null || echo 0)
-        SCORES["unit"]=$score
-        
+        set_score "unit" "$score"
+
         if [[ $tests_failed -eq 0 ]]; then
-            RESULTS["unit"]="PASSED"
+            set_result "unit" "PASSED"
             log_success "All $tests_passed tests passed (${duration}s)"
         else
-            RESULTS["unit"]="FAILED"
+            set_result "unit" "FAILED"
             log_error "$tests_failed of $total_tests tests failed"
         fi
     else
-        SCORES["unit"]=1.0
-        RESULTS["unit"]="SKIPPED"
+        set_score "unit" 1.0
+        set_result "unit" "SKIPPED"
     fi
-    
+
     return $tests_failed
 }
 
 # Level 4: 集成测试
 run_integration_tests() {
     local level_start=$(date +%s)
-    
+
     log_section "Level 4: Integration Tests (集成测试)"
-    
+
     # 检查脚本间依赖
     log_info "Checking script dependencies..."
     local dep_errors=0
-    
+
     # 验证所有脚本引用的文件存在
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" ]]; then
             # 检查 source 引用
             local sourced=$(grep -E "^source |^\. " "$script" 2>/dev/null | \
                 grep -v "BASH_SOURCE" | awk '{print $2}' | tr -d '"' || true)
-            
+
             for ref in $sourced; do
                 if [[ "$ref" == /* ]]; then
                     if [[ ! -f "$ref" ]]; then
@@ -375,11 +476,11 @@ run_integration_tests() {
             done
         fi
     done
-    
+
     # 验证配置文件引用
     log_info "Checking configuration references..."
     local config_errors=0
-    
+
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" ]]; then
             local yaml_refs=$(grep -E "\.yaml|\.yml" "$script" | grep -v "^#" | wc -l)
@@ -394,24 +495,23 @@ run_integration_tests() {
             fi
         fi
     done
-    
+
+    local total_errors=$((dep_errors + config_errors))
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["integration"]=$duration
-    
-    local total_errors=$((dep_errors + config_errors))
-    
+    set_duration "integration" "$duration"
+
     if [[ $total_errors -eq 0 ]]; then
-        SCORES["integration"]=1.0
-        RESULTS["integration"]="PASSED"
+        set_score "integration" 1.0
+        set_result "integration" "PASSED"
         log_success "Integration tests passed (${duration}s)"
     else
         local score=$(echo "scale=2; 1 - ($total_errors / 20)" | bc 2>/dev/null || echo 0.8)
-        SCORES["integration"]=$score
-        RESULTS["integration"]="WARNING"
+        set_score "integration" "$score"
+        set_result "integration" "WARNING"
         log_warning "Integration tests found $total_errors issues"
     fi
-    
+
     return 0
 }
 
@@ -419,12 +519,12 @@ run_integration_tests() {
 run_security_scan() {
     local level_start=$(date +%s)
     local vulnerabilities=0
-    
+
     log_section "Level 5: Security Scan (安全扫描)"
-    
+
     # 检查敏感信息泄露
     log_info "Scanning for secrets..."
-    
+
     local patterns=(
         "password\s*="
         "api_key\s*="
@@ -433,7 +533,7 @@ run_security_scan() {
         "AWS_ACCESS_KEY"
         "PRIVATE_KEY"
     )
-    
+
     for pattern in "${patterns[@]}"; do
         local matches=$(grep -rE "$pattern" "$PROJECT_ROOT" \
             --include="*.sh" --include="*.yaml" --include="*.yml" \
@@ -442,7 +542,7 @@ run_security_scan() {
             --exclude-dir=runtime 2>/dev/null | grep -v "example" | grep -v "template" | wc -l)
         vulnerabilities=$((vulnerabilities + matches))
     done
-    
+
     # 检查文件权限
     log_info "Checking file permissions..."
     local bad_perms=$(find "$SCRIPT_DIR" -type f -name "*.sh" ! -perm -111 2>/dev/null | wc -l)
@@ -450,7 +550,7 @@ run_security_scan() {
         log_warning "$bad_perms scripts not executable"
         vulnerabilities=$((vulnerabilities + bad_perms))
     fi
-    
+
     # 检查 eval 使用
     log_info "Checking for dangerous patterns..."
     local eval_count=$(grep -rE "\beval\b" "$SCRIPT_DIR" --include="*.sh" 2>/dev/null | grep -v "^#" | wc -l)
@@ -458,71 +558,71 @@ run_security_scan() {
         log_warning "Found $eval_count eval statements"
         vulnerabilities=$((vulnerabilities + eval_count))
     fi
-    
+
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["security"]=$duration
-    
+    set_duration "security" "$duration"
+
     if [[ $vulnerabilities -eq 0 ]]; then
-        SCORES["security"]=1.0
-        RESULTS["security"]="PASSED"
+        set_score "security" 1.0
+        set_result "security" "PASSED"
         log_success "Security scan passed (${duration}s)"
     else
         local score=$(echo "scale=2; 1 - ($vulnerabilities / 50)" | bc 2>/dev/null || echo 0.9)
-        SCORES["security"]=$score
-        RESULTS["security"]="WARNING"
+        set_score "security" "$score"
+        set_result "security" "WARNING"
         log_warning "Security scan found $vulnerabilities potential issues"
     fi
-    
+
     return 0
 }
 
 # Level 6: 性能测试
 run_performance_tests() {
     local level_start=$(date +%s)
-    
+
     log_section "Level 6: Performance Tests (性能测试)"
-    
+
     # 测量脚本执行时间
     log_info "Benchmarking script performance..."
-    
+
     local slow_scripts=0
     local benchmark_threshold=2000  # 2 seconds in milliseconds
-    
+
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" && "$(basename "$script")" != "verify.sh" ]]; then
-            local start_ms=$(date +%s%3N)
+            local start_s=$(date +%s)
             timeout 5 bash "$script" --help > /dev/null 2>&1 || true
-            local end_ms=$(date +%s%3N)
-            local duration=$((end_ms - start_ms))
-            
-            if [[ $duration -gt $benchmark_threshold ]]; then
-                log_warning "Slow script: $(basename "$script") (${duration}ms)"
+            local end_s=$(date +%s)
+            local duration_ms=$(((end_s - start_s) * 1000))
+
+            if [[ $duration_ms -gt $benchmark_threshold ]]; then
+                log_warning "Slow script: $(basename "$script") (${duration_ms}ms)"
                 slow_scripts=$((slow_scripts + 1))
             fi
         fi
     done
-    
+
     # 检查项目大小
     log_info "Checking project size..."
     local project_size=$(du -sm "$PROJECT_ROOT" 2>/dev/null | cut -f1)
     log_info "Project size: ${project_size}MB"
-    
+
     local level_end=$(date +%s)
     local duration=$((level_end - level_start))
-    DURATIONS["performance"]=$duration
-    
+    set_duration "performance" "$duration"
+
     if [[ $slow_scripts -eq 0 ]]; then
-        SCORES["performance"]=1.0
-        RESULTS["performance"]="PASSED"
+        set_score "performance" 1.0
+        set_result "performance" "PASSED"
         log_success "Performance tests passed (${duration}s)"
     else
         local score=$(echo "scale=2; 1 - ($slow_scripts / 10)" | bc 2>/dev/null || echo 0.9)
-        SCORES["performance"]=$score
-        RESULTS["performance"]="WARNING"
+        set_score "performance" "$score"
+        set_result "performance" "WARNING"
         log_warning "Performance tests found $slow_scripts slow scripts"
     fi
-    
+
     return 0
 }
 
@@ -530,35 +630,35 @@ run_performance_tests() {
 
 generate_text_report() {
     local report=""
-    
+
     report+="\n"
     report+="╔══════════════════════════════════════════════════════════════╗\n"
     report+="║              VERIFICATION REPORT (验证报告)                   ║\n"
     report+="╚══════════════════════════════════════════════════════════════╝\n"
     report+="\n"
-    
+
     # 汇总统计
     local end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
-    
+
     report+="Summary:\n"
     report+="  Total Duration: ${total_duration}s\n"
     report+="  Levels Passed:  $PASSED_LEVELS\n"
     report+="  Levels Failed:  $FAILED_LEVELS\n"
     report+="  Levels Skipped: $SKIPPED_LEVELS\n"
     report+="\n"
-    
+
     # 详细结果
     report+="Detailed Results:\n"
     report+="────────────────────────────────────────────────────────────────\n"
-    
+
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
-    
+
     for level in "${levels[@]}"; do
-        local result="${RESULTS[$level]:-SKIPPED}"
-        local score="${SCORES[$level]:-0}"
-        local duration="${DURATIONS[$level]:-0}"
-        
+        local result=$(get_result "$level")
+        local score=$(get_score "$level")
+        local duration=$(get_duration "$level")
+
         local status_icon
         case "$result" in
             "PASSED") status_icon="✓" ;;
@@ -566,27 +666,27 @@ generate_text_report() {
             "WARNING") status_icon="⚠" ;;
             *) status_icon="○" ;;
         esac
-        
+
         report+=$(printf "  %-15s %-10s Score: %.2f  Time: %ss\n" \
             "$level" "[$status_icon $result]" "$score" "$duration")
     done
-    
+
     report+="────────────────────────────────────────────────────────────────\n"
     report+="\n"
-    
+
     # 总分
     calculate_total_score
     report+="Overall Score: $(printf "%.2f" $TOTAL_SCORE) / 1.00\n"
-    
+
     if (( $(echo "$TOTAL_SCORE >= $PASS_SCORE" | bc -l) )); then
         report+="Status: ✓ PASSED\n"
     else
         report+="Status: ✗ FAILED (below threshold $PASS_SCORE)\n"
     fi
-    
+
     report+="\n"
     report+="Generated: $(date '+%Y-%m-%d %H:%M:%S')\n"
-    
+
     echo -e "$report"
 }
 
@@ -599,37 +699,37 @@ generate_json_report() {
     json+="\"failed\":$FAILED_LEVELS,"
     json+="\"skipped\":$SKIPPED_LEVELS,"
     json+="\"levels\":{"
-    
+
     local first=true
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
-    
+
     for level in "${levels[@]}"; do
         [[ "$first" == true ]] || json+=","
         first=false
-        
-        local result="${RESULTS[$level]:-SKIPPED}"
-        local score="${SCORES[$level]:-0}"
-        local duration="${DURATIONS[$level]:-0}"
-        
+
+        local result=$(get_result "$level")
+        local score=$(get_score "$level")
+        local duration=$(get_duration "$level")
+
         json+="\"$level\":{"
         json+="\"result\":\"$result\","
         json+="\"score\":$score,"
         json+="\"duration\":$duration"
         json+="}"
     done
-    
+
     json+="}}"
-    
+
     echo "$json"
 }
 
 generate_markdown_report() {
     local md="# Verification Report\n\n"
     md+="**Generated:** $(date '+%Y-%m-%d %H:%M:%S')\n\n"
-    
+
     local end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
-    
+
     md+="## Summary\n\n"
     md+="| Metric | Value |\n"
     md+="|--------|-------|\n"
@@ -638,41 +738,45 @@ generate_markdown_report() {
     md+="| Levels Failed | $FAILED_LEVELS |\n"
     md+="| Levels Skipped | $SKIPPED_LEVELS |\n"
     md+="| Overall Score | $(printf "%.2f" $TOTAL_SCORE) |\n\n"
-    
+
     md+="## Detailed Results\n\n"
     md+="| Level | Result | Score | Duration |\n"
     md+="|-------|--------|-------|----------|\n"
-    
+
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
-    
+
     for level in "${levels[@]}"; do
-        local result="${RESULTS[$level]:-SKIPPED}"
-        local score="${SCORES[$level]:-0}"
-        local duration="${DURATIONS[$level]:-0}"
-        
+        local result=$(get_result "$level")
+        local score=$(get_score "$level")
+        local duration=$(get_duration "$level")
+
         md+="| $level | $result | $score | ${duration}s |\n"
     done
-    
+
     md+="\n## Status\n\n"
-    
+
     if (( $(echo "$TOTAL_SCORE >= $PASS_SCORE" | bc -l) )); then
         md+=":white_check_mark: **PASSED**\n"
     else
         md+=":x: **FAILED** (below threshold $PASS_SCORE)\n"
     fi
-    
+
     echo "$md"
 }
 
 calculate_total_score() {
     local total=0
     local count=0
-    
-    for score in "${SCORES[@]}"; do
-        total=$(echo "$total + $score" | bc 2>/dev/null || echo $total)
-        count=$((count + 1))
+    local levels=("syntax" "static" "unit" "integration" "security" "performance")
+
+    for level in "${levels[@]}"; do
+        local score=$(get_score "$level")
+        if [[ -n "$score" ]]; then
+            total=$(echo "$total + $score" | bc 2>/dev/null || echo $total)
+            count=$((count + 1))
+        fi
     done
-    
+
     if [[ $count -gt 0 ]]; then
         TOTAL_SCORE=$(echo "scale=2; $total / $count" | bc 2>/dev/null || echo 0)
     fi
@@ -681,7 +785,7 @@ calculate_total_score() {
 # 创建检查点
 create_checkpoint() {
     local checkpoint_name="verify-$(date +%Y%m%d-%H%M%S)"
-    
+
     if [[ -f "${SCRIPT_DIR}/create-checkpoint.sh" ]]; then
         bash "${SCRIPT_DIR}/create-checkpoint.sh" "$checkpoint_name" > /dev/null 2>&1
         log_info "Checkpoint created: $checkpoint_name"
@@ -709,13 +813,12 @@ Examples:
   $(basename "$0") --level syntax     # Run only syntax check
   $(basename "$0") --format json      # Output as JSON
   $(basename "$0") --fix              # Auto-fix issues
-
 EOF
 }
 
 parse_args() {
     while [[ $# -gt 0 ]]; do
-        case $1 in
+        case "$1" in
             --level)
                 LEVEL="$2"
                 shift 2
@@ -744,6 +847,11 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            -*)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -755,24 +863,24 @@ parse_args() {
 
 main() {
     parse_args "$@"
-    
+
     # 创建运行时目录
     mkdir -p "$RUNTIME_DIR" "$REPORTS_DIR" "$CHECKPOINTS_DIR"
-    
+
     # 加载配置
     load_config
-    
+
     echo ""
     echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║         HARNESS VERIFICATION SYSTEM (验证系统)               ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    
+
     log_info "Mode: $MODE"
     log_info "Pass Threshold: $PASS_SCORE"
     [[ "$FIX" == true ]] && log_info "Auto-fix: enabled"
     [[ "$PARALLEL" == true ]] && log_info "Parallel execution: enabled"
-    
+
     # 验证特定级别或全部
     if [[ -n "$LEVEL" ]]; then
         case "$LEVEL" in
@@ -804,18 +912,19 @@ main() {
         # 运行所有级别
         run_syntax_check
         local syntax_exit=$?
-        
+
         run_static_analysis
-        
+
         run_unit_tests
         local unit_exit=$?
-        
+
         run_integration_tests
         run_security_scan
         run_performance_tests
-        
+
         # 统计结果
-        for result in "${RESULTS[@]}"; do
+        for level in "syntax" "static" "unit" "integration" "security" "performance"; do
+            local result=$(get_result "$level")
             case "$result" in
                 "PASSED")
                     PASSED_LEVELS=$((PASSED_LEVELS + 1))
@@ -829,10 +938,10 @@ main() {
             esac
         done
     fi
-    
+
     # 计算总分
     calculate_total_score
-    
+
     # 生成报告
     local report=""
     case "$FORMAT" in
@@ -846,21 +955,21 @@ main() {
             report=$(generate_text_report)
             ;;
     esac
-    
+
     # 输出报告
     echo -e "$report"
-    
+
     # 保存到文件
     if [[ -n "$OUTPUT" ]]; then
         echo -e "$report" > "$OUTPUT"
         log_info "Report saved to: $OUTPUT"
     fi
-    
+
     # 创建检查点
     if [[ "$MODE" == "checkpoint" ]]; then
         create_checkpoint
     fi
-    
+
     # 返回状态
     if [[ $FAILED_LEVELS -gt 0 ]]; then
         echo ""

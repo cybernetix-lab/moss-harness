@@ -183,7 +183,7 @@ confirm_switch() {
     echo "═══════════════════════════════════════════════════════════════"
     echo "  Agent Switch Confirmation"
     echo "═══════════════════════════════════════════════════════════════"
-    echo "  From: ${CURRENT_AGENT:-'(none active)'}
+    echo "  From: ${CURRENT_AGENT:-'(none active)'}"
     echo "  To:   $TARGET_AGENT"
     echo ""
     

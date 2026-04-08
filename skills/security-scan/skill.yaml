@@ -57,43 +57,52 @@ detectors:
     severity: critical
     tags: [secrets, credentials]
     patterns:
-      - "api[_-]?key\s*[=:]\s*['\"][^'\"]{16,}['\"]"
-      - "password\s*[=:]\s*['\"][^'\"]+['\"]"
-      - "secret\s*[=:]\s*['\"][^'\"]+['\"]"
-      - "token\s*[=:]\s*['\"][^'\"]{20,}['\"]"
+      - >-
+        api[_-]?key\s*[=:]\s*["'][^"']{16,}["']
+      - >-
+        password\s*[=:]\s*["'][^"']+["']
+      - >-
+        secret\s*[=:]\s*["'][^"']+["']
+      - >-
+        token\s*[=:]\s*["'][^"']{20,}["']
       - "-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"
     message: "检测到硬编码的敏感信息"
-  
+
   - name: sql-injection
     severity: critical
     tags: [injection, database]
     patterns:
-      - "query\s*\(\s*.*\+.*\)"
-      - "exec\s*\(\s*[`\"'].*\$\{.*\}"
+      - >-
+        query\s*\(\s*.*\+.*\)
+      - >-
+        exec\s*\(\s*[`"'].*\$\{.*\}
     message: "可能存在 SQL 注入风险"
-  
+
   - name: xss-vulnerability
     severity: high
     tags: [xss, frontend]
     patterns:
-      - "innerHTML\s*="
+      - >-
+        innerHTML\s*=
       - "dangerouslySetInnerHTML"
     message: "可能存在 XSS 风险，请确保内容已转义"
-  
+
   - name: insecure-random
     severity: medium
     tags: [cryptography]
     patterns:
-      - "Math\.random\(\)"
+      - "Math\\.random\\(\\)"
     message: "Math.random() 不适用于加密场景"
     suggestion: "使用 crypto.getRandomValues() 替代"
-  
+
   - name: eval-usage
     severity: high
     tags: [code-injection]
     patterns:
-      - "eval\s*\("
-      - "new\s+Function\s*\("
+      - >-
+        eval\s*\(
+      - >-
+        new\s+Function\s*\(
     message: "避免使用 eval 或 new Function"
 
 actions:
@@ -104,7 +113,7 @@ actions:
       - 遍历所有目标文件
       - 应用所有检测器
       - 生成报告
-  
+
   - type: fix
     description: 自动修复可修复的问题
     tags: [remediation]

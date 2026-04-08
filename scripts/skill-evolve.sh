@@ -800,18 +800,23 @@ discover_new_skills() {
     local min_requirements=$(get_config_value "min_requirements_met" "4")
     local proposals_created=0
     
-    echo "$candidates" | python3 << EOF | while read -r line; do
+    # 使用临时文件避免管道问题
+    local temp_candidates="${TEMP_DIR}/candidates.json"
+    echo "$candidates" > "$temp_candidates"
+    
+    python3 << EOF > "${TEMP_DIR}/candidate_lines.txt"
 import json
 import sys
 
-candidates = json.load(sys.stdin)
-min_quality = $min_quality
+with open("$temp_candidates", 'r') as f:
+    candidates = json.load(f)
 
 for i, candidate in enumerate(candidates):
     # 输出候选信息供bash处理
     print(json.dumps(candidate, ensure_ascii=False))
 EOF
-    do
+
+    while read -r line; do
         local candidate="$line"
         local code=$(echo "$candidate" | python3 -c "import json,sys; print(json.load(sys.stdin)['code'])")
         local freq=$(echo "$candidate" | python3 -c "import json,sys; print(json.load(sys.stdin)['frequency'])")
@@ -885,7 +890,7 @@ PROPOSAL
         echo "    质量分数: $overall_score"
         echo "    出现频率: $freq 次 / $sessions 个会话"
         echo "    语言: $primary_lang"
-    done
+    done < "${TEMP_DIR}/candidate_lines.txt"
     
     echo -e "\n${BLUE}══════════════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}✅ 发现完成${NC}"
