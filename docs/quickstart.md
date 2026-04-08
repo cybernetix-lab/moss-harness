@@ -130,7 +130,7 @@ Next steps:
 ./scripts/agent-list.sh
 
 # 设置当前 Agent
-export ECC_AGENT=implementer
+export AHARNESS_AGENT=implementer
 ```
 
 ### 验证

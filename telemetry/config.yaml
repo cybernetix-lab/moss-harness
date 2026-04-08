@@ -58,6 +58,43 @@ metrics:
   # 聚合间隔
   aggregation_interval_seconds: 60
 
+# Token 消耗观测配置（基于信息论）
+token_telemetry:
+  import: ./token-telemetry.yaml
+  
+  # 信息论优化指标
+  information_theory_metrics:
+    enabled: true
+    metrics:
+      - information_entropy        # 信息熵
+      - token_information_density  # Token 信息密度
+      - signal_to_noise_ratio      # 信噪比
+      - compression_ratio          # 压缩率
+      
+  # 成本追踪
+  cost_tracking:
+    enabled: true
+    models:
+      - name: claude-3-opus
+        input_price_per_1k: 15.0    # USD
+        output_price_per_1k: 75.0   # USD
+      - name: claude-3-5-sonnet
+        input_price_per_1k: 3.0     # USD
+        output_price_per_1k: 15.0   # USD
+      - name: gpt-4
+        input_price_per_1k: 30.0    # USD
+        output_price_per_1k: 60.0   # USD
+      - name: gpt-3.5-turbo
+        input_price_per_1k: 0.5     # USD
+        output_price_per_1k: 1.5    # USD
+        
+  # 预算管理
+  budget_management:
+    enabled: true
+    default_budget_per_task: 10000  # tokens
+    alert_threshold_percent: 80
+    hard_limit_percent: 95
+
 checkpoints:
   # 自动检查点
   auto_create:

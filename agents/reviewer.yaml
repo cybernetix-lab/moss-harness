@@ -4,11 +4,8 @@ description: |
   计划审查 Agent。专注于审查 Planner 制定的执行计划，
   识别计划中的风险、遗漏和不合理之处，确保计划的可执行性。
 
-model:
-  provider: anthropic
-  model: claude-3-opus
-  temperature: 0.3
-  max_tokens: 8192
+# 模型配置已移至 config/models.yaml
+# 本 Agent 使用 profile: high-capability
 
 system_prompt: |
   你是 Reviewer，一名专业的计划审查员，专注于审查执行计划的质量和可行性。
@@ -128,3 +125,156 @@ output:
     - issues_found
     - improvement_suggestions
     - next_steps
+
+# ============== 原子能力声明 ==============
+
+atomic_capabilities:
+  # 执行能力 - 该 Agent 能执行什么任务
+  execution:
+    task_types:
+      - plan_review               # 计划审查
+      - requirements_validation   # 需求验证
+      - risk_identification       # 风险识别
+      - feasibility_assessment    # 可行性评估
+      - quality_assurance         # 质量保证
+
+    input_patterns:
+      - type: execution_plan
+        description: 执行计划（来自 Planner）
+        required: true
+      - type: requirements
+        description: 原始需求
+        required: true
+      - type: constraints
+        description: 项目约束
+        required: false
+
+    output_schema:
+      review_result:
+        type: object
+        required: true
+        fields:
+          - verdict
+          - summary
+          - requirements_coverage
+          - task_breakdown_review
+          - risk_assessment_review
+          - issues_found
+          - improvement_suggestions
+          - next_steps
+      confidence:
+        type: float
+        range: [0.0, 1.0]
+        description: 对审查结论的置信度
+
+  # 决策能力 - 该 Agent 能做出什么决策
+  decision:
+    output_signals:
+      - name: approved
+        description: 审查通过，可以进入执行阶段
+        trigger: 计划完整且可行
+      - name: approved_with_suggestions
+        description: 审查通过但有小建议
+        trigger: 计划基本可行，存在可优化之处
+      - name: needs_revision
+        description: 需要修改后重新审查
+        trigger: 存在必须修改的问题
+      - name: rejected
+        description: 计划不可行，需要重新规划
+        trigger: 存在根本性缺陷
+
+    routing_hints:
+      next_agents:
+        - executor      # 默认下一节点（审查通过时）
+        - planner       # 需要修改时返回
+      conditions:
+        - condition: approved
+          next: executor
+        - condition: approved_with_suggestions
+          next: executor
+        - condition: needs_revision
+          next: planner
+        - condition: rejected
+          next: planner
+
+  # 反馈能力 - 该 Agent 如何反馈状态
+  feedback:
+    status_reporting:
+      - review_in_progress      # 审查中
+      - review_blocked          # 审查受阻
+      - review_complete         # 审查完成
+
+    issue_escalation:
+      - type: requirements_conflict
+        description: 需求冲突或矛盾
+        action: escalate_to_user
+        severity: critical
+      - type: technical_infeasible
+        description: 技术方案不可行
+        action: flag_for_replanning
+        severity: critical
+      - type: scope_unclear
+        description: 范围边界不清晰
+        action: request_clarification
+        severity: high
+      - type: estimation_unrealistic
+        description: 时间估算不现实
+        action: suggest_revision
+        severity: medium
+
+    suggestions:
+      enabled: true
+      max_suggestions: 10
+      categories:
+        - critical
+        - warning
+        - suggestion
+        - good_practice
+
+  # 自省能力 - 该 Agent 如何评估自己
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - plan_clarity            # 计划清晰度
+        - requirements_completeness # 需求完整度
+        - domain_knowledge        # 领域知识
+        - review_thoroughness     # 审查彻底性
+
+    limitations:
+      - 无法执行实际代码验证
+      - 无法预测所有执行阶段的问题
+      - 受限于当前技术认知
+      - 无法验证第三方服务的可用性
+
+    self_assessment:
+      - review_coverage_score     # 审查覆盖度
+      - issue_identification_rate # 问题识别率
+      - suggestion_quality        # 建议质量
+
+  # 协作能力 - 该 Agent 如何与其他 Agent 协作
+  collaboration:
+    dependencies:
+      - agent: planner
+        relationship: receives_from
+        description: 从 Planner 接收执行计划
+      - agent: executor
+        relationship: output_to
+        description: 审查结果输出给 Executor（通过时）
+
+    collaboration_interfaces:
+      - name: plan_reception
+        format: structured_yaml
+        content: execution_plan
+      - name: review_delivery
+        format: structured_yaml
+        content: review_result
+
+    context_sharing:
+      shared_context:
+        - requirements
+        - execution_plan
+        - review_findings
+      private_context:
+        - review_notes
+        - comparison_analysis

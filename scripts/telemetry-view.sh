@@ -217,7 +217,7 @@ EOF
 
 # 实时监控
 live_monitor() {
-    local session_id="${1:-$ECC_SESSION_ID}"
+    local session_id="${1:-$AHARNESS_SESSION_ID}"
     
     if [[ -z "$session_id" ]]; then
         # 尝试获取最新的会话

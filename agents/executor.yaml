@@ -4,11 +4,8 @@ description: |
   执行 Agent。专注于按照既定计划高质量地实现功能。
   不关心整体规划，只专注于把分配的任务做到最好。
 
-model:
-  provider: anthropic
-  model: claude-3-5-sonnet
-  temperature: 0.2
-  max_tokens: 8192
+# 模型配置已移至 config/models.yaml
+# 本 Agent 使用 profile: balanced
 
 system_prompt: |
   你是 Executor，一名专业的代码实现工程师，专注于高质量地完成任务。
@@ -116,3 +113,176 @@ output:
     - linter_results
     - issues_encountered
     - completion_status
+
+# ============== 原子能力声明 ==============
+
+atomic_capabilities:
+  # 执行能力 - 该 Agent 能执行什么任务
+  execution:
+    task_types:
+      - code_implementation       # 代码实现
+      - test_writing             # 测试编写
+      - code_refactoring         # 代码重构
+      - bug_fixing               # Bug 修复
+      - documentation            # 文档编写
+      - self_verification        # 自测验证
+    
+    input_patterns:
+      - type: execution_plan
+        description: 执行计划
+        required: true
+      - type: review_suggestions
+        description: 审查建议
+        required: false
+      - type: previous_attempt
+        description: 之前的尝试（用于修复模式）
+        required: false
+      - type: fix_instructions
+        description: 修复指令
+        required: false
+    
+    output_schema:
+      execution_result:
+        type: object
+        required: true
+        fields:
+          - task_id
+          - status
+          - code_changes
+          - test_results
+          - linter_results
+          - issues_encountered
+          - completion_status
+      confidence:
+        type: float
+        range: [0.0, 1.0]
+        description: 对执行结果的置信度
+  
+  # 决策能力 - 该 Agent 能做出什么决策
+  decision:
+    output_signals:
+      - name: execution_complete
+        description: 执行完成，可以进入评估
+        trigger: 代码实现并通过测试
+      - name: execution_failed
+        description: 执行失败
+        trigger: 测试失败或编译错误
+      - name: plan_defect_detected
+        description: 发现计划缺陷
+        trigger: 计划不可行或依赖缺失
+      - name: need_clarification
+        description: 需要澄清
+        trigger: 验收标准不明确
+      - name: partial_completion
+        description: 部分完成
+        trigger: 部分任务完成，部分受阻
+    
+    routing_hints:
+      next_agents:
+        - evaluator    # 默认下一节点
+      conditions:
+        - condition: execution_complete
+          next: evaluator
+        - condition: execution_failed
+          next: executor  # 自我重试
+        - condition: plan_defect_detected
+          next: planner   # 返回重新规划
+        - condition: need_clarification
+          next: user      # 需要用户输入
+        - condition: partial_completion
+          next: evaluator # 继续评估
+  
+  # 反馈能力 - 该 Agent 如何反馈状态
+  feedback:
+    status_reporting:
+      - execution_in_progress   # 执行中
+      - execution_blocked       # 执行受阻
+      - execution_complete      # 执行完成
+      - execution_failed        # 执行失败
+      - awaiting_dependencies   # 等待依赖
+    
+    issue_escalation:
+      - type: plan_defect
+        description: 发现计划缺陷
+        action: escalate_to_planner
+        severity: critical
+      - type: dependency_missing
+        description: 依赖缺失
+        action: flag_for_resolution
+        severity: high
+      - type: technical_blocker
+        description: 技术阻碍
+        action: request_help
+        severity: medium
+      - type: scope_mismatch
+        description: 范围不匹配
+        action: flag_for_review
+        severity: medium
+      - type: test_failure
+        description: 测试失败
+        action: retry_or_escalate
+        severity: high
+    
+    progress_reporting:
+      enabled: true
+      granularity: per_task
+      metrics:
+        - tasks_completed
+        - tests_passed
+        - code_coverage
+        - time_spent
+  
+  # 自省能力 - 该 Agent 如何评估自己
+  introspection:
+    confidence_scoring:
+      enabled: true
+      factors:
+        - code_quality            # 代码质量
+        - test_coverage           # 测试覆盖度
+        - plan_clarity            # 计划清晰度
+        - domain_expertise        # 领域专业知识
+    
+    limitations:
+      - 无法修改计划范围
+      - 无法绕过测试验证
+      - 无法引入未批准的依赖
+      - 无法访问生产环境
+    
+    self_assessment:
+      - code_quality_score        # 代码质量自评
+      - test_coverage_score       # 测试覆盖度
+      - adherence_to_plan         # 计划遵循度
+      - risk_identified           # 识别的风险
+  
+  # 协作能力 - 该 Agent 如何与其他 Agent 协作
+  collaboration:
+    dependencies:
+      - agent: planner
+        relationship: input_from
+        description: 从 Planner 接收执行计划
+      - agent: evaluator
+        relationship: output_to
+        description: 执行结果输出给 Evaluator
+      - agent: reviewer
+        relationship: receives_feedback_from
+        description: 接收 Reviewer 的建议
+    
+    collaboration_interfaces:
+      - name: plan_reception
+        format: structured_yaml
+        content: execution_plan
+      - name: result_delivery
+        format: structured_yaml
+        content: execution_result
+      - name: feedback_reception
+        format: structured_yaml
+        content: review_suggestions
+    
+    context_sharing:
+      shared_context:
+        - execution_plan
+        - code_changes
+        - test_results
+      private_context:
+        - implementation_notes
+        - debugging_logs

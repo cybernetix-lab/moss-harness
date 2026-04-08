@@ -279,7 +279,7 @@ context:
 
 ```bash
 # 设置环境变量
-export ECC_AGENT=executor
+export AHARNESS_AGENT=executor
 
 # 或在会话中切换
 ./scripts/agent-switch.sh evaluator

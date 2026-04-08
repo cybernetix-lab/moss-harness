@@ -78,10 +78,10 @@ docker-compose up -d
 
 ```bash
 # 设置 exporter 端口
-export ECC_PROMETHEUS_PORT=8080
+export AHARNESS_PROMETHEUS_PORT=8080
 
 # 设置遥测数据目录
-export ECC_TELEMETRY_DIR=/path/to/telemetry
+export AHARNESS_TELEMETRY_DIR=/path/to/telemetry
 
 # 启动 exporter
 ./scripts/telemetry-prometheus-exporter.sh start
@@ -403,7 +403,7 @@ prometheus:
 
 ```bash
 # 只导出活跃会话的指标
-export ECC_EXPORT_INACTIVE=false
+export AHARNESS_EXPORT_INACTIVE=false
 ./scripts/telemetry-prometheus-exporter.sh start
 ```
 
