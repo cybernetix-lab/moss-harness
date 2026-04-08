@@ -10,6 +10,8 @@ rules/
 ├── typescript/       # TypeScript 规则
 ├── python/           # Python 规则
 ├── react/            # React 规则
+├── yaml/             # YAML 规则
+├── security/         # 安全规则
 └── architecture/     # 架构规则
 ```
 

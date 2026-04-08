@@ -1,0 +1,163 @@
+name: memory_search
+description: |
+  搜索 Agent 的记忆/上下文存储。用于检索历史会话、之前的决策、
+  关键信息等。支持语义搜索和关键词搜索。
+
+input:
+  type: object
+  properties:
+    query:
+      type: string
+      description: 搜索查询（关键词或语义描述）
+    
+    search_type:
+      type: string
+      description: 搜索类型
+      default: semantic
+      enum: [semantic, keyword, hybrid]
+    
+    context_type:
+      type: string
+      description: 上下文类型过滤
+      default: all
+      enum: [all, session, decision, task, agent_output]
+    
+    time_range:
+      type: object
+      description: 时间范围过滤
+      properties:
+        from:
+          type: string
+          description: 开始时间 (ISO 8601)
+        to:
+          type: string
+          description: 结束时间 (ISO 8601)
+        last_hours:
+          type: integer
+          description: 最近 N 小时
+    
+    max_results:
+      type: integer
+      description: 最大结果数
+      default: 10
+      maximum: 50
+    
+    min_relevance:
+      type: number
+      description: 最小相关度分数 (0-1)
+      default: 0.7
+      minimum: 0
+      maximum: 1
+  
+  required: [query]
+
+output:
+  type: object
+  properties:
+    results:
+      type: array
+      description: 搜索结果列表
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: 记忆条目 ID
+          content:
+            type: string
+            description: 记忆内容
+          context_type:
+            type: string
+            description: 上下文类型
+          timestamp:
+            type: string
+            description: 创建时间 (ISO 8601)
+          relevance_score:
+            type: number
+            description: 相关度分数 (0-1)
+          metadata:
+            type: object
+            description: 额外元数据
+            properties:
+              agent:
+                type: string
+                description: 关联的 Agent
+              task_id:
+                type: string
+                description: 关联的任务 ID
+              tags:
+                type: array
+                items:
+                  type: string
+    
+    total_found:
+      type: integer
+      description: 找到的总数
+    
+    search_duration_ms:
+      type: integer
+      description: 搜索耗时
+    
+    query_expansion:
+      type: array
+      description: 查询扩展词
+      items:
+        type: string
+  
+  required: [results, total_found]
+
+errors:
+  - name: MemoryNotAvailableError
+    code: MEMORY_NOT_AVAILABLE
+    description: 记忆存储不可用
+  
+  - name: InvalidQueryError
+    code: INVALID_QUERY
+    description: 查询格式无效
+  
+  - name: SearchTimeoutError
+    code: SEARCH_TIMEOUT
+    description: 搜索超时
+
+examples:
+  - name: 语义搜索历史决策
+    input:
+      query: "关于用户认证的设计决策"
+      search_type: semantic
+      context_type: decision
+      max_results: 5
+    output:
+      results:
+        - id: "mem_001"
+          content: "决定使用 JWT 进行用户认证"
+          context_type: decision
+          timestamp: "2024-01-15T10:30:00Z"
+          relevance_score: 0.92
+          metadata:
+            agent: planner
+            task_id: "task_123"
+            tags: ["auth", "jwt", "security"]
+      total_found: 12
+      search_duration_ms: 150
+
+  - name: 关键词搜索最近任务
+    input:
+      query: "database schema"
+      search_type: keyword
+      time_range:
+        last_hours: 24
+      max_results: 10
+    output:
+      results:
+        - id: "mem_002"
+          content: "设计了用户表和订单表的关联关系"
+          context_type: task
+          timestamp: "2024-01-16T08:00:00Z"
+          relevance_score: 0.85
+      total_found: 3
+      search_duration_ms: 45
+
+constraints:
+  max_query_length: 500
+  retention_days: 30
+  enable_semantic_search: true

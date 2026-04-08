@@ -1,0 +1,175 @@
+name: network_search
+description: |
+  执行网络搜索。支持多种搜索引擎，用于查找技术资料、
+  最佳实践、问题解决方案等。
+
+input:
+  type: object
+  properties:
+    query:
+      type: string
+      description: 搜索查询
+    
+    engine:
+      type: string
+      description: 搜索引擎
+      default: auto
+      enum: [auto, google, bing, duckduckgo, perplexity]
+    
+    search_type:
+      type: string
+      description: 搜索类型
+      default: web
+      enum: [web, news, technical, code]
+    
+    max_results:
+      type: integer
+      description: 最大结果数
+      default: 10
+      maximum: 50
+    
+    time_range:
+      type: string
+      description: 时间范围
+      default: any
+      enum: [any, day, week, month, year]
+    
+    language:
+      type: string
+      description: 语言限制
+      default: ""
+    
+    safe_search:
+      type: boolean
+      description: 是否启用安全搜索
+      default: true
+  
+  required: [query]
+
+output:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: 搜索是否成功
+    
+    engine_used:
+      type: string
+      description: 实际使用的搜索引擎
+    
+    query:
+      type: string
+      description: 实际执行的查询
+    
+    results:
+      type: array
+      description: 搜索结果列表
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+            description: 结果标题
+          url:
+            type: string
+            description: 结果 URL
+          snippet:
+            type: string
+            description: 内容摘要
+          source:
+            type: string
+            description: 来源网站
+          published_date:
+            type: string
+            description: 发布日期
+          relevance_score:
+            type: number
+            description: 相关度分数
+    
+    related_queries:
+      type: array
+      description: 相关搜索建议
+      items:
+        type: string
+    
+    total_results:
+      type: integer
+      description: 估计的总结果数
+    
+    search_duration_ms:
+      type: integer
+      description: 搜索耗时
+  
+  required: [success, query, results]
+
+errors:
+  - name: SearchError
+    code: SEARCH_ERROR
+    description: 搜索执行失败
+  
+  - name: RateLimitError
+    code: RATE_LIMIT
+    description: 达到搜索频率限制
+  
+  - name: NetworkError
+    code: NETWORK_ERROR
+    description: 网络连接错误
+  
+  - name: InvalidQueryError
+    code: INVALID_QUERY
+    description: 查询格式无效
+
+examples:
+  - name: 技术问题搜索
+    input:
+      query: "React useEffect dependency array best practices"
+      search_type: technical
+      max_results: 5
+    output:
+      success: true
+      engine_used: "duckduckgo"
+      query: "React useEffect dependency array best practices"
+      results:
+        - title: "A Complete Guide to useEffect"
+          url: "https://overreacted.io/a-complete-guide-to-useeffect/"
+          snippet: "This is a deep dive into useEffect..."
+          source: "overreacted.io"
+          relevance_score: 0.95
+      related_queries:
+        - "React hooks best practices"
+        - "useEffect cleanup function"
+      total_results: 1250000
+      search_duration_ms: 800
+
+  - name: 代码示例搜索
+    input:
+      query: "python asyncio example"
+      search_type: code
+      time_range: year
+      max_results: 3
+    output:
+      success: true
+      engine_used: "google"
+      query: "python asyncio example"
+      results:
+        - title: "Async IO in Python: A Complete Walkthrough"
+          url: "https://realpython.com/async-io-python/"
+          snippet: "asyncio is a library to write concurrent code..."
+          source: "realpython.com"
+          published_date: "2024-01-10"
+          relevance_score: 0.92
+      total_results: 890000
+      search_duration_ms: 600
+
+constraints:
+  max_query_length: 500
+  max_requests_per_minute: 20
+  cache_ttl_hours: 1
+  allowed_search_types:
+    - technical
+    - programming
+    - documentation
+    - best_practices
+  blocked_domains:
+    - "*.spam.*"
+    - "*.malware.*"

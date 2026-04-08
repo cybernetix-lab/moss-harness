@@ -58,7 +58,8 @@ parse_skill() {
     
     # 获取技能目录（相对于 skills 目录的路径）
     local skill_dir=$(dirname "$skill_file")
-    local relative_path=$(realpath --relative-to="$SKILLS_DIR" "$skill_dir")
+    # macOS compatible relative path calculation
+    local relative_path=$(echo "$skill_dir" | sed "s|^$SKILLS_DIR/||")
     
     echo "${skill_name}|${version}|${description}|${tags}|${relative_path}"
 }

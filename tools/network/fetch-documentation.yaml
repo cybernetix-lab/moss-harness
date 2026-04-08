@@ -1,0 +1,195 @@
+name: network_fetch_documentation
+description: |
+  获取在线文档内容。支持获取 API 文档、技术文档、
+  官方指南等，并自动解析和缓存。
+
+input:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 文档 URL
+    
+    format:
+      type: string
+      description: 期望的文档格式
+      default: auto
+      enum: [auto, markdown, html, json, yaml, text]
+    
+    extract_content:
+      type: boolean
+      description: 是否提取主要内容（去除导航等）
+      default: true
+    
+    max_length:
+      type: integer
+      description: 最大内容长度（字符）
+      default: 50000
+      maximum: 100000
+    
+    cache:
+      type: boolean
+      description: 是否使用缓存
+      default: true
+    
+    follow_redirects:
+      type: boolean
+      description: 是否跟随重定向
+      default: true
+    
+    timeout:
+      type: integer
+      description: 请求超时（秒）
+      default: 30
+      maximum: 120
+  
+  required: [url]
+
+output:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: 是否成功获取
+    
+    url:
+      type: string
+      description: 最终 URL（考虑重定向）
+    
+    title:
+      type: string
+      description: 文档标题
+    
+    content:
+      type: string
+      description: 文档内容
+    
+    format:
+      type: string
+      description: 实际内容格式
+    
+    metadata:
+      type: object
+      description: 文档元数据
+      properties:
+        author:
+          type: string
+          description: 作者
+        publish_date:
+          type: string
+          description: 发布日期
+        last_modified:
+          type: string
+          description: 最后修改时间
+        version:
+          type: string
+          description: 文档版本
+    
+    links:
+      type: array
+      description: 文档中的链接
+      items:
+        type: object
+        properties:
+          text:
+            type: string
+            description: 链接文本
+          url:
+            type: string
+            description: 链接 URL
+          type:
+            type: string
+            description: 链接类型
+            enum: [internal, external, anchor]
+    
+    from_cache:
+      type: boolean
+      description: 是否来自缓存
+    
+    fetch_duration_ms:
+      type: integer
+      description: 获取耗时
+  
+  required: [success, url]
+
+errors:
+  - name: NetworkError
+    code: NETWORK_ERROR
+    description: 网络连接错误
+  
+  - name: TimeoutError
+    code: TIMEOUT
+    description: 请求超时
+  
+  - name: HttpError
+    code: HTTP_ERROR
+    description: HTTP 错误 (4xx, 5xx)
+  
+  - name: ContentParseError
+    code: PARSE_ERROR
+    description: 内容解析失败
+  
+  - name: ContentTooLargeError
+    code: CONTENT_TOO_LARGE
+    description: 内容过大
+
+examples:
+  - name: 获取 API 文档
+    input:
+      url: "https://docs.example.com/api/v2"
+      format: markdown
+      extract_content: true
+    output:
+      success: true
+      url: "https://docs.example.com/api/v2"
+      title: "API Reference v2.0"
+      content: "# API Reference..."
+      format: "markdown"
+      metadata:
+        version: "2.0"
+        last_modified: "2024-01-10T00:00:00Z"
+      links:
+        - text: "Authentication"
+          url: "/api/v2/auth"
+          type: internal
+      from_cache: false
+      fetch_duration_ms: 1200
+
+  - name: 获取 npm 包文档
+    input:
+      url: "https://www.npmjs.com/package/express"
+      max_length: 10000
+    output:
+      success: true
+      url: "https://www.npmjs.com/package/express"
+      title: "express - npm"
+      content: "Fast, unopinionated, minimalist web framework..."
+      format: "html"
+      from_cache: true
+      fetch_duration_ms: 50
+
+constraints:
+  allowed_domains:
+    - "*.github.com"
+    - "*.npmjs.com"
+    - "*.docs.rs"
+    - "*.readthedocs.io"
+    - "*.python.org"
+    - "*.nodejs.org"
+    - "*.typescriptlang.org"
+    - "*.react.dev"
+    - "*.vuejs.org"
+    - "*.angular.io"
+    - "*.mdn.mozilla.net"
+    - "*.stackoverflow.com"
+    - "*.medium.com"
+    - "*.dev.to"
+  blocked_domains:
+    - "*.internal.*"
+    - "*.local"
+    - "localhost"
+    - "127.0.0.1"
+    - "10.*"
+    - "192.168.*"
+  cache_ttl_hours: 24
+  max_requests_per_minute: 30

@@ -18,12 +18,9 @@ fi
 
 # 查找技能
 SKILL_FILE=""
-for category_dir in "${PROJECT_ROOT}/skills"/*; do
-    if [[ -d "$category_dir/$SKILL_NAME" ]]; then
-        SKILL_FILE="${category_dir}/${SKILL_NAME}/skill.yaml"
-        break
-    fi
-done
+if [[ -d "${PROJECT_ROOT}/skills/${SKILL_NAME}" ]]; then
+    SKILL_FILE="${PROJECT_ROOT}/skills/${SKILL_NAME}/skill.yaml"
+fi
 
 if [[ -z "$SKILL_FILE" || ! -f "$SKILL_FILE" ]]; then
     echo "❌ Skill not found: $SKILL_NAME"

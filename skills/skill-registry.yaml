@@ -1,33 +1,33 @@
-# 技能注册表 - 多标签分类系统
-# 所有技能在此注册，不再依赖目录结构
+# Skill Registry - Multi-label Classification System
+# Auto-generated at 2026-04-08T05:30:00Z
 
 registry:
-  # 技能发现配置
+  # Skill discovery configuration
   discovery:
-    # 技能文件匹配模式
+    # Skill file matching pattern
     pattern: "**/skill.yaml"
-    # 扫描路径（相对于项目根目录）
+    # Scan paths (relative to project root)
     paths:
       - "skills/"
-    # 排除路径
+    # Exclude paths
     exclude:
       - "**/evolution/**"
       - "**/deprecated/**"
-  
-  # 标签分类体系
+
+  # Tag taxonomy system
   taxonomy:
-    # 领域标签 (Domain)
+    # Domain tags
     domain:
-      - frontend      # 前端开发
-      - backend       # 后端开发
-      - fullstack     # 全栈开发
-      - mobile        # 移动端
-      - devops        # 运维/DevOps
-      - ai-ml         # AI/机器学习
-      - data          # 数据处理
-      - security      # 安全
-    
-    # 技术栈标签 (Technology)
+      - frontend
+      - backend
+      - fullstack
+      - mobile
+      - devops
+      - ai-ml
+      - data
+      - security
+
+    # Technology tags
     technology:
       - react
       - vue
@@ -44,37 +44,37 @@ registry:
       - aws
       - gcp
       - azure
-    
-    # 任务类型标签 (Task Type)
+
+    # Task type tags
     task_type:
-      - coding        # 编码/开发
-      - review        # 代码审查
-      - testing       # 测试
-      - debugging     # 调试
-      - refactoring   # 重构
-      - documentation # 文档
-      - research      # 研究
-      - analysis      # 分析
-      - optimization  # 优化
-    
-    # 场景标签 (Scenario)
+      - coding
+      - review
+      - testing
+      - debugging
+      - refactoring
+      - documentation
+      - research
+      - analysis
+      - optimization
+
+    # Scenario tags
     scenario:
-      - startup       # 初创项目
-      - enterprise    # 企业级
-      - legacy        # 遗留系统
-      - greenfield    # 全新项目
-      - maintenance   # 维护模式
-    
-    # 复杂度标签 (Complexity)
+      - startup
+      - enterprise
+      - legacy
+      - greenfield
+      - maintenance
+
+    # Complexity tags
     complexity:
-      - beginner      # 初级
-      - intermediate  # 中级
-      - advanced      # 高级
-      - expert        # 专家级
-  
-  # 标签关系定义
+      - beginner
+      - intermediate
+      - advanced
+      - expert
+
+  # Tag relationships
   relationships:
-    # 标签层级关系
+    # Tag hierarchy
     hierarchy:
       javascript:
         parent: frontend
@@ -84,17 +84,63 @@ registry:
         parent: [frontend, javascript]
       vue:
         parent: [frontend, javascript]
-    
-    # 标签互斥关系
+
+    # Mutually exclusive tags
     mutually_exclusive:
-      - [react, vue, angular]  # 同一项目通常不会同时使用
-    
-    # 标签推荐关系
+      - [react, vue, angular]
+
+    # Tag recommendations
     recommendations:
       react:
         suggests: [typescript, frontend, coding]
       security:
         suggests: [review, analysis, testing]
 
-# 已注册技能列表（自动生成，请勿手动编辑）
-skills: []
+# Registered skills list (auto-generated, do not edit manually)
+skills:
+  - name: typescript-patterns
+    version: "1.0.0"
+    description: TypeScript design patterns and best practices
+    path: typescript-patterns
+    tags:
+      - frontend
+      - backend
+      - fullstack
+      - typescript
+      - javascript
+      - coding
+      - refactoring
+      - enterprise
+      - greenfield
+      - advanced
+
+  - name: react-hooks
+    version: "1.0.0"
+    description: React Hooks development patterns
+    path: react-hooks
+    tags:
+      - frontend
+      - react
+      - javascript
+      - typescript
+      - coding
+      - intermediate
+
+  - name: security-scan
+    version: "1.0.0"
+    description: Security vulnerability scanning
+    path: security-scan
+    tags:
+      - security
+      - review
+      - analysis
+      - advanced
+
+  - name: documentation-lookup
+    version: "1.0.0"
+    description: Documentation query and lookup
+    path: documentation-lookup
+    tags:
+      - research
+      - documentation
+      - beginner
