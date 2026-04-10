@@ -164,7 +164,7 @@ awesome-agent-harness/
 ./scripts/agent-list.sh
 
 # 启动特定 Agent 模式
-export AHARNESS_AGENT=implementer
+export MOSS_AGENT=implementer
 
 # 或使用脚本
 ./scripts/agent-start.sh reviewer
@@ -187,16 +187,16 @@ export AHARNESS_AGENT=implementer
 
 ```bash
 # 钩子配置
-export AHARNESS_HOOK_PROFILE=standard  # minimal|standard|strict
-export AHARNESS_DISABLED_HOOKS=        # 禁用的钩子
-export AHARNESS_SESSION_ID=xxx
-export AHARNESS_AGENT=implementer
+export MOSS_HOOK_PROFILE=standard  # minimal|standard|strict
+export MOSS_DISABLED_HOOKS=        # 禁用的钩子
+export MOSS_SESSION_ID=xxx
+export MOSS_AGENT=implementer
 
 # 检查点配置
-export AHARNESS_CHECKPOINT_INTERVAL=10
+export MOSS_CHECKPOINT_INTERVAL=10
 
 # 权限级别
-export AHARNESS_PERMISSION_LEVEL=confirm_required
+export MOSS_PERMISSION_LEVEL=confirm_required
 ```
 
 ## 架构说明

@@ -3,7 +3,7 @@
 load ../test_helper
 
 @test "task-board.sh create should write executor task into pending queue" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
   run "$PROJECT_ROOT/scripts/task-board.sh" create \
     --lane executor \
     --task-id task-001 \
@@ -12,11 +12,11 @@ load ../test_helper
     --priority high
 
   assert_success
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-001.json"
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-001.json"
 }
 
 @test "task-board.sh move should move task between executor states" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
 
   run "$PROJECT_ROOT/scripts/task-board.sh" create \
     --lane executor \
@@ -34,17 +34,106 @@ load ../test_helper
 
   assert_success
   # 确认任务已从 pending 移除
-  if [[ -f "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-001.json" ]]; then
+  if [[ -f "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-001.json" ]]; then
     echo "Expected task-001 to be removed from pending after move"
     return 1
   fi
   # 确认任务已在 claimed 出现
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-001.json"
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-001.json"
   # 确认 JSON 状态已更新为 claimed（脚本会在 move 后更新 status）
-  if ! grep -q '"status":"claimed"' "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-001.json"; then
+  if ! grep -q '"status":"claimed"' "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-001.json"; then
     echo "Expected claimed file JSON to contain status=claimed"
     return 1
   fi
+}
+
+@test "task-board.sh should persist mosscli flow metadata and emit telemetry" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+
+  run "$PROJECT_ROOT/scripts/task-board.sh" create \
+    --lane executor \
+    --task-id task-flow \
+    --task-type code_implementation \
+    --tags frontend,react \
+    --priority high \
+    --run-id run-001 \
+    --stage executor \
+    --flow-sequence 3
+
+  assert_success
+
+  local pending_file="$MOSS_RUNTIME_DIR/task-board/executor/pending/task-flow.json"
+  local claimed_file="$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-flow.json"
+  local telemetry_file="$MOSS_RUNTIME_DIR/telemetry/events.jsonl"
+
+  assert_file_exists "$pending_file"
+  assert_file_exists "$telemetry_file"
+
+  if ! grep -q '"run_id":"run-001"' "$pending_file"; then
+    echo "Expected pending task JSON to contain run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$pending_file"; then
+    echo "Expected pending task JSON to contain stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":3' "$pending_file"; then
+    echo "Expected pending task JSON to contain flow_sequence"
+    return 1
+  fi
+  if ! grep -q '"type":"task.board.created"' "$telemetry_file"; then
+    echo "Expected telemetry to contain task.board.created event"
+    return 1
+  fi
+  if ! grep -q '"run_id":"run-001"' "$telemetry_file"; then
+    echo "Expected create telemetry to contain run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$telemetry_file"; then
+    echo "Expected create telemetry to contain stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":3' "$telemetry_file"; then
+    echo "Expected create telemetry to contain flow_sequence"
+    return 1
+  fi
+
+  run "$PROJECT_ROOT/scripts/task-board.sh" move \
+    --lane executor \
+    --task-id task-flow \
+    --from pending \
+    --to claimed
+
+  assert_success
+  assert_file_exists "$claimed_file"
+  if ! grep -q '"run_id":"run-001"' "$claimed_file"; then
+    echo "Expected claimed task JSON to preserve run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$claimed_file"; then
+    echo "Expected claimed task JSON to preserve stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":3' "$claimed_file"; then
+    echo "Expected claimed task JSON to preserve flow_sequence"
+    return 1
+  fi
+  if ! grep -q '"type":"task.board.moved"' "$telemetry_file"; then
+    echo "Expected telemetry to contain task.board.moved event"
+    return 1
+  fi
+}
+
+@test "task-board.sh should reject lane or task_id with unsafe path characters" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+
+  run "$PROJECT_ROOT/scripts/task-board.sh" create \
+    --lane executor \
+    --task-id ../../owned \
+    --task-type code_implementation
+
+  assert_failure
+  assert_output_contains 'invalid path characters'
 }
 
 @test "roster-loader.sh list executor should return backups and experts from members" {
@@ -67,7 +156,7 @@ load ../test_helper
 }
 
 @test "presence-manager.sh set should write teammate presence file" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
   run "$PROJECT_ROOT/scripts/presence-manager.sh" set \
     --lane executor \
     --agent frontend_executor \
@@ -75,11 +164,11 @@ load ../test_helper
     --availability 1.0
 
   assert_success
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json"
+  assert_file_exists "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json"
 }
 
 @test "presence-manager.sh set should reject availability outside 0..1" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
   run "$PROJECT_ROOT/scripts/presence-manager.sh" set \
     --lane executor \
     --agent frontend_executor \
@@ -88,14 +177,14 @@ load ../test_helper
 
   assert_failure
   assert_output_contains 'availability out of range'
-  if [[ -d "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor" ]] && compgen -G "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/.presence.json.tmp.*" > /dev/null; then
+  if [[ -d "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor" ]] && compgen -G "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/.presence.json.tmp.*" > /dev/null; then
     echo "Expected invalid presence update to clean up temporary files"
     return 1
   fi
 }
 
 @test "presence-manager.sh set should reject unknown lifecycle" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
   run "$PROJECT_ROOT/scripts/presence-manager.sh" set \
     --lane executor \
     --agent frontend_executor \
@@ -107,13 +196,36 @@ load ../test_helper
 }
 
 @test "claim-engine.sh should grant frontend task to frontend_executor before backup" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-frontend.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-frontend.json" <<'EOF'
 {"task_id":"task-frontend","lane":"executor","domain_tags":["frontend","react"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
 
@@ -125,7 +237,7 @@ EOF
     return 1
   fi
   local claim_request_id="${BASH_REMATCH[1]}"
-  local claim_record_file="$AHARNESS_RUNTIME_DIR/claims/$claim_request_id/record.json"
+  local claim_record_file="$MOSS_RUNTIME_DIR/claims/$claim_request_id/record.json"
   assert_file_exists "$claim_record_file"
   if ! grep -q '"request_id":"task_claim_task-frontend_' "$claim_record_file"; then
     echo "Expected claim record to contain request_id"
@@ -143,25 +255,126 @@ EOF
     echo "Expected claim record to contain lifecycle_state=claimed"
     return 1
   fi
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"
-  if ! grep -q '"type":"task.claim.granted"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"
+  if ! grep -q '"type":"task.claim.granted"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected telemetry to contain task.claim.granted event"
     return 1
   fi
-  if ! grep -q '"selected_agent":"frontend_executor"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  if ! grep -q '"selected_agent":"frontend_executor"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected telemetry to record selected agent"
     return 1
   fi
 }
 
+@test "claim-engine.sh should propagate mosscli flow metadata into claim artifacts and telemetry" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+
+  run "$PROJECT_ROOT/scripts/task-board.sh" create \
+    --lane executor \
+    --task-id task-flow-claim \
+    --task-type code_implementation \
+    --tags frontend,react \
+    --priority high \
+    --run-id run-claim-001 \
+    --stage executor \
+    --flow-sequence 7
+  assert_success
+
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+{"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
+EOF
+
+  run "$PROJECT_ROOT/scripts/claim-engine.sh" claim --lane executor --task-id task-flow-claim
+  assert_success
+
+  if [[ ! "$output" =~ \"request_id\":\"([^\"]+)\" ]]; then
+    echo "Expected claim output to contain request_id"
+    return 1
+  fi
+
+  local claim_request_id="${BASH_REMATCH[1]}"
+  local claim_record_file="$MOSS_RUNTIME_DIR/claims/$claim_request_id/record.json"
+  local claimed_task_file="$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-flow-claim.json"
+  local telemetry_file="$MOSS_RUNTIME_DIR/telemetry/events.jsonl"
+
+  assert_file_exists "$claim_record_file"
+  assert_file_exists "$claimed_task_file"
+  assert_file_exists "$telemetry_file"
+
+  if ! grep -q '"run_id":"run-claim-001"' "$claimed_task_file"; then
+    echo "Expected claimed task JSON to contain run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$claimed_task_file"; then
+    echo "Expected claimed task JSON to contain stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":7' "$claimed_task_file"; then
+    echo "Expected claimed task JSON to contain flow_sequence"
+    return 1
+  fi
+  if ! grep -q '"run_id":"run-claim-001"' "$claim_record_file"; then
+    echo "Expected claim record to contain run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$claim_record_file"; then
+    echo "Expected claim record to contain stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":7' "$claim_record_file"; then
+    echo "Expected claim record to contain flow_sequence"
+    return 1
+  fi
+  if ! grep -q '"type":"task.claim.granted"' "$telemetry_file"; then
+    echo "Expected telemetry to contain task.claim.granted event"
+    return 1
+  fi
+  if ! grep -q '"run_id":"run-claim-001"' "$telemetry_file"; then
+    echo "Expected claim telemetry to contain run_id"
+    return 1
+  fi
+  if ! grep -q '"stage":"executor"' "$telemetry_file"; then
+    echo "Expected claim telemetry to contain stage"
+    return 1
+  fi
+  if ! grep -q '"flow_sequence":7' "$telemetry_file"; then
+    echo "Expected claim telemetry to contain flow_sequence"
+    return 1
+  fi
+}
+
 @test "claim-engine.sh should fallback backend task to executor backup when no expert is available" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-backend.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-backend.json" <<'EOF'
 {"task_id":"task-backend","lane":"executor","domain_tags":["backend","api"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
 {"agent":"executor","lane":"executor","lifecycle":"idle","availability":0.9}
 EOF
 
@@ -171,17 +384,17 @@ EOF
   assert_output_contains '"selected_agent":"executor"'
   assert_output_contains '"selected_mode":"backup"'
   assert_output_contains '"fallback_used":true'
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-backend.json"
-  if ! grep -q '"selection_reason":"backup_fallback"' "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-backend.json"; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-backend.json"
+  if ! grep -q '"selection_reason":"backup_fallback"' "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-backend.json"; then
     echo "Expected claimed task JSON to contain selection_reason=backup_fallback"
     return 1
   fi
 }
 
 @test "claim-engine.sh should honor preferred_modes from roster selection policy" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  export AHARNESS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
-  cat > "$AHARNESS_AGENT_REGISTRY" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
 lanes:
   executor:
     selection_policy:
@@ -202,16 +415,16 @@ members:
 selection_policy:
   allow_manual_override: true
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-policy.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-policy.json" <<'EOF'
 {"task_id":"task-policy","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
 {"agent":"executor","lane":"executor","lifecycle":"idle","availability":0.8}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
 
@@ -223,9 +436,9 @@ EOF
 }
 
 @test "claim-engine.sh should keep active experts eligible while candidates only affect preference" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  export AHARNESS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
-  cat > "$AHARNESS_AGENT_REGISTRY" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
 lanes:
   executor:
     selection_policy:
@@ -251,16 +464,16 @@ members:
 selection_policy:
   allow_manual_override: true
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-candidate.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-candidate.json" <<'EOF'
 {"task_id":"task-candidate","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor/presence.json" <<'EOF'
 {"agent":"candidate_frontend_executor","lane":"executor","lifecycle":"idle","availability":0.7}
 EOF
 
@@ -269,28 +482,149 @@ EOF
   assert_success
   assert_output_contains '"selected_agent":"frontend_executor"'
   if grep -q '"selected_agent":"candidate_frontend_executor"' <<<"$output"; then
-    echo "Expected active expert to remain eligible and beat lower-availability candidate"
+    echo "Expected candidate expert to remain ineligible before promotion"
     return 1
   fi
 }
 
+@test "claim-engine.sh should fallback to backup when only candidate experts are available" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: candidate_frontend_executor
+        status: candidate
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-candidate-only.json" <<'EOF'
+{"task_id":"task-candidate-only","lane":"executor","domain_tags":["frontend"],"priority":"high"}
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
+{"agent":"executor","lane":"executor","lifecycle":"idle","availability":0.9}
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/candidate_frontend_executor/presence.json" <<'EOF'
+{"agent":"candidate_frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
+EOF
+
+  run "$PROJECT_ROOT/scripts/claim-engine.sh" claim --lane executor --task-id task-candidate-only
+
+  assert_success
+  assert_output_contains '"selected_agent":"executor"'
+  assert_output_contains '"selected_mode":"backup"'
+}
+
+@test "claim-engine.sh should reject manual override when policy disables it" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: false
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-manual.json" <<'EOF'
+{"task_id":"task-manual","lane":"executor","domain_tags":["frontend"],"priority":"high"}
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/executor/presence.json" <<'EOF'
+{"agent":"executor","lane":"executor","lifecycle":"idle","availability":0.8}
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+{"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
+EOF
+
+  run "$PROJECT_ROOT/scripts/claim-engine.sh" claim --lane executor --task-id task-manual --agent executor
+
+  assert_failure
+  assert_output_contains 'manual override is disabled'
+}
+
+@test "claim-engine.sh should reject lane or task_id with unsafe path characters" {
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+
+  run "$PROJECT_ROOT/scripts/claim-engine.sh" claim --lane executor --task-id ../../owned
+
+  assert_failure
+  assert_output_contains 'invalid path characters'
+}
+
 @test "claim-engine.sh should allow only one concurrent claim for the same task" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-race.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-race.json" <<'EOF'
 {"task_id":"task-race","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
   cat > "$TEST_TEMP_DIR/claim-before-move-hook.sh" <<'EOF'
 #!/usr/bin/env bash
-sleep "${AHARNESS_CLAIM_TEST_DELAY:-0.5}"
+sleep "${MOSS_CLAIM_TEST_DELAY:-0.5}"
 EOF
   chmod +x "$TEST_TEMP_DIR/claim-before-move-hook.sh"
-  export AHARNESS_CLAIM_BEFORE_MOVE_HOOK="$TEST_TEMP_DIR/claim-before-move-hook.sh"
-  export AHARNESS_CLAIM_TEST_DELAY=0.5
+  export MOSS_CLAIM_BEFORE_MOVE_HOOK="$TEST_TEMP_DIR/claim-before-move-hook.sh"
+  export MOSS_CLAIM_TEST_DELAY=0.5
 
   local claim_output_one="$TEST_TEMP_DIR/claim-one.log"
   local claim_output_two="$TEST_TEMP_DIR/claim-two.log"
@@ -322,21 +656,21 @@ EOF
     return 1
   fi
 
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-race.json"
-  if [[ -f "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-race.json" ]]; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-race.json"
+  if [[ -f "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-race.json" ]]; then
     echo "Expected concurrent claim winner to remove task-race from pending"
     return 1
   fi
 
   local claim_record_count
-  claim_record_count="$(find "$AHARNESS_RUNTIME_DIR/claims" -name 'record.json' -print | wc -l | tr -d ' ')"
+  claim_record_count="$(find "$MOSS_RUNTIME_DIR/claims" -name 'record.json' -print | wc -l | tr -d ' ')"
   if [[ "$claim_record_count" -ne 1 ]]; then
     echo "Expected exactly one claim record after concurrent claims"
     return 1
   fi
 
   local granted_count
-  granted_count="$(grep -c '"type":"task.claim.granted"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl" || true)"
+  granted_count="$(grep -c '"type":"task.claim.granted"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl" || true)"
   if [[ "$granted_count" -ne 1 ]]; then
     echo "Expected exactly one task.claim.granted event after concurrent claims"
     return 1
@@ -344,13 +678,36 @@ EOF
 }
 
 @test "claim-engine.sh should reject duplicate claim after task is already claimed" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-duplicate.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-duplicate.json" <<'EOF'
 {"task_id":"task-duplicate","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
 
@@ -359,21 +716,21 @@ EOF
 
   run "$PROJECT_ROOT/scripts/claim-engine.sh" claim --lane executor --task-id task-duplicate
   assert_failure
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-duplicate.json"
-  if [[ -f "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-duplicate.json" ]]; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-duplicate.json"
+  if [[ -f "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-duplicate.json" ]]; then
     echo "Expected duplicate claim target to remain absent from pending"
     return 1
   fi
 
   local claim_record_count
-  claim_record_count="$(find "$AHARNESS_RUNTIME_DIR/claims" -name 'record.json' -print | wc -l | tr -d ' ')"
+  claim_record_count="$(find "$MOSS_RUNTIME_DIR/claims" -name 'record.json' -print | wc -l | tr -d ' ')"
   if [[ "$claim_record_count" -ne 1 ]]; then
     echo "Expected duplicate claim to avoid creating a second claim record"
     return 1
   fi
 
   local granted_count
-  granted_count="$(grep -c '"type":"task.claim.granted"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl" || true)"
+  granted_count="$(grep -c '"type":"task.claim.granted"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl" || true)"
   if [[ "$granted_count" -ne 1 ]]; then
     echo "Expected duplicate claim to avoid a second task.claim.granted event"
     return 1
@@ -381,13 +738,36 @@ EOF
 }
 
 @test "claim-engine.sh should commit transactional claim artifacts consistently" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-txn.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-txn.json" <<'EOF'
 {"task_id":"task-txn","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
 
@@ -398,9 +778,9 @@ EOF
     return 1
   fi
   local claim_request_id="${BASH_REMATCH[1]}"
-  local transaction_dir="$AHARNESS_RUNTIME_DIR/transactions/claims/$claim_request_id"
-  local claim_record_file="$AHARNESS_RUNTIME_DIR/claims/$claim_request_id/record.json"
-  local claimed_task_file="$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-txn.json"
+  local transaction_dir="$MOSS_RUNTIME_DIR/transactions/claims/$claim_request_id"
+  local claim_record_file="$MOSS_RUNTIME_DIR/claims/$claim_request_id/record.json"
+  local claimed_task_file="$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-txn.json"
 
   assert_file_exists "$transaction_dir/manifest.json"
   assert_file_exists "$transaction_dir/claimed-task.json"
@@ -414,22 +794,45 @@ EOF
 
   assert_file_exists "$claimed_task_file"
   assert_file_exists "$claim_record_file"
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"
-  if [[ -f "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-txn.json" ]]; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"
+  if [[ -f "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-txn.json" ]]; then
     echo "Expected pending task to be removed only after transactional commit"
     return 1
   fi
 }
 
 @test "claim-engine.sh should keep pending task when transactional commit fails" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  export AHARNESS_CLAIM_FAIL_AFTER="claim_record"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/pending"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-txn-fail.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_CLAIM_FAIL_AFTER="claim_record"
+  export MOSS_AGENT_REGISTRY="$TEST_TEMP_DIR/agent-registry.yaml"
+  cat > "$MOSS_AGENT_REGISTRY" <<'EOF'
+lanes:
+  executor:
+    selection_policy:
+      preferred_modes:
+        - expert
+        - backup
+selection_policy:
+  allow_manual_override: true
+members:
+  executor:
+    backup:
+      - id: executor
+        status: active
+        mode: backup
+        domain_tags: [general, implementation]
+    experts:
+      - id: frontend_executor
+        status: active
+        mode: expert
+        domain_tags: [frontend, react]
+EOF
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/pending"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-txn-fail.json" <<'EOF'
 {"task_id":"task-txn-fail","lane":"executor","domain_tags":["frontend"],"priority":"high"}
 EOF
-  mkdir -p "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor"
-  cat > "$AHARNESS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
+  mkdir -p "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor"
+  cat > "$MOSS_RUNTIME_DIR/teammates/executor/frontend_executor/presence.json" <<'EOF'
 {"agent":"frontend_executor","lane":"executor","lifecycle":"idle","availability":1}
 EOF
 
@@ -440,14 +843,14 @@ EOF
     return 1
   fi
   local claim_request_id="${BASH_REMATCH[1]}"
-  local transaction_dir="$AHARNESS_RUNTIME_DIR/transactions/claims/$claim_request_id"
+  local transaction_dir="$MOSS_RUNTIME_DIR/transactions/claims/$claim_request_id"
 
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/task-board/executor/pending/task-txn-fail.json"
-  if [[ -f "$AHARNESS_RUNTIME_DIR/task-board/executor/claimed/task-txn-fail.json" ]]; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/task-board/executor/pending/task-txn-fail.json"
+  if [[ -f "$MOSS_RUNTIME_DIR/task-board/executor/claimed/task-txn-fail.json" ]]; then
     echo "Expected claimed task file to be absent when transactional commit fails"
     return 1
   fi
-  if [[ -d "$AHARNESS_RUNTIME_DIR/claims/$claim_request_id" ]]; then
+  if [[ -d "$MOSS_RUNTIME_DIR/claims/$claim_request_id" ]]; then
     echo "Expected claim record publish to be skipped on commit failure"
     return 1
   fi
@@ -456,16 +859,16 @@ EOF
     echo "Expected transaction state to be commit_failed"
     return 1
   fi
-  if [[ -f "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl" ]] && grep -q '"type":"task.claim.granted"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  if [[ -f "$MOSS_RUNTIME_DIR/telemetry/events.jsonl" ]] && grep -q '"type":"task.claim.granted"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected no task.claim.granted telemetry on commit failure"
     return 1
   fi
 }
 
 @test "evolution-candidate.sh propose should create candidate proposal from successful executor runs" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
-  mkdir -p "$AHARNESS_RUNTIME_DIR/task-board/executor/completed"
-  cat > "$AHARNESS_RUNTIME_DIR/task-board/executor/completed/task-frontend.json" <<'EOF'
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  mkdir -p "$MOSS_RUNTIME_DIR/task-board/executor/completed"
+  cat > "$MOSS_RUNTIME_DIR/task-board/executor/completed/task-frontend.json" <<'EOF'
 {"task_id":"task-frontend","lane":"executor","domain_tags":["frontend","react"],"quality_score":85,"selected_agent":"frontend_executor"}
 EOF
 
@@ -477,7 +880,7 @@ EOF
   assert_output_contains '"protocol_type":"member_promotion"'
   assert_output_contains '"lifecycle_state":"proposed"'
 
-  local proposal_file="$AHARNESS_RUNTIME_DIR/evolution/candidates/executor/executor_candidate_task-frontend.json"
+  local proposal_file="$MOSS_RUNTIME_DIR/evolution/candidates/executor/executor_candidate_task-frontend.json"
   assert_file_exists "$proposal_file"
 
   if ! grep -q '"source_task":"task-frontend"' "$proposal_file"; then
@@ -493,29 +896,29 @@ EOF
     return 1
   fi
 
-  assert_file_exists "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"
-  if ! grep -q '"type":"member.promotion.proposed"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  assert_file_exists "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"
+  if ! grep -q '"type":"member.promotion.proposed"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected telemetry to contain member.promotion.proposed event"
     return 1
   fi
-  if ! grep -q '"candidate_id":"executor_candidate_task-frontend"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  if ! grep -q '"candidate_id":"executor_candidate_task-frontend"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected telemetry to record candidate_id"
     return 1
   fi
-  if grep -q '"type":"member.promotion.approved"' "$AHARNESS_RUNTIME_DIR/telemetry/events.jsonl"; then
+  if grep -q '"type":"member.promotion.approved"' "$MOSS_RUNTIME_DIR/telemetry/events.jsonl"; then
     echo "Expected raw proposal flow to avoid promotion approval event"
     return 1
   fi
 }
 
 @test "evolution-candidate.sh propose should fail when completed source task is missing" {
-  export AHARNESS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
+  export MOSS_RUNTIME_DIR="$TEST_TEMP_DIR/.runtime"
 
   run "$PROJECT_ROOT/scripts/evolution-candidate.sh" propose --lane executor --source-task missing-task --proposed-by memory_curator
 
   assert_failure
   assert_output_contains 'Completed task not found'
-  if [[ -d "$AHARNESS_RUNTIME_DIR/evolution/candidates/executor" ]]; then
+  if [[ -d "$MOSS_RUNTIME_DIR/evolution/candidates/executor" ]]; then
     echo "Expected no proposal directory to be created for missing completed task"
     return 1
   fi

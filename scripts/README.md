@@ -27,8 +27,12 @@
 ## Executor Lane PoC
 
 - `task-board.sh` 负责创建与迁移 lane 任务状态
+- `task-board.sh create` 支持附带 `run_id`、`stage`、`flow_sequence`，并写入 `task.board.created` / `task.board.moved` telemetry
 - `roster-loader.sh` 负责读取 `members` 作为唯一成员真相源
+- `claim-engine.sh` 只允许 `status: active` 的 expert 参与 expert-first claim；`candidate` 在正式晋升前不会直接认领任务
+- `claim-engine.sh` 会遵守 `selection_policy.allow_manual_override`；当策略关闭时，`--agent` 手动指定会被拒绝
 - `claim-engine.sh` 负责专家优先、backup 兜底的任务认领
+- `claim-engine.sh` 会将任务上的 `run_id`、`stage`、`flow_sequence` 透传到 claimed task、claim record 与 claim telemetry
 - `evolution-candidate.sh` 只生成 raw proposal 和 telemetry，不做自动 promotion
 
 ## 使用示例

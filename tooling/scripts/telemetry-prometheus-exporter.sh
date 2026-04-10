@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # 配置
-PORT="${AHARNESS_PROMETHEUS_PORT:-9090}"
+PORT="${MOSS_PROMETHEUS_PORT:-9090}"
 TELEMETRY_DIR="${PROJECT_ROOT}/.runtime/telemetry"
 
 # 显示帮助
@@ -27,8 +27,8 @@ Harness Telemetry Prometheus Exporter
     -h, --help              显示此帮助
 
 环境变量:
-    AHARNESS_PROMETHEUS_PORT     服务器端口
-    AHARNESS_TELEMETRY_DIR       遥测数据目录
+    MOSS_PROMETHEUS_PORT     服务器端口
+    MOSS_TELEMETRY_DIR       遥测数据目录
 
 示例:
     $0 start

@@ -1,117 +1,192 @@
-# 架构设计
+# Moss-Harness Architecture
 
-## 目录结构
+## North Star
 
+`moss-harness` is a self-evolving superintelligence harness substrate.
+
+The architecture is not organized around a single agent, a single UI, or a single workflow. It is organized around a harder objective: building agent systems that can coordinate, remember, execute, observe, govern, and improve themselves without collapsing into opacity.
+
+## Architectural Thesis
+
+The project treats the following as one closed-loop system:
+
+- orchestration
+- memory
+- sandbox execution
+- telemetry
+- replay and reporting
+- governance
+- evolutionary feedback
+
+A strong substrate cannot let these drift into separate silos. If they are designed independently, the system may complete tasks but it will not learn safely, explain itself clearly, or evolve coherently.
+
+## System Layers
+
+| Layer | Responsibility | Examples |
+| --- | --- | --- |
+| Strategy Layer | Define the north star, constraints, and evolution doctrine | SCI theory, project priorities, architectural invariants |
+| Substrate Layer | Provide core harness behavior | orchestration, memory, sandbox, telemetry, governance |
+| Runtime Layer | Execute runs and persist facts | claim engine, runtime stores, flow execution, replay data |
+| Validation Layer | Prove the substrate through a controlled app surface | `apps/mosscli/` |
+| Observability Layer | Expose facts without mutating system state | reports, timelines, `moss_` metrics, read-only Web panel |
+
+## Capability Stack
+
+The current strategic priority order is:
+
+1. **Orchestration**
+   - role-aware routing
+   - implemented workflow orchestration across staged execution paths
+   - sub-agent coordination
+   - feedback-aware rework and reroute transitions
+   - deterministic stage progression where required
+2. **Memory**
+   - durable facts and observations
+   - retrieval discipline
+   - information quality control
+3. **Sandbox**
+   - controlled execution
+   - isolated side effects
+   - replayable output surfaces
+4. **Telemetry / Replay / Report**
+   - timeline capture
+   - causal reconstruction
+   - operator-facing evidence
+5. **Governance / Feedback / Evolution**
+   - rule-based intervention
+   - bounded adaptation
+   - measurable system improvement
+
+This order reflects current emphasis, not final capability limits. The workflow orchestrator is already part of the runtime orchestration layer: it coordinates stage progression, rework routing, and run-structure continuity as part of the substrate rather than as a standalone workflow product.
+
+## Core Invariants
+
+The following invariants are architectural, not optional implementation details.
+
+### Role Lane Ownership
+
+Every execution belongs to a Role Lane.
+
+Role Lanes define:
+
+- responsibility boundaries
+- artifact expectations
+- what kinds of work an agent can claim
+- how feedback should route through the system
+
+This protects the substrate from becoming an undifferentiated pool of agents.
+
+### Transactional Claiming
+
+Task claiming follows this order:
+
+1. `Fact`
+2. `Audit`
+3. `Broadcast`
+
+The system must record the fact first, persist the audit trail second, and only then broadcast the change to downstream telemetry and observers. This keeps the runtime reconstructable under failure.
+
+### Read-Only Web Observability
+
+The Web surface exposed by `mosscli serve` is read-only.
+
+The control plane remains CLI-first. This boundary is intentional:
+
+- operators act through explicit commands
+- the Web panel observes facts and timelines
+- the system avoids accidental hidden writes from UI workflows
+
+The Web layer is a visibility surface, not a second control plane.
+
+### Runtime Namespace
+
+Validation runtime data lives under `.runtime/moss-harness/`.
+
+A typical run layout is:
+
+```text
+.runtime/moss-harness/
+├── run.json
+└── runs/
+    └── <run-id>/
+        ├── run.json
+        ├── summary.json
+        ├── feedback.json
+        ├── timeline.jsonl
+        ├── stages/
+        └── artifacts/
 ```
-agent-harness-spec/
-├── 📁 apps/                    # 应用层
-│   ├── agent-cli/              # 命令行工具
-│   └── operator/               # K8s Operator
-│
-├── 📁 configs/                 # 配置层
-│   ├── agents/                 # Agent 配置
-│   ├── constraints/            # 约束策略
-│   ├── orchestration/          # 编排配置
-│   ├── protocols/              # 协议定义
-│   ├── skills/                 # 技能注册表
-│   └── telemetry/              # 遥测配置
-│
-├── 📁 runtime/                 # 运行时实现（TypeScript）
-│   ├── agents/                 # Agent 运行时
-│   ├── memory/                 # 内存系统
-│   ├── orchestration/          # 编排系统
-│   ├── sandbox/                # 沙箱系统
-│   ├── storage/                # 存储系统
-│   ├── subagent/               # 子代理管理
-│   └── telemetry/              # 遥测收集
-│
-├── 📁 .runtime/                # 运行时数据（.gitignore）
-│   └── context/                # 上下文管理
-│       ├── PROGRESS.md
-│       └── DECISIONS.md
-│
-├── 📁 integrations/            # 集成层
-│   ├── extensions/             # 扩展模块
-│   │   └── mailbox/            # 邮箱系统
-│   ├── mcp/                    # MCP 协议
-│   └── skills/                 # 技能定义
-│
-├── 📁 deployments/             # 部署配置
-│   ├── docker/                 # Docker 配置
-│   └── helm/                   # Helm charts
-│
-├── 📁 observability/           # 可观测性
-│   ├── grafana/                # Grafana 看板
-│   └── prometheus/             # Prometheus 配置
-│
-├── 📁 platform/                # 平台扩展
-│   └── telemetry/              # 遥测文档
-│
-├── 📁 scripts/                 # 运维脚本
-│
-├── 📁 tooling/                 # 开发工具
-│   ├── evals/                  # 评估用例
-│   ├── rules/                  # 代码规范
-│   └── scripts/                # 工具脚本
-│
-├── 📁 docs/                    # 文档
-│
-└── 📁 context/                 # 上下文管理（已迁移到 .runtime/context/）
-```
 
-## 分层职责
+### Metric Contract
 
-### 1. 应用层 (apps/)
-- **职责**: 提供用户界面和外部接口
-- **内容**: CLI工具、K8s Operator
-- **依赖**: 可以依赖 configs/, runtime/, integrations/
+Target-state observability indicators use the `moss_` prefix.
 
-### 2. 配置层 (configs/)
-- **职责**: 静态配置管理
-- **内容**: Agent配置、约束策略、编排配置、协议定义
-- **特点**: 版本控制，运行时只读
+Examples:
 
-### 3. 运行时层 (runtime/)
-- **职责**: TypeScript 运行时实现
-- **内容**: Agent运行时、内存系统、编排、沙箱、存储、遥测
-- **特点**: 核心业务逻辑实现
+- `moss_expert_hit_rate`
+- `moss_fallback_rate`
+- `moss_rework_rate`
+- `moss_stage_avg_duration`
 
-### 4. 集成层 (integrations/)
-- **职责**: 外部集成和扩展
-- **内容**: 邮箱系统、MCP协议、技能定义
-- **特点**: 可插拔的扩展模块
+This keeps exported signals clearly associated with the substrate and makes long-horizon comparison easier.
 
-### 5. 运行时数据 (.runtime/)
-- **职责**: 运行时生成的数据
-- **内容**: 上下文、会话、检查点、遥测数据
-- **特点**: .gitignore，动态生成
+## Feedback and Evolution Loop
 
-### 6. 部署层 (deployments/)
-- **职责**: 部署配置
-- **内容**: Docker、Helm、K8s配置
-- **特点**: 基础设施即代码
+`moss-harness` is designed as a controlled adaptive loop rather than a fire-and-forget workflow engine.
 
-### 7. 可观测性 (observability/)
-- **职责**: 监控和告警
-- **内容**: Prometheus、Grafana配置
-- **特点**: 独立的监控栈
+A simplified loop looks like this:
 
-### 8. 工具层 (tooling/)
-- **职责**: 开发工具和评估
-- **内容**: 脚本、评估用例、代码规范
-- **特点**: 独立运行，辅助开发
+1. work is routed into a Role Lane
+2. the workflow orchestrator advances or reroutes stages based on the current run state
+3. claim facts are persisted transactionally
+4. execution produces stage artifacts and result envelopes
+5. telemetry captures events and metrics
+6. replay and reports expose what happened
+7. feedback determines whether the system should continue, rework, reroute, or escalate
+8. memory and governance inform later runs
 
-## 迁移映射
+The point is not just to finish a run. The point is to improve the substrate's future behavior without losing legibility.
 
-| 旧路径 | 新路径 |
-|--------|--------|
-| `packages/core/agents/` | `configs/agents/` |
-| `packages/core/orchestration/` | `configs/orchestration/` |
-| `packages/core/memory/` | `runtime/memory/` |
-| `packages/core/sandbox/` | `runtime/sandbox/` |
-| `packages/core/skills/` | `integrations/skills/` |
-| `packages/platform/telemetry/` | `platform/telemetry/` |
-| `infra/deployments/` | `deployments/` |
-| `infra/observability/` | `observability/` |
-| `infra/configs/` | `configs/` |
-| `context/` | `.runtime/context/` |
+## Runtime Data Boundaries
+
+The architecture intentionally separates:
+
+- **control inputs** - CLI commands and explicit operator actions
+- **execution facts** - run state, stage outputs, feedback files, claims, audits
+- **observability outputs** - reports, replay timelines, `moss_` metrics, read-only Web views
+
+This boundary keeps the substrate honest. Observability should describe the system, not secretly mutate it.
+
+## Mosscli as Validation App
+
+`apps/mosscli/` is the current validation surface for `moss-harness`.
+
+Its role is to prove that the substrate can already support:
+
+- fixed-path staged execution
+- implemented workflow orchestration for stage sequencing and feedback-aware routing
+- task progression across explicit roles
+- artifact persistence
+- replayable run history
+- feedback-driven rework
+- read-only operational observability
+
+`mosscli` is intentionally narrower than the substrate. It should never be mistaken for the entire strategic boundary of the project.
+
+## Practical Reading Path
+
+- Start with [README.md](README.md) for project positioning
+- Read [docs/design-philosophy.md](docs/design-philosophy.md) for the SCI doctrine behind the architecture
+- Use [CONTRIBUTING.md](CONTRIBUTING.md) for contributor workflow and verification expectations
+- Open [apps/mosscli/README.md](apps/mosscli/README.md) when working specifically with the validation app
+
+## Current MVP Boundary and Future Direction
+
+Today the substrate is validated primarily through `mosscli`. Tomorrow the architecture is meant to support richer evolution loops, stronger memory regimes, deeper governance, and more capable sandboxed execution.
+
+What should not change is the underlying discipline:
+
+- facts before stories
+- replay before hand-waving
+- feedback before blind automation
+- governance before unconstrained evolution

@@ -288,7 +288,7 @@ context:
 
 ```bash
 # 设置环境变量
-export AHARNESS_AGENT=executor
+export MOSS_AGENT=executor
 
 # 或在会话中切换
 ./scripts/agent-switch.sh evaluator

@@ -1,233 +1,195 @@
-# 贡献指南
+# Contributing to moss-harness
 
-感谢你对 Awesome Agent Harness 项目的关注！我们欢迎所有形式的贡献。
+Thank you for contributing to `moss-harness`.
 
-## 📋 目录
+This repository is not a generic agent playground. It is a substrate project for self-evolving superintelligence systems. Contributions are welcome, but they must strengthen the coherence of the harness rather than add disconnected features.
 
-- [行为准则](#行为准则)
-- [如何贡献](#如何贡献)
-- [开发流程](#开发流程)
-- [提交规范](#提交规范)
-- [代码审查](#代码审查)
+## What Matters Most
 
-## 🤝 行为准则
+The highest-value contributions usually improve one of these areas:
 
-本项目遵循 [Contributor Covenant](https://www.contributor-covenant.org/) 行为准则。参与本项目即表示你同意遵守此准则。
+- orchestration and Role Lane discipline
+- memory quality and retrieval correctness
+- sandboxed execution and side-effect control
+- telemetry, replay, reporting, and `moss_` metrics
+- governance, feedback, and bounded adaptation
+- documentation that clarifies the substrate/app boundary
 
-## 🚀 如何贡献
+## Project Values
 
-### 报告问题
+Please preserve the following values when making changes:
 
-如果你发现了 bug 或有功能建议：
+- **Facts before stories** - persist and verify execution facts before describing system behavior
+- **Readability before hype** - explain the architecture clearly; do not hide complexity behind vague language
+- **Governance before unchecked evolution** - stronger systems must remain controllable
+- **Replayability before intuition** - make it possible to inspect and replay what happened
+- **Boundary clarity before convenience** - do not blur substrate, app, and observability surfaces
 
-1. 先搜索 [Issues](https://github.com/yourusername/awesome-agent-harness/issues) 确认是否已存在
-2. 如果没有，创建一个新的 Issue
-3. 使用对应的模板填写详细信息
+## Architectural Invariants
 
-### 提交代码
+Your changes must not weaken these invariants:
 
-1. **Fork** 本仓库
-2. **Clone** 你的 fork
-   ```bash
-   git clone https://github.com/yourusername/awesome-agent-harness.git
-   ```
-3. **创建分支**
-   ```bash
-   git checkout -b feature/your-feature-name
-   # 或
-   git checkout -b fix/issue-description
-   ```
-4. **提交更改**
-   ```bash
-   git commit -m "feat: 添加新功能"
-   ```
-5. **推送到你的 fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-6. **创建 Pull Request**
+- every execution belongs to a **Role Lane**
+- claiming follows **`Fact -> Audit -> Broadcast`**
+- the Web panel remains **read-only**
+- runtime data for the validation app belongs under **`.runtime/moss-harness/`**
+- target-state observability indicators use the **`moss_`** prefix
 
-## 🛠️ 开发流程
+If your change challenges one of these rules, document the rationale explicitly and discuss it before implementation.
 
-### 环境设置
+## Local Setup
 
 ```bash
-# 克隆仓库
-git clone https://github.com/yourusername/awesome-agent-harness.git
-cd awesome-agent-harness
-
-# 运行健康检查
-./scripts/health-check.sh
-
-# 启动开发会话
-./scripts/start-session.sh
+npm install
+npm --prefix apps/mosscli run build
+node apps/mosscli/dist/cli/index.js --help
 ```
 
-### 项目结构
-
-```
-awesome-agent-harness/
-├── agents/          # Agent 配置
-├── skills/          # 技能系统
-├── hooks/           # 会话钩子
-├── rules/           # 代码规则
-├── verification/    # 验证循环
-├── .runtime/        # 运行时数据
-│   └── context/    # 上下文管理
-├── constraints/     # 约束配置
-├── evals/           # 评估框架
-├── telemetry/       # 可观测性
-├── mcp/             # MCP 配置
-├── memory/          # 记忆系统
-├── tools/           # 工具定义
-├── scripts/         # 运维脚本
-└── docs/            # 文档
-```
-
-### 添加新技能
-
-1. 在 `skills/{category}/` 下创建新目录
-2. 创建 `skill.yaml` 文件
-3. 添加示例和测试
-
-示例：
-
-```yaml
-# skills/coding/my-skill/skill.yaml
-name: my-skill
-category: coding
-description: "技能描述"
-version: 1.0.0
-
-triggers:
-  - pattern: "触发模式"
-    confidence: 0.8
-
-actions:
-  - type: analyze
-    description: "分析操作"
-```
-
-### 添加新规则
-
-1. 在 `rules/{language}/` 下创建 YAML 文件
-2. 定义检测模式和修复建议
-
-示例：
-
-```yaml
-# rules/typescript/my-rule.yaml
-name: my-rule
-severity: warning
-category: maintainability
-description: "规则描述"
-
-detection:
-  pattern: "正则表达式"
-
-fix:
-  description: "如何修复"
-```
-
-### 添加新 Agent
-
-1. 在 `agents/` 下创建 YAML 文件
-2. 定义系统提示词和可用技能
-
-示例：
-
-```yaml
-# agents/my-agent.yaml
-name: my-agent
-type: custom
-description: |
-  Agent 描述
-
-system_prompt: |
-  你是 MyAgent...
-
-skills:
-  - typescript-patterns
-```
-
-## 📝 提交规范
-
-我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
-
-### 提交类型
-
-- `feat`: 新功能
-- `fix`: Bug 修复
-- `docs`: 文档更新
-- `style`: 代码格式（不影响功能）
-- `refactor`: 代码重构
-- `perf`: 性能优化
-- `test`: 测试相关
-- `chore`: 构建/工具/依赖
-
-### 提交示例
+Recommended validation commands:
 
 ```bash
-# 新功能
-feat: 添加 Python 技能支持
-
-# Bug 修复
-fix: 修复 session-stop 钩子中的时间戳问题
-
-# 文档
-docs: 更新 README 中的示例
-
-# 重构
-refactor: 优化技能加载逻辑
+bats tests/apps/test_mosscli_cli.bats
+bats tests/apps/test_mosscli_task4.bats
+bats tests/apps/test_mosscli_task5.bats
+bats tests/apps/test_mosscli_task6.bats
+bats tests/scripts/test_executor_lane_poc.bats
+npm test
 ```
 
-## 🔍 代码审查
+## Contribution Areas
 
-所有提交都需要通过代码审查：
+### Orchestration
 
-1. 确保所有测试通过
-2. 遵循项目编码规范
-3. 更新相关文档
-4. 添加必要的注释
+Work here when improving:
 
-## 🧪 测试
+- role routing
+- task progression
+- claim handling
+- run lifecycle structure
+
+Guardrail:
+- do not turn the system into an undifferentiated pool of agents
+
+### Memory
+
+Work here when improving:
+
+- fact capture
+- observation quality
+- retrieval discipline
+- long-horizon knowledge structure
+
+Guardrail:
+- do not optimize for memory volume at the expense of signal quality
+
+### Sandbox
+
+Work here when improving:
+
+- controlled execution
+- isolation boundaries
+- reproducibility
+- side-effect safety
+
+Guardrail:
+- do not add execution power without preserving inspection and control
+
+### Telemetry and Reporting
+
+Work here when improving:
+
+- timeline fidelity
+- replay quality
+- report structure
+- exported metrics
+
+Guardrail:
+- telemetry must describe system behavior, not invent it after the fact
+
+### Governance and Feedback
+
+Work here when improving:
+
+- review loops
+- evaluator decisions
+- bounded adaptation
+- evolution guardrails
+
+Guardrail:
+- every adaptive mechanism should remain explainable and testable
+
+### Documentation
+
+Work here when improving:
+
+- project positioning
+- architecture clarity
+- contributor guidance
+- app/substrate boundaries
+
+Guardrail:
+- do not present `mosscli` as the entire project
+
+## Documentation Sync Rules
+
+When your change affects project behavior, update the canonical doc owner instead of scattering partial explanations.
+
+- `README.md` - strategic positioning and docs map
+- `README.zh-CN.md` - Chinese parity narrative
+- `ARCHITECTURE.md` - architectural layers and invariants
+- `docs/design-philosophy.md` - SCI doctrine and superiority framing
+- `CONTRIBUTING.md` - contributor workflow and standards
+- `apps/mosscli/README.md` - validation app usage and runtime behavior
+
+Side-entry docs such as `tests/README.md`, `README-EXTENSION.md`, `docs/quickstart.md`, and `docs/local-ci.md` should stay lightweight and link back to the canonical docs when needed.
+
+## Pull Request Expectations
+
+Before opening a PR, verify that you have:
+
+- kept `moss-harness` and `mosscli` boundaries explicit
+- preserved Role Lane ownership and transactional claiming order
+- kept the Web panel read-only
+- used `moss_` for target-state observability examples where relevant
+- updated the appropriate docs
+- run the most relevant tests for your area
+
+## Commit Guidance
+
+We use conventional commit style where practical:
+
+- `feat:` for new capability
+- `fix:` for bug fixes
+- `docs:` for documentation updates
+- `refactor:` for structural improvements
+- `test:` for test work
+- `chore:` for tooling and maintenance
+
+Examples:
 
 ```bash
-# 运行所有测试
-./scripts/run-evals.sh
-
-# 运行特定测试
-./scripts/run-evals.sh harness
-
-# 运行验证
-./scripts/verify.sh
+git commit -m "docs: refresh moss-harness project narrative"
+git commit -m "refactor: strengthen mosscli runtime invariants"
 ```
 
-## 📚 文档
+## Review Standard
 
-- 更新 README.md 如果添加新功能
-- 添加/更新 docs/ 中的文档
-- 为复杂逻辑添加注释
+Reviews should focus on:
 
-## 🎯 开发优先级
+- correctness
+- boundary clarity
+- invariant preservation
+- documentation accuracy
+- verification evidence
 
-我们优先处理以下类型的贡献：
+“Looks useful” is not enough. A change should make the substrate stronger, clearer, or safer.
 
-1. 🐛 **Bug 修复** - 修复现有问题
-2. 📖 **文档** - 改进文档质量
-3. 🛠️ **新技能** - 扩展技能库
-4. 🤖 **新 Agent** - 添加新的 Agent 类型
-5. ⚡ **性能** - 优化性能
+## Where to Start
 
-## 💬 联系方式
+If you are new to the repository, start here:
 
-- GitHub Issues: [提交问题](https://github.com/yourusername/awesome-agent-harness/issues)
-- Discussions: [参与讨论](https://github.com/yourusername/awesome-agent-harness/discussions)
-
-## 🙏 感谢
-
-感谢所有贡献者！
-
----
-
-**再次感谢你的贡献！** 🎉
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [docs/design-philosophy.md](docs/design-philosophy.md)
+- [apps/mosscli/README.md](apps/mosscli/README.md)
+- [tests/README.md](tests/README.md)

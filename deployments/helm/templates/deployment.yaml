@@ -44,29 +44,29 @@ spec:
               protocol: TCP
             {{- end }}
           env:
-            - name: AHARNESS_APP_NAME
+            - name: MOSS_APP_NAME
               value: {{ .Values.config.app.name | quote }}
-            - name: AHARNESS_APP_ENV
+            - name: MOSS_APP_ENV
               value: {{ .Values.config.app.env | quote }}
-            - name: AHARNESS_LOG_LEVEL
+            - name: MOSS_LOG_LEVEL
               value: {{ .Values.config.app.logLevel | quote }}
-            - name: AHARNESS_DEFAULT_AGENT
+            - name: MOSS_DEFAULT_AGENT
               value: {{ .Values.config.agents.defaultAgent | quote }}
-            - name: AHARNESS_MAX_CONCURRENT_TASKS
+            - name: MOSS_MAX_CONCURRENT_TASKS
               value: {{ .Values.config.agents.maxConcurrentTasks | quote }}
-            - name: AHARNESS_TASK_TIMEOUT
+            - name: MOSS_TASK_TIMEOUT
               value: {{ .Values.config.agents.taskTimeout | quote }}
-            - name: AHARNESS_MEMORY_BACKEND
+            - name: MOSS_MEMORY_BACKEND
               value: {{ .Values.config.memory.backend | quote }}
-            - name: AHARNESS_STORAGE_BACKEND
+            - name: MOSS_STORAGE_BACKEND
               value: {{ .Values.config.storage.backend | quote }}
-            - name: AHARNESS_SANDBOX_MODE
+            - name: MOSS_SANDBOX_MODE
               value: {{ .Values.config.sandbox.mode | quote }}
-            - name: AHARNESS_TELEMETRY_ENABLED
+            - name: MOSS_TELEMETRY_ENABLED
               value: {{ .Values.config.telemetry.enabled | quote }}
-            - name: AHARNESS_TELEMETRY_PROMETHEUS_PORT
+            - name: MOSS_TELEMETRY_PROMETHEUS_PORT
               value: {{ .Values.config.telemetry.prometheus.port | quote }}
-            - name: AHARNESS_MODEL_DEFAULT_PROVIDER
+            - name: MOSS_MODEL_DEFAULT_PROVIDER
               value: {{ .Values.config.models.defaultProvider | quote }}
             - name: DATABASE_URL
               valueFrom:

@@ -8,7 +8,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-RUNTIME_DIR="${AHARNESS_RUNTIME_DIR:-${PROJECT_ROOT}/.runtime}"
+RUNTIME_DIR="${MOSS_RUNTIME_DIR:-${PROJECT_ROOT}/.runtime}"
 TEAMMATES_DIR="${RUNTIME_DIR}/teammates"
 
 RED='\033[0;31m'

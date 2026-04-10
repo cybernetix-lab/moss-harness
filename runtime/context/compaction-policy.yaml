@@ -1,0 +1,31 @@
+version: 2
+
+defaults:
+  profile: balanced
+  fallback_profile: balanced
+
+profiles:
+  balanced:
+    signals:
+      entropy_weight: 0.30
+      density_weight: 0.25
+      redundancy_weight: 0.45
+
+    thresholds:
+      keep_verbatim: 0.25
+      summarize: 0.55
+      persist_and_preview: 0.75
+
+    persisted_output:
+      preview_chars: 1600
+      hard_size_threshold: 3000
+
+    retention:
+      artifact_priority:
+        user_goal: 1.0
+        key_decision: 1.0
+        blocker: 0.95
+        failed_attempt: 0.9
+        tool_log: 0.3
+        search_result: 0.2
+        conversation_message: 0.5

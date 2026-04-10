@@ -5,7 +5,7 @@
  * Implements entropy calculation, density analysis, and SNR estimation
  */
 
-import type { InformationQualityMetrics } from './types';
+import type { BlockCompactionSignals, InformationQualityMetrics } from './types';
 
 export class InformationQualityAnalyzer {
   private readonly DEFAULT_ALPHABET_SIZE = 256;
@@ -43,6 +43,19 @@ export class InformationQualityAnalyzer {
       confidenceCalibration,
       redundancyRatio,
       compressionPotential,
+    };
+  }
+
+  analyzeBlock(content: string): BlockCompactionSignals {
+    const metrics = this.analyze(content);
+    const tokens = this.tokenize(content);
+    const { redundancyScore } = this.detectRedundancy(content);
+
+    return {
+      ...metrics,
+      tokenCount: tokens.length,
+      densityNorm: this.normalizeDensity(metrics.informationDensity),
+      ngramRedundancy: redundancyScore,
     };
   }
 
@@ -182,6 +195,12 @@ export class InformationQualityAnalyzer {
   calculateCompressionRatio(original: string, compressed: string): number {
     if (original.length === 0) return 1;
     return compressed.length / original.length;
+  }
+
+  normalizeDensity(density: number): number {
+    if (density >= 0.01) return 1;
+    if (density <= 0) return 0;
+    return density / 0.01;
   }
 
   /**

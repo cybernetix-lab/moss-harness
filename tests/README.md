@@ -1,8 +1,13 @@
 # Tests
 
-使用 Bats (Bash Automated Testing System) 进行脚本测试。
+This directory documents repository verification. For the strategic project narrative, start with [README.md](../README.md). For the current validation app, see [apps/mosscli/README.md](../apps/mosscli/README.md).
 
-## 安装 Bats
+The repository currently uses two main test families:
+
+- `Bats` for CLI and shell behavior across `apps/`, `scripts/`, `tooling/`, and `context/`
+- `Jest` for TypeScript runtime coverage such as `tests/runtime/**/*.test.ts`
+
+## Install Bats
 
 ```bash
 # macOS
@@ -11,40 +16,49 @@ brew install bats-core
 # Linux
 sudo apt-get install bats
 
-# 或使用 npm
+# or via npm
 npm install -g bats
 ```
 
-## 运行测试
+## Run Tests
 
 ```bash
-# 运行所有测试
-bats tests/
+# Run the Bats suites
+bats tests/apps tests/scripts tests/tooling tests/context
 
-# 运行特定目录测试
+# Run specific directories
 bats tests/apps/
 bats tests/scripts/
 bats tests/tooling/
+bats tests/context/
 
-# 运行单个测试文件
-bats tests/apps/test_agent_cli.bats
+# Run a single file
+bats tests/apps/test_mosscli_cli.bats
+
+# Run TypeScript / Jest tests
+npm test
 ```
 
-## 测试结构
+## Test Layout
 
-```
+```text
 tests/
-├── README.md              # 本文件
-├── test_helper.bash       # 测试辅助函数
-├── apps/                  # apps/agent-cli/ 测试
-│   └── test_agent_cli.bats
-├── scripts/               # scripts/ 测试
-│   └── test_scripts.bats
-└── tooling/               # tooling/scripts/ 测试
-    └── test_tooling.bats
+├── README.md
+├── test_helper.bash
+├── apps/
+│   ├── test_agent_cli.bats
+│   ├── test_mosscli_cli.bats
+│   ├── test_mosscli_task4.bats
+│   ├── test_mosscli_task5.bats
+│   └── test_mosscli_task6.bats
+├── context/
+├── runtime/
+│   └── context/
+├── scripts/
+└── tooling/
 ```
 
-## 编写测试
+## Writing Tests
 
 ```bash
 #!/usr/bin/env bats

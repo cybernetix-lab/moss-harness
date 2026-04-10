@@ -32,6 +32,8 @@ docs/superpowers/*
 *.swp
 *.swo
 *~
+graphify-out/
+.graphify_python
 
 # OS
 .DS_Store

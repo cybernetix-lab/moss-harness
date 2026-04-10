@@ -2,12 +2,12 @@
 
 ## 概述
 
-Agent 原子能力模型定义了每个 Agent 应该具备的**自描述能力**，使 Orchestrator 能够动态编排 Agent Loop，而无需硬编码路由逻辑。
+Agent 原子能力模型定义了每个 Agent 应该具备的**自描述能力**，使当前已实现的 workflow orchestrator / Orchestrator 能够动态编排 Agent Loop，而无需硬编码路由逻辑。
 
 ## 设计原则
 
 1. **自描述** - Agent 声明自己能做什么、需要什么、能输出什么
-2. **可发现** - Orchestrator 通过读取配置即可了解 Agent 能力
+2. **可发现** - 已实现的 Orchestrator 通过读取配置即可了解 Agent 能力
 3. **可组合** - Agent 之间通过标准接口协作
 4. **可扩展** - 新增 Agent 只需声明能力，无需修改编排逻辑
 
@@ -156,7 +156,7 @@ atomic_capabilities:
 
 ## 动态编排流程
 
-基于原子能力，Orchestrator 可以实现完全动态的编排：
+基于原子能力，当前已实现的 Orchestrator 可以实现动态编排，并持续向更强的 workflow orchestration 能力演进：
 
 ```
 1. 读取所有 Agent 的 atomic_capabilities
@@ -197,7 +197,7 @@ next_agent = match_condition(hints, current_signal)
 
 ### 3. 自文档化
 
-Agent 的能力、限制、接口都在配置中声明，无需额外文档。
+Agent 的能力、限制、接口都在配置中声明，无需额外文档。这也意味着 workflow orchestrator 的动态路由不是悬空设计，而是已经建立在现有能力声明模型之上的 substrate 行为。
 
 ## 配置示例
 
@@ -266,7 +266,7 @@ def validate_capabilities(config):
 
 ### 2. 能力发现
 
-实现能力发现机制，让 Orchestrator 动态发现可用 Agent：
+持续增强能力发现机制，让 Orchestrator 动态发现可用 Agent：
 
 ```python
 def discover_agents():
@@ -300,7 +300,7 @@ def route_next_agent(current_agent, output_signal, agents):
 
 ## 总结
 
-Agent 原子能力模型将编排逻辑从 Orchestrator 中解耦，使每个 Agent 成为**自描述、自包含、可组合**的单元。这种设计支持：
+Agent 原子能力模型将编排逻辑从 Orchestrator 中解耦，使每个 Agent 成为**自描述、自包含、可组合**的单元。这种设计已经支撑当前 workflow orchestrator 的运行，并继续支持后续增强：
 
 - **动态发现** - 自动识别可用 Agent
 - **动态编排** - 基于能力而非硬编码

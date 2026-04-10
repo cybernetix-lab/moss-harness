@@ -177,7 +177,7 @@ execution_plan:
 **使用场景**:
 ```bash
 # 启动 Planner 模式
-export AHARNESS_AGENT=planner
+export MOSS_AGENT=planner
 
 # 或使用脚本
 ./scripts/agent-start.sh planner
@@ -244,7 +244,7 @@ model:
 **使用场景**:
 ```bash
 # 在 Planner 输出计划后，切换到 Reviewer 审查
-export AHARNESS_AGENT=reviewer
+export MOSS_AGENT=reviewer
 
 # 审查完成后，根据结论决定下一步
 # - APPROVED: 进入执行阶段
@@ -314,7 +314,7 @@ execution_report:
 **使用场景**:
 ```bash
 # 在 Reviewer 审查通过后，切换到 Executor 执行
-export AHARNESS_AGENT=executor
+export MOSS_AGENT=executor
 
 # 或使用脚本
 ./scripts/agent-start.sh executor
@@ -388,7 +388,7 @@ evaluation_report:
 **使用场景**:
 ```bash
 # 在 Executor 提交实现后，切换到 Evaluator 评估
-export AHARNESS_AGENT=evaluator
+export MOSS_AGENT=evaluator
 
 # 根据评估结论决定下一步
 # - PASS/EXCELLENT: 任务完成
@@ -432,7 +432,7 @@ model:
 **使用场景**:
 ```bash
 # 评估通过后，自动切换到 Memory Curator 进行知识沉淀
-export AHARNESS_AGENT=memory_curator
+export MOSS_AGENT=memory_curator
 ```
 
 ---
@@ -475,7 +475,7 @@ model:
 **使用场景**:
 ```bash
 # 在需要技术调研时使用
-export AHARNESS_AGENT=researcher
+export MOSS_AGENT=researcher
 
 # 例如：调研新的技术方案
 # "研究一下目前主流的认证方案，对比 JWT 和 Session 的优缺点"
@@ -493,7 +493,7 @@ export AHARNESS_AGENT=researcher
 ./scripts/agent-start.sh planner
 
 # 或使用环境变量
-export AHARNESS_AGENT=planner
+export MOSS_AGENT=planner
 ```
 
 ### 会话中切换
@@ -631,33 +631,33 @@ git pull
 
 ```bash
 # 检查配置文件是否存在
-ls -la agents/${AHARNESS_AGENT}.yaml
+ls -la agents/${MOSS_AGENT}.yaml
 
 # 验证配置格式
-yq eval agents/${AHARNESS_AGENT}.yaml > /dev/null && echo "配置有效"
+yq eval agents/${MOSS_AGENT}.yaml > /dev/null && echo "配置有效"
 
 # 查看详细错误
-./scripts/agent-start.sh ${AHARNESS_AGENT} --verbose
+./scripts/agent-start.sh ${MOSS_AGENT} --verbose
 ```
 
 ### Agent 表现异常
 
 ```bash
 # 检查最近的评估结果
-./scripts/agent-eval.sh status ${AHARNESS_AGENT}
+./scripts/agent-eval.sh status ${MOSS_AGENT}
 
 # 查看进化历史
-./scripts/agent-evolve.sh status ${AHARNESS_AGENT}
+./scripts/agent-evolve.sh status ${MOSS_AGENT}
 
 # 回滚到上一版本
-./scripts/agent-evolve.sh rollback ${AHARNESS_AGENT}
+./scripts/agent-evolve.sh rollback ${MOSS_AGENT}
 ```
 
 ### 工具权限问题
 
 ```bash
 # 检查当前 Agent 的工具权限
-cat agents/${AHARNESS_AGENT}.yaml | yq '.tools'
+cat agents/${MOSS_AGENT}.yaml | yq '.tools'
 
 # 确认约束配置
 cat constraints/tools-policy.yaml

@@ -337,7 +337,7 @@ wc -l runtime/telemetry/sess-abc123/events.jsonl
 A: 可以配置数据保留策略，定期清理旧数据。
 
 **Q: 如何禁用遥测？**
-A: 设置环境变量 `AHARNESS_TELEMETRY_ENABLED=false`。
+A: 设置环境变量 `MOSS_TELEMETRY_ENABLED=false`。
 
 **Q: 如何导出特定时间范围的数据？**
 A: 使用 `./scripts/telemetry-export.sh --start 2024-01-01 --end 2024-01-31`。

@@ -1,6 +1,6 @@
 # Agent Harness 架构扩展设计
 
-> 基于 DeerFlow 参考的分层架构扩展方案
+> 基于 DeerFlow 参考的分层架构扩展方案，描述已实现 orchestrator 能力及其后续增强方向
 
 ## 架构总览
 
@@ -222,7 +222,11 @@ Agent Execution
 
 ## 核心扩展模块
 
+以下模块不是纯概念预案，其中 `Sub-Agent Orchestrator` / workflow orchestration 已经属于 `moss-harness` 当前编排底座的一部分；本节重点说明其深层结构与后续增强方向。
+
 ### 1. Sub-Agent Orchestrator
+
+`Sub-Agent Orchestrator` 在这里代表已经落地的 workflow orchestration capability。它负责把任务分解、并行调度、结果聚合和冲突处理纳入统一的 runtime orchestration 过程，而不是把系统降格为一个独立 workflow engine。
 
 ```typescript
 interface SubAgentOrchestrator {
@@ -338,16 +342,16 @@ const MIDDLEWARE_CHAIN = [
    - Metrics 暴露
    - Grafana 看板
 
-### Phase 2: 编排层扩展（高优先级）
+### Phase 2: 编排层增强（高优先级）
 
 4. **Middleware Chain 框架**
    - 洋葱模型实现
    - 14 层 Middleware 定义
 
-5. **Sub-Agent Orchestrator**
-   - 任务分解
-   - 并行调度
-   - 结果聚合
+5. **Sub-Agent Orchestrator 增强**
+   - 强化任务分解
+   - 强化并行调度
+   - 强化结果聚合与冲突处理
 
 ### Phase 3: 能力层增强（中优先级）
 

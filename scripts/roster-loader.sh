@@ -8,7 +8,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REGISTRY_FILE="${AHARNESS_AGENT_REGISTRY:-${PROJECT_ROOT}/configs/orchestration/agent-registry.yaml}"
+REGISTRY_FILE="${MOSS_AGENT_REGISTRY:-${PROJECT_ROOT}/configs/orchestration/agent-registry.yaml}"
 
 RED='\033[0;31m'
 YELLOW='\033[1;33m'

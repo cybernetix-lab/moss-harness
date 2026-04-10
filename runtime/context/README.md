@@ -1,6 +1,6 @@
 # 上下文压缩管理器
 
-基于 [ShareAI 上下文压缩设计](https://learn.shareai.run/zh/s06/) 实现的三层压缩机制，用于优化 Agent 会话的上下文管理。
+基于 [ShareAI 上下文压缩设计](https://learn.shareai.run/zh/s06/) 实现的上下文压缩系统，用于优化 Agent 会话的上下文管理。
 
 ## 概述
 
@@ -9,7 +9,38 @@
 - 响应延迟变长
 - 关键信息被淹没
 
-本系统通过三层渐进式压缩机制解决这些问题。
+本系统当前包含两套兼容路径：
+- **V1 回退路径**: 固定阈值的三层渐进式压缩机制
+- **V2 MVP-1 路径**: 基于 `compaction-policy.yaml` 的策略驱动压缩
+
+默认情况下，`auto` 命令会优先尝试 V2 policy-driven 评估；如果 policy 读取或 evaluator 执行失败，则自动回退到 V1 逻辑。
+
+## V2 MVP-1
+
+V2 MVP-1 将压缩逻辑拆成三部分：
+- `runtime/context/compaction-policy.yaml`: 压缩策略配置
+- `runtime/context/policy-evaluator.ts`: block 评分与动作决策
+- `runtime/context/context-compactor.sh`: 会话上下文收集、动作执行与遥测记录
+
+其中 evaluator 由 `node runtime/context/policy-evaluator.ts` 直接执行，不依赖额外的 Ruby 运行时脚本。
+
+当前 MVP-1 支持的动作：
+- `keep`
+- `summarize`
+- `persist_and_preview`
+
+当前默认 profile：
+
+```yaml
+defaults:
+  profile: balanced
+```
+
+当前会对以下 block 类型做基础识别：
+- `tool_log`
+- `conversation_message`
+- `user_goal`
+- `key_decision`
 
 ## 三层压缩机制
 
@@ -120,12 +151,27 @@ echo "大段输出内容" | ./runtime/context/context-compactor.sh persist tool_
 
 ### 配置参数
 
-在 `context-compactor.sh` 顶部可调整：
+V1 回退逻辑仍保留在 `context-compactor.sh` 顶部：
 
 ```bash
 PERSIST_THRESHOLD=2000  # 大结果持久化阈值（字符）
 MICRO_COMPACT_KEEP=3    # 微压缩保留的最近结果数
 CONTEXT_LIMIT=8000      # 触发完整压缩的上下文大小上限
+```
+
+V2 MVP-1 的主要参数位于 `runtime/context/compaction-policy.yaml`：
+
+```yaml
+profiles:
+  balanced:
+    signals:
+      entropy_weight: 0.30
+      density_weight: 0.25
+      redundancy_weight: 0.45
+    thresholds:
+      keep_verbatim: 0.25
+      summarize: 0.55
+      persist_and_preview: 0.75
 ```
 
 ## 状态跟踪
@@ -138,9 +184,24 @@ CONTEXT_LIMIT=8000      # 触发完整压缩的上下文大小上限
   "last_compact_time": "2026-04-08T17:51:38Z",
   "compact_count": 5,
   "last_summary": "/path/to/context-summary.md",
-  "recent_files": []
+  "recent_files": [],
+  "current_profile": "balanced",
+  "last_window_average_score": 0.42,
+  "last_action_histogram": {
+    "keep": 2,
+    "summarize": 1
+  }
 }
 ```
+
+### 遥测事件
+
+除原有压缩事件外，V2 MVP-1 还会写入：
+- `context.policy.loaded`
+- `context.profile.selected`
+- `context.action.applied`
+
+这些事件统一记录在 `.runtime/telemetry/events.jsonl`，便于后续分析策略命中情况与动作分布。
 
 ## 最佳实践
 
@@ -155,6 +216,7 @@ CONTEXT_LIMIT=8000      # 触发完整压缩的上下文大小上限
 
 ```bash
 bats tests/context/test_context_compactor.bats
+bats tests/context/test_compaction_policy.bats
 ```
 
 测试覆盖：

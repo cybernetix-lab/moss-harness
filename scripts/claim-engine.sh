@@ -8,7 +8,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-RUNTIME_DIR="${AHARNESS_RUNTIME_DIR:-${PROJECT_ROOT}/.runtime}"
+RUNTIME_DIR="${MOSS_RUNTIME_DIR:-${PROJECT_ROOT}/.runtime}"
 TASK_BOARD_DIR="${RUNTIME_DIR}/task-board"
 TEAMMATES_DIR="${RUNTIME_DIR}/teammates"
 TELEMETRY_DIR="${RUNTIME_DIR}/telemetry"
@@ -80,10 +80,30 @@ require_value() {
     fi
 }
 
+require_integer() {
+    local name="$1"
+    local value="$2"
+
+    if [[ -n "$value" && ! "$value" =~ ^[0-9]+$ ]]; then
+        log_error "Option ${name} must be a non-negative integer"
+        exit 1
+    fi
+}
+
+require_path_component() {
+    local name="$1"
+    local value="$2"
+
+    if [[ ! "$value" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        log_error "Option ${name} contains invalid path characters"
+        exit 1
+    fi
+}
+
 run_before_move_hook() {
     local lane="$1"
     local task_id="$2"
-    local hook_path="${AHARNESS_CLAIM_BEFORE_MOVE_HOOK:-}"
+    local hook_path="${MOSS_CLAIM_BEFORE_MOVE_HOOK:-}"
 
     if [[ -z "$hook_path" ]]; then
         return 0
@@ -99,7 +119,7 @@ run_before_move_hook() {
 
 should_fail_after_step() {
     local step="$1"
-    local configured_step="${AHARNESS_CLAIM_FAIL_AFTER:-}"
+    local configured_step="${MOSS_CLAIM_FAIL_AFTER:-}"
     [[ -n "$configured_step" && "$configured_step" == "$step" ]]
 }
 
@@ -136,6 +156,9 @@ claim_task() {
     local lane=""
     local task_id=""
     local requested_agent=""
+    local requested_run_id=""
+    local requested_stage=""
+    local requested_flow_sequence=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -154,6 +177,21 @@ claim_task() {
                 requested_agent="${2:-}"
                 shift 2
                 ;;
+            --run-id)
+                require_option_argument "--run-id" "${2-}"
+                requested_run_id="${2:-}"
+                shift 2
+                ;;
+            --stage)
+                require_option_argument "--stage" "${2-}"
+                requested_stage="${2:-}"
+                shift 2
+                ;;
+            --flow-sequence)
+                require_option_argument "--flow-sequence" "${2-}"
+                requested_flow_sequence="${2:-}"
+                shift 2
+                ;;
             --help|-h)
                 show_help
                 return 0
@@ -167,6 +205,12 @@ claim_task() {
 
     require_value "--lane" "$lane"
     require_value "--task-id" "$task_id"
+    require_integer "--flow-sequence" "$requested_flow_sequence"
+    require_path_component "--lane" "$lane"
+    require_path_component "--task-id" "$task_id"
+    if [[ -n "$requested_agent" ]]; then
+        require_path_component "--agent" "$requested_agent"
+    fi
 
     local pending_task_file="${TASK_BOARD_DIR}/${lane}/pending/${task_id}.json"
     local claimed_task_file="${TASK_BOARD_DIR}/${lane}/claimed/${task_id}.json"
@@ -201,11 +245,11 @@ claim_task() {
     printf '%s\n' "$roster_json" > "$roster_tmp"
 
     local selection_json
-    if ! selection_json="$(python3 - "$pending_task_file" "$roster_tmp" "$TEAMMATES_DIR" "$lane" "$requested_agent" <<'PY'
+    if ! selection_json="$(python3 - "$pending_task_file" "$roster_tmp" "$TEAMMATES_DIR" "$lane" "$requested_agent" "$requested_run_id" "$requested_stage" "$requested_flow_sequence" <<'PY'
 import json
 import sys
 
-task_file, roster_file, teammates_dir, lane, requested_agent = sys.argv[1:]
+task_file, roster_file, teammates_dir, lane, requested_agent, requested_run_id, requested_stage, requested_flow_sequence = sys.argv[1:]
 
 with open(task_file, "r", encoding="utf-8") as fh:
     task = json.load(fh)
@@ -221,12 +265,7 @@ preferred_modes = [
     for mode in preferred_modes
     if str(mode).strip()
 ] if isinstance(preferred_modes, list) else []
-
-candidate_ids = {
-    str(member.get("id", "")).strip()
-    for member in roster.get("candidates", [])
-    if isinstance(member, dict) and str(member.get("id", "")).strip()
-}
+allow_manual_override = bool(selection_policy.get("allow_manual_override", False))
 
 task_tags = task.get("domain_tags")
 task_tags = [str(tag).strip() for tag in task_tags] if isinstance(task_tags, list) else []
@@ -245,10 +284,13 @@ for mode_name in ("experts", "backup"):
         member_id = str(member.get("id", "")).strip()
         if not member_id:
             continue
+        status = str(member.get("status", "")).strip().lower()
+        if status != "active":
+            continue
         members.append({
             "id": member_id,
             "mode": str(member.get("mode", default_mode)).strip() or default_mode,
-            "status": str(member.get("status", "")).strip().lower(),
+            "status": status,
             "domain_tags": [
                 str(tag).strip()
                 for tag in member.get("domain_tags", [])
@@ -257,7 +299,26 @@ for mode_name in ("experts", "backup"):
         })
 
 requested_agent = requested_agent.strip()
+requested_run_id = requested_run_id.strip()
+requested_stage = requested_stage.strip()
+requested_flow_sequence = requested_flow_sequence.strip()
+
+run_id = requested_run_id or str(task.get("run_id", "")).strip()
+stage = requested_stage or str(task.get("stage", "")).strip()
+flow_sequence = None
+
+if requested_flow_sequence:
+    flow_sequence = int(requested_flow_sequence)
+elif "flow_sequence" in task and task.get("flow_sequence") not in (None, ""):
+    flow_sequence = int(task.get("flow_sequence"))
+
 if requested_agent:
+    if not allow_manual_override:
+        print(json.dumps({
+            "error": f"manual override is disabled for lane {lane}",
+            "requested_agent": requested_agent,
+        }, ensure_ascii=True, separators=(",", ":")), file=sys.stderr)
+        sys.exit(1)
     members = [member for member in members if member["id"] == requested_agent]
     if not members:
         print(json.dumps({
@@ -309,9 +370,6 @@ def score_member(member):
     route_score += member["availability"] * 10.0
     if mode == "expert":
         route_score += 1000.0
-        # Candidate experts remain eligible peers; this only nudges sorting.
-        if member["id"] in candidate_ids:
-            route_score += 1.0
     if not has_task_tags and mode == "expert":
         route_score += 50.0
     return overlap_count, route_score
@@ -375,7 +433,7 @@ else:
         }, ensure_ascii=True, separators=(",", ":")), file=sys.stderr)
         sys.exit(1)
 
-print(json.dumps({
+result = {
     "task_id": task.get("task_id"),
     "lane": lane,
     "selected_agent": selected["id"],
@@ -388,18 +446,40 @@ print(json.dumps({
         tag for tag in task_tags
         if tag in set(selected["domain_tags"])
     ],
-}, ensure_ascii=True, separators=(",", ":")))
+}
+
+if run_id:
+    result["run_id"] = run_id
+
+if stage:
+    result["stage"] = stage
+
+if flow_sequence is not None:
+    result["flow_sequence"] = flow_sequence
+
+print(json.dumps(result, ensure_ascii=True, separators=(",", ":")))
 PY
     )"; then
         mkdir -p "$TELEMETRY_DIR"
-        python3 - "$telemetry_file" "$lane" "$task_id" <<'PY'
+        python3 - "$telemetry_file" "$lane" "$task_id" "$pending_task_file" "$requested_run_id" "$requested_stage" "$requested_flow_sequence" <<'PY'
 import json
 import os
 import sys
 from datetime import datetime, timezone
 
-telemetry_file, lane, task_id = sys.argv[1:]
+telemetry_file, lane, task_id, pending_task_file, requested_run_id, requested_stage, requested_flow_sequence = sys.argv[1:]
 os.makedirs(os.path.dirname(telemetry_file), exist_ok=True)
+with open(pending_task_file, "r", encoding="utf-8") as fh:
+    task = json.load(fh)
+
+run_id = requested_run_id.strip() or str(task.get("run_id", "")).strip()
+stage = requested_stage.strip() or str(task.get("stage", "")).strip()
+flow_sequence = None
+if requested_flow_sequence.strip():
+    flow_sequence = int(requested_flow_sequence)
+elif "flow_sequence" in task and task.get("flow_sequence") not in (None, ""):
+    flow_sequence = int(task.get("flow_sequence"))
+
 event = {
     "type": "task.claim.rejected",
     "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -410,6 +490,16 @@ event = {
         "reason": "selection_failed",
     },
 }
+
+if run_id:
+    event["data"]["run_id"] = run_id
+
+if stage:
+    event["data"]["stage"] = stage
+
+if flow_sequence is not None:
+    event["data"]["flow_sequence"] = flow_sequence
+
 with open(telemetry_file, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(event, ensure_ascii=True, separators=(",", ":")) + "\n")
 PY
@@ -447,6 +537,10 @@ task["selection_reason"] = selection["selection_reason"]
 task["claim_id"] = claim_id
 task["claimed_at"] = timestamp
 
+for key in ("run_id", "stage", "flow_sequence"):
+    if key in selection:
+        task[key] = selection[key]
+
 claim_record = {
     "claim_id": claim_id,
     "request_id": request_id,
@@ -464,6 +558,10 @@ claim_record = {
     "selection_reason": selection["selection_reason"],
     "claimed_at": timestamp,
 }
+
+for key in ("run_id", "stage", "flow_sequence"):
+    if key in selection:
+        claim_record[key] = selection[key]
 
 telemetry_event = {
     "type": "task.claim.granted",
@@ -485,6 +583,10 @@ telemetry_event = {
     },
 }
 
+for key in ("run_id", "stage", "flow_sequence"):
+    if key in selection:
+        telemetry_event["data"][key] = selection[key]
+
 manifest = {
     "request_id": request_id,
     "claim_id": claim_id,
@@ -496,6 +598,10 @@ manifest = {
     "fallback_used": selection["fallback_used"],
     "claimed_at": timestamp,
 }
+
+for key in ("run_id", "stage", "flow_sequence"):
+    if key in selection:
+        manifest[key] = selection[key]
 
 os.makedirs(transaction_dir, exist_ok=True)
 
@@ -600,6 +706,7 @@ print(json.dumps({
     "fallback_used": manifest.get("fallback_used", False),
     "claim_id": manifest["claim_id"],
     "request_id": manifest["request_id"],
+    **{key: manifest[key] for key in ("run_id", "stage", "flow_sequence") if key in manifest},
 }, ensure_ascii=True, separators=(",", ":")))
 PY
 }

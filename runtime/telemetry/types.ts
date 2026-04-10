@@ -256,6 +256,12 @@ export interface InformationQualityMetrics {
   compressionPotential: number;
 }
 
+export interface BlockCompactionSignals extends InformationQualityMetrics {
+  tokenCount: number;
+  densityNorm: number;
+  ngramRedundancy: number;
+}
+
 // Memory metrics
 export interface MemoryMetrics {
   // Operations

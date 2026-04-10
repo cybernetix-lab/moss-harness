@@ -15,9 +15,9 @@
 
 ### 1.2 优先级排序
 
-根据用户需求，按以下优先级实现：
+根据当前项目状态与用户需求，按以下优先级增强：
 
-1. **子 Agent 编排** - 动态创建和管理子代理
+1. **子 Agent 编排 / Workflow Orchestration** - 在已实现的编排底座上继续增强动态创建、管理与路由能力
 2. **内存系统** - 长周期任务的上下文保持
 3. **沙箱执行** - 安全的代码执行环境
 4. **K8s 部署** - 云原生部署支持
@@ -32,7 +32,7 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  接入层        │  Web UI │  IM Gateway (飞书优先)  │  API Gateway           │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  编排层        │  Orchestrator (动态子 Agent 编排)                         │
+│  编排层        │  Workflow Orchestrator (已实现的动态子 Agent 编排能力)     │
 │               │  ├─ Lead Agent (主代理)                                    │
 │               │  ├─ Sub-Agent Manager (子代理管理)                          │
 │               │  └─ Task Router (任务路由)                                  │
@@ -46,6 +46,8 @@
 ```
 
 ## 2. 子 Agent 编排系统
+
+这里描述的并不是一个尚未存在的独立产品，而是 `moss-harness` 已实现 orchestration substrate 的延展形态。当前系统已经具备 workflow orchestration 能力；本节重点说明如何在既有编排能力上继续增强子 Agent 管理、动态路由与扩展集成。
 
 ### 2.1 核心概念
 
@@ -639,8 +641,8 @@ data_models:
 
 ### 8.2 渐进式迁移路径
 
-**Phase 1: 子 Agent 编排**
-- 扩展现有 Orchestrator，添加 Sub-Agent Manager
+**Phase 1: 子 Agent 编排增强**
+- 强化现有 Orchestrator，补齐和扩展 Sub-Agent Manager
 - 复用现有的六角色 Agent 作为 Sub-Agent 模板
 - 保持现有接口不变
 
@@ -665,7 +667,7 @@ data_models:
 
 | 组件 | 选型 | 理由 |
 |------|------|------|
-| 编排引擎 | 扩展现有 Orchestrator | 保持架构一致性 |
+| 编排引擎 | 强化现有 Workflow Orchestrator | 保持架构一致性，并延续已实现的 orchestration substrate |
 | 内存存储 | PostgreSQL + Redis | 成熟稳定，支持向量扩展 |
 | 沙箱 | Docker (默认) + K8s (生产) | 安全隔离，弹性伸缩 |
 | 消息队列 | Redis Streams / RabbitMQ | 轻量，与现有技术栈兼容 |
@@ -675,7 +677,7 @@ data_models:
 
 | 特性 | DeerFlow | 本方案 |
 |------|----------|--------|
-| 架构基础 | LangGraph | 自定义 Orchestrator |
+| 架构基础 | LangGraph | 自定义 Workflow Orchestrator |
 | Agent 模型 | 单一 Lead Agent | 六角色分离 |
 | 设计哲学 | 功能导向 | SCI 论导向 |
 | 扩展性 | Markdown Skills | YAML Skills + Hooks |
@@ -683,10 +685,10 @@ data_models:
 
 ## 10. 下一步行动
 
-1. **实现子 Agent 编排系统**
-   - 创建 `orchestrator/subagents/` 目录
-   - 实现 Sub-Agent Manager
-   - 添加动态路由逻辑
+1. **增强子 Agent 编排系统**
+   - 完善 `orchestrator/subagents/` 目录结构
+   - 强化 Sub-Agent Manager
+   - 增强动态路由逻辑
 
 2. **增强内存系统**
    - 扩展 `memory/` 目录

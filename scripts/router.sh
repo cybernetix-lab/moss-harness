@@ -7,10 +7,24 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# 引入 Sub-Agent Manager
-source "${PROJECT_ROOT}/runtime/orchestration/subagents/subagent-manager.sh"
+# 延迟加载旧的 Sub-Agent Manager，避免影响新的 workflow orchestrator 入口
+SUBAGENT_MANAGER_SCRIPT="${PROJECT_ROOT}/scripts/subagent-manager.sh"
+SUBAGENT_MANAGER_LOADED="${SUBAGENT_MANAGER_LOADED:-false}"
+
+ensure_subagent_manager_loaded() {
+    if [[ "$SUBAGENT_MANAGER_LOADED" == "true" ]]; then
+        return 0
+    fi
+    if [[ ! -f "$SUBAGENT_MANAGER_SCRIPT" ]]; then
+        log_error "Sub-Agent Manager not found: ${SUBAGENT_MANAGER_SCRIPT}"
+        return 1
+    fi
+    # shellcheck disable=SC1090
+    source "$SUBAGENT_MANAGER_SCRIPT"
+    SUBAGENT_MANAGER_LOADED="true"
+}
 
 # 路由配置
 ROUTING_CONFIG="${PROJECT_ROOT}/runtime/orchestration/routing/routing-config.yaml"
@@ -37,6 +51,40 @@ log_warn() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+emit_workflow_event() {
+    local event_type="$1"
+    local json_payload="${2-}"
+    local runtime_dir="${MOSS_RUNTIME_DIR:-${PROJECT_ROOT}/.runtime}"
+    local telemetry_dir="${runtime_dir}/telemetry"
+    local telemetry_file="${telemetry_dir}/events.jsonl"
+
+    if [[ -z "$json_payload" ]]; then
+        json_payload='{}'
+    fi
+
+    mkdir -p "$telemetry_dir"
+
+    python3 - "$telemetry_file" "$event_type" "$json_payload" <<'PY'
+import json
+import os
+import sys
+from datetime import datetime, timezone
+
+telemetry_file, event_type, raw_payload = sys.argv[1:]
+payload = json.loads(raw_payload)
+
+event = {
+    "type": event_type,
+    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "id": f"{event_type.replace('.', '_')}_{os.getpid()}",
+    "data": payload,
+}
+
+with open(telemetry_file, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(event, ensure_ascii=True, separators=(",", ":")) + "\n")
+PY
 }
 
 # 分析任务特征
@@ -305,6 +353,8 @@ execute_single_agent() {
 route_task() {
     local task_description="$1"
     local parent_session_id="${2:-}"
+
+    ensure_subagent_manager_loaded
     
     log_info "Routing task: ${task_description:0:50}..."
     
@@ -344,6 +394,8 @@ wait_for_subagents() {
     local timeout="${WAIT_TIMEOUT:-300}"
     local poll_interval=5
     local elapsed=0
+
+    ensure_subagent_manager_loaded
     
     log_info "Waiting for ${#subagent_ids[@]} subagents to complete..."
     
@@ -380,6 +432,8 @@ wait_for_subagents() {
 # 汇总 Sub-Agent 结果
 aggregate_results() {
     local subagent_ids=("$@")
+
+    ensure_subagent_manager_loaded
     
     log_info "Aggregating results from ${#subagent_ids[@]} subagents..."
     
@@ -402,26 +456,26 @@ aggregate_results() {
 # 显示帮助
 show_help() {
     cat << EOF
-Task Router - Dynamic Routing Engine
-
+Workflow Orchestrator Router
 Usage: $0 <command> [options]
 
 Commands:
+    orchestrate --text "<request>" [--task-id <id>] [--task-type <type>] [--tags <tag1,tag2>] [--priority <p>]
+        统一入口：意图识别 -> 策略包 -> 决策 -> 建档/控制器调用（任务治理）
+
+    orchestrate --campaign "<topic>" [--campaign-id <id>] [--tags <tag1,tag2>]
+        统一入口：意图识别 -> 策略包 -> 决策 -> 学习控制器（学习推进）
+
     route <task_description> [parent_session]
-        Route a task using appropriate strategy
-        
+        [兼容] 子代理路由策略
     analyze <task_description>
-        Analyze task characteristics only
-        
+        [兼容] 仅分析任务特征
     strategy <task_description>
-        Show which strategy would be selected
-        
+        [兼容] 查看选中的旧策略
     wait <subagent_id> [subagent_id...]
-        Wait for subagents to complete
-        
+        [兼容] 等待子代理完成
     aggregate <subagent_id> [subagent_id...]
-        Aggregate results from subagents
-        
+        [兼容] 汇总子代理结果
     help
         Show this help message
 
@@ -429,9 +483,9 @@ Environment Variables:
     WAIT_TIMEOUT      Timeout for waiting subagents (default: 300s)
 
 Examples:
-    $0 route "Implement user authentication system"
-    $0 analyze "Design database schema for e-commerce"
-    $0 wait sub-1234567890-abcdef12 sub-1234567890-ghijkl34
+    $0 orchestrate --text "Implement a local bugfix"
+    $0 orchestrate --campaign "Study feedback control"
+    $0 route "Implement user authentication system"   # 兼容旧行为
 EOF
 }
 
@@ -441,6 +495,225 @@ main() {
     shift || true
     
     case "$command" in
+        orchestrate)
+            # 轻量内联新入口（无破坏旧实现）
+            # 依赖：task-board.sh、path-controller.sh、learning-controller.sh
+            local text=""
+            local tags_csv=""
+            local priority="normal"
+            local task_id=""
+            local task_type="generic_task"
+            local campaign=""
+            local campaign_id=""
+
+            while [[ $# -gt 0 ]]; do
+              case "$1" in
+                --text) text="${2-}"; shift 2;;
+                --tags) tags_csv="${2-}"; shift 2;;
+                --priority) priority="${2-}"; shift 2;;
+                --task-id) task_id="${2-}"; shift 2;;
+                --task-type) task_type="${2-}"; shift 2;;
+                --campaign) campaign="${2-}"; shift 2;;
+                --campaign-id) campaign_id="${2-}"; shift 2;;
+                --help|-h) show_help; return 0;;
+                *) log_error "Unknown option for orchestrate: $1"; exit 1;;
+              esac
+            done
+
+            # 工具路径
+            local TASK_BOARD_SCRIPT="${PROJECT_ROOT}/scripts/task-board.sh"
+            local PATH_CONTROLLER_SCRIPT="${PROJECT_ROOT}/scripts/path-controller.sh"
+            local LEARNING_CONTROLLER_SCRIPT="${PROJECT_ROOT}/scripts/learning-controller.sh"
+            local WORKFLOW_ORCHESTRATOR_SCRIPT="${PROJECT_ROOT}/runtime/orchestration/workflow-orchestrator.ts"
+
+            if [[ -z "$text" ]]; then
+              if [[ -z "$campaign" ]]; then
+                log_error "orchestrate requires --text (task) or --campaign (learning)"
+                exit 1
+              fi
+            fi
+
+            if [[ -n "$campaign" && -z "$campaign_id" ]]; then
+              campaign_id="learn-$(date +%s)"
+            fi
+
+            if [[ -n "$text" && -z "$task_id" ]]; then
+              task_id="task-$(date +%s)"
+            fi
+
+            if [[ ! -f "$WORKFLOW_ORCHESTRATOR_SCRIPT" ]]; then
+              log_error "Workflow orchestrator script not found: ${WORKFLOW_ORCHESTRATOR_SCRIPT}"
+              exit 1
+            fi
+
+            local eval_payload
+            eval_payload="$(python3 - "$text" "$task_id" "$task_type" "$campaign" "$campaign_id" "$tags_csv" <<'PY'
+import json
+import sys
+
+text, task_id, task_type, campaign, campaign_id, tags_csv = sys.argv[1:]
+payload = {}
+if text:
+    payload["text"] = text
+if task_id:
+    payload["taskId"] = task_id
+if task_type:
+    payload["taskType"] = task_type
+if campaign:
+    payload["campaign"] = campaign
+if campaign_id:
+    payload["campaignId"] = campaign_id
+payload["tags"] = [tag.strip() for tag in tags_csv.split(",") if tag.strip()]
+print(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+
+            local eval_result
+            eval_result="$(node "$WORKFLOW_ORCHESTRATOR_SCRIPT" "$eval_payload" 2>/dev/null)"
+
+            local work_item_type policy_pack route lane result_task_id result_campaign_id result_study_plan
+            work_item_type="$(python3 - "$eval_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("workItemType", ""))
+PY
+)"
+            policy_pack="$(python3 - "$eval_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("policyPack", ""))
+PY
+)"
+            route="$(python3 - "$eval_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("route", ""))
+PY
+)"
+            lane="$(python3 - "$eval_result" <<'PY'
+import json, sys
+value = json.loads(sys.argv[1]).get("firstLane", "")
+print(value)
+PY
+)"
+            result_task_id="$(python3 - "$eval_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("taskId", ""))
+PY
+)"
+            result_campaign_id="$(python3 - "$eval_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("campaignId", ""))
+PY
+)"
+            result_study_plan="$(python3 - "$eval_result" <<'PY'
+import json, sys
+value = json.loads(sys.argv[1]).get("studyPlan")
+if value is None:
+    print("")
+else:
+    print(json.dumps(value, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+
+            emit_workflow_event "workflow.intent.recognized" "$(python3 - "$work_item_type" "$text" "$campaign" "$tags_csv" <<'PY'
+import json
+import sys
+
+work_item_type, text, campaign, tags_csv = sys.argv[1:]
+payload = {
+    "work_item_type": work_item_type,
+    "goal": campaign or text,
+    "domain_tags": [tag.strip() for tag in tags_csv.split(",") if tag.strip()],
+}
+print(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+
+            emit_workflow_event "workflow.policy.selected" "$(python3 - "$work_item_type" "$policy_pack" "$route" "$result_task_id" "$result_campaign_id" <<'PY'
+import json
+import sys
+
+work_item_type, policy_pack, route, task_id, campaign_id = sys.argv[1:]
+payload = {
+    "work_item_type": work_item_type,
+    "policy_pack": policy_pack,
+    "route": route,
+}
+if task_id:
+    payload["task_id"] = task_id
+if campaign_id:
+    payload["campaign_id"] = campaign_id
+print(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+
+            if [[ "$work_item_type" == "learning" ]]; then
+              emit_workflow_event "learning.route.selected" "$(python3 - "$result_campaign_id" "$route" "$policy_pack" "$campaign" <<'PY'
+import json
+import sys
+
+campaign_id, route, policy_pack, campaign = sys.argv[1:]
+print(json.dumps({
+    "campaign_id": campaign_id,
+    "route": route,
+    "policy_pack": policy_pack,
+    "goal": campaign,
+}, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+              log_decision "policy_pack=${policy_pack} route=${route} campaign_id=${result_campaign_id}"
+              if [[ -x "$LEARNING_CONTROLLER_SCRIPT" ]]; then
+                if [[ -n "$result_study_plan" ]]; then
+                  "$LEARNING_CONTROLLER_SCRIPT" start-iteration --campaign-id "$result_campaign_id" --route "$route" --study-plan-json "$result_study_plan" || true
+                else
+                  "$LEARNING_CONTROLLER_SCRIPT" start-iteration --campaign-id "$result_campaign_id" --route "$route" || true
+                fi
+              fi
+              echo "{\"work_item_type\":\"learning\",\"campaign_id\":\"${result_campaign_id}\",\"route\":\"${route}\"}"
+              return 0
+            fi
+
+            [[ -z "$lane" ]] && lane="planner"
+            [[ -z "$result_task_id" ]] && result_task_id="$task_id"
+            emit_workflow_event "task.path.selected" "$(python3 - "$result_task_id" "$route" "$policy_pack" "$lane" "$text" <<'PY'
+import json
+import sys
+
+task_id, route, policy_pack, first_lane, text = sys.argv[1:]
+print(json.dumps({
+    "task_id": task_id,
+    "route": route,
+    "policy_pack": policy_pack,
+    "first_lane": first_lane,
+    "goal": text,
+}, ensure_ascii=True, separators=(",", ":")))
+PY
+)"
+            log_decision "policy_pack=${policy_pack} route=${route} task_id=${result_task_id} first_lane=${lane}"
+
+            # 建档：创建首个 lane 任务（pending）
+            if [[ -x "$TASK_BOARD_SCRIPT" ]]; then
+              "$TASK_BOARD_SCRIPT" create \
+                --lane "$lane" \
+                --task-id "$result_task_id" \
+                --task-type "$task_type" \
+                --tags "${tags_csv}" \
+                --priority "${priority}" \
+                --stage "$lane" \
+                --flow-sequence 1 \
+                --work-item-type "task" \
+                --policy-pack "$policy_pack" \
+                --route "$route" \
+                --route-state "queued" || log_warn "task-board create failed; continue"
+            else
+              log_warn "Task board script not executable: ${TASK_BOARD_SCRIPT}"
+            fi
+
+            # 控制器：启动路径
+            if [[ -x "$PATH_CONTROLLER_SCRIPT" ]]; then
+              "$PATH_CONTROLLER_SCRIPT" start --task-id "$result_task_id" --route "$route" || true
+            fi
+
+            echo "{\"work_item_type\":\"task\",\"task_id\":\"${result_task_id}\",\"route\":\"${route}\",\"first_lane\":\"${lane}\"}"
+            ;;
         route)
             if [[ $# -lt 1 ]]; then
                 log_error "Usage: $0 route <task_description> [parent_session]"
