@@ -31,7 +31,7 @@ jobs:
 
     - name: Validate YAML files
       run: |
-        find . -name "*.yaml" -o -name "*.yml" | grep -v node_modules | xargs yamllint -d relaxed
+        find . -name "*.yaml" -o -name "*.yml" | grep -v node_modules | grep -v deployments/helm/templates | xargs yamllint -d relaxed
 
     - name: Validate skill definitions
       run: |

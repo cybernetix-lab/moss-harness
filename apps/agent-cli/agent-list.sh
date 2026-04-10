@@ -2,9 +2,9 @@
 # agent-list.sh - 列出所有可用 Agent
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-AGENTS_DIR="${PROJECT_ROOT}/agents"
+AGENTS_DIR="${PROJECT_ROOT}/configs/agents"
 
 echo "🤖 Available Agents"
 echo ""

@@ -266,7 +266,7 @@ atomic_capabilities:
           signal: dispatch_to_planner
           to: planner
           feedback_type: positive
-        
+
         # 标准流程（正反馈驱动）
         - from: planner
           signal: plan_complete
