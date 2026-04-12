@@ -143,18 +143,28 @@ moss-harness/
 ├── configs/                   # 【Strategy 层】配置中心
 │   ├── orchestration/         # 编排与泳道配置
 │   ├── protocols/             # 结构化通信协议
-│   └── agents/                # Agent 模板配置
+│   ├── agents/                # Agent 模板配置
+│   └── rules/                 # 规则与工具约束
 ├── docs/                      # 文档与架构规范
-├── evals/                     # 评估框架
+├── evals/                     # 【Observability 层】评估框架与指标
+├── integrations/              # 【Harness 层】MCP 与外部 Skill 扩展
+├── observability/             # 【Observability 层】Prometheus 与 Grafana 大盘配置
 ├── .runtime/moss-harness/     # 【Observability 层】运行时落盘与事实链
 │   ├── tasks/                 # Task Board 状态事实
 │   └── telemetry/             # 遥测事件日志
-├── src/                       # 【Harness 层】核心源码
-│   ├── core/                  # Workflow Orchestrator 及路由
+├── runtime/                   # 【Harness 层】TypeScript 核心底座实现
+│   ├── orchestration/         # Workflow Orchestrator 编排器与路由
+│   ├── context/               # 策略 (Policies) 与上下文压缩
+│   ├── memory/                # 记忆与沉淀系统
+│   ├── telemetry/             # 遥测指标收集器
+│   ├── sandbox/               # 执行沙箱管控
+│   └── storage/               # 持久化存储实现 (SQLite, Base)
+├── src/                       # 【Harness 层】Shell 核心底座源码 (Legacy)
+│   ├── core/                  # Workflow Orchestrator 编排器
 │   ├── agents/                # 角色 Agent 实现
 │   └── memory/                # 记忆与沉淀系统
 ├── tests/                     # 测试用例 (Bats/Jest)
-└── scripts/                   # 运维与管控脚本
+└── scripts/                   # 【Harness 层】运维与管控脚本
 ```
 
 ---

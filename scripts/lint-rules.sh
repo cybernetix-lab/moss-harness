@@ -6,7 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-RULES_DIR="${PROJECT_ROOT}/rules"
+RULES_DIR="${PROJECT_ROOT}/configs/rules"
 
 # 颜色定义
 RED='\033[0;31m'

@@ -4,7 +4,7 @@ This directory documents repository verification. For the strategic project narr
 
 The repository currently uses two main test families:
 
-- `Bats` for CLI and shell behavior across `apps/`, `scripts/`, `tooling/`, and `context/`
+- `Bats` for CLI and shell behavior across `apps/`, `scripts/`, `configs/rules/`, and `context/`
 - `Jest` for TypeScript runtime coverage such as `tests/runtime/**/*.test.ts`
 
 ## Install Bats

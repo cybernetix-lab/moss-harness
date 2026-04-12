@@ -1,61 +1,76 @@
-# Scripts
+# Tooling Scripts
 
-运行时管理脚本，负责管理 Agent Harness 平台的核心运行时组件。
+开发工具脚本，支持 Agent 开发、技能管理和评估调试。
 
 ## 定位
 
-- **目标用户**: 系统管理员、运维人员
-- **使用场景**: 平台运维管理
-- **交互方式**: 后台管理脚本
+- **目标用户**: Agent 工程师、开发者
+- **使用场景**: 技能开发/评估调试
+- **交互方式**: 开发辅助工具
 
-## 脚本说明
+## 脚本分类
 
-| 脚本 | 功能 | 管理对象 |
+### 技能管理
+
+| 脚本 | 功能 | 使用示例 |
 |------|------|----------|
-| `memory-manager.sh` | 内存管理系统 | 工作内存、短期/长期记忆、共享内存 |
-| `router.sh` | 任务路由决策引擎 | 任务分发和负载均衡 |
-| `sandbox-manager.sh` | 沙箱执行系统 | Local/Docker/K8s 沙箱 |
-| `subagent-manager.sh` | 子代理生命周期管理 | 子代理创建、调度、销毁 |
-| `storage-manager.sh` | 存储系统管理 | 数据持久化和检索 |
-| `feishu-gateway.sh` | 飞书网关集成 | 消息通知和交互 |
-| `task-board.sh` | 按 lane 管理任务状态队列 | `.runtime/task-board/` |
-| `roster-loader.sh` | 从 registry 读取 lane 成员清单 | `configs/orchestration/agent-registry.yaml` |
-| `claim-engine.sh` | 在 lane 内执行 expert-first claim | `.runtime/task-board/`、`.runtime/claims/` |
-| `presence-manager.sh` | 记录 lane 成员 presence | `.runtime/teammates/` |
-| `evolution-candidate.sh` | 从 completed task 生成候选专家 raw proposal | `.runtime/evolution/candidates/` |
+| `skill-discover.sh` | 发现并注册技能 | `./skill-discover.sh` |
+| `skill-list.sh` | 列出所有技能 | `./skill-list.sh` |
+| `skill-activate.sh` | 激活技能 | `./skill-activate.sh typescript-patterns` |
+| `skill-run.sh` | 运行技能 | `./skill-run.sh react-hooks` |
+| `skill-tag.sh` | 标签管理 | `./skill-tag.sh filter react` |
+| `skill-eval.sh` | 评估技能 | `./skill-eval.sh typescript-patterns` |
+| `skill-evolve.sh` | 进化技能 | `./skill-evolve.sh analyze react-hooks` |
 
-## Executor Lane PoC
+### 评估框架
 
-- `task-board.sh` 负责创建与迁移 lane 任务状态
-- `task-board.sh create` 支持附带 `run_id`、`stage`、`flow_sequence`，并写入 `task.board.created` / `task.board.moved` telemetry
-- `roster-loader.sh` 负责读取 `members` 作为唯一成员真相源
-- `claim-engine.sh` 只允许 `status: active` 的 expert 参与 expert-first claim；`candidate` 在正式晋升前不会直接认领任务
-- `claim-engine.sh` 会遵守 `selection_policy.allow_manual_override`；当策略关闭时，`--agent` 手动指定会被拒绝
-- `claim-engine.sh` 负责专家优先、backup 兜底的任务认领
-- `claim-engine.sh` 会将任务上的 `run_id`、`stage`、`flow_sequence` 透传到 claimed task、claim record 与 claim telemetry
-- `evolution-candidate.sh` 只生成 raw proposal 和 telemetry，不做自动 promotion
+| 脚本 | 功能 | 使用示例 |
+|------|------|----------|
+| `run-evals.sh` | 运行评估用例 | `./run-evals.sh agents` |
+| `eval-feedback.sh` | 处理评估反馈 | `./eval-feedback.sh process` |
 
-## 使用示例
+### 遥测分析
+
+| 脚本 | 功能 | 使用示例 |
+|------|------|----------|
+| `telemetry-analyze.sh` | 分析遥测数据 | `./telemetry-analyze.sh --session session_001` |
+| `telemetry-view.sh` | 查看遥测指标 | `./telemetry-view.sh` |
+| `telemetry-prometheus-exporter.sh` | 导出到 Prometheus | `./telemetry-prometheus-exporter.sh` |
+
+### 开发工具
+
+| 脚本 | 功能 | 使用示例 |
+|------|------|----------|
+| `local-ci.sh` | 本地 CI 检查 | `./local-ci.sh` |
+| `lint-rules.sh` | 规则检查 | `./lint-rules.sh` |
+| `verify.sh` | 验证配置 | `./verify.sh` |
+| `update-context.sh` | 更新上下文 | `./update-context.sh task "新目标"` |
+| `health-check.sh` | 健康检查 | `./health-check.sh` |
+| `memory.sh` | 内存操作 | `./memory.sh search "pattern"` |
+| `ruleset.sh` | 规则集管理 | `./ruleset.sh list` |
+
+## 典型工作流
 
 ```bash
-# 内存管理
-./memory-manager.sh working create session_001
-./memory-manager.sh short-term store session_001 "关键信息"
-./memory-manager.sh long-term retrieve session_001 "模式"
+# 1. 发现新技能
+./skill-discover.sh
 
-# 沙箱管理
-./sandbox-manager.sh create local --cpu 2 --memory 1g
-./sandbox-manager.sh create docker --image node:18
-./sandbox-manager.sh list
+# 2. 激活技能
+./skill-activate.sh typescript-patterns
 
-# 子代理管理
-./subagent-manager.sh create --parent session_001 --task "子任务"
-./subagent-manager.sh list --parent session_001
-./subagent-manager.sh destroy subagent_001
+# 3. 评估技能效果
+./skill-eval.sh typescript-patterns
+
+# 4. 分析遥测数据
+./telemetry-analyze.sh --skill typescript-patterns
+
+# 5. 基于反馈进化技能
+./skill-evolve.sh evolve typescript-patterns
 ```
 
 ## 与其他目录的关系
 
-- 被 `apps/agent-cli/` 调用，提供底层能力
-- 操作 `runtime/` 中的 TypeScript 运行时
-- 管理 `.runtime/` 中的运行时数据
+- 操作 `configs/skills/` 中的技能注册表
+- 操作 `integrations/skills/` 中的技能定义
+- 读取 `runtime/telemetry/` 中的遥测数据
+- 被 `apps/agent-cli/` 调用进行技能评估

@@ -3,7 +3,7 @@
 # health-check.sh - 运行健康检查
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 echo "🔍 Running Harness Health Checks..."
 echo ""
@@ -47,13 +47,12 @@ check_file() {
 }
 
 echo "📁 Directory Structure:"
-check_directory "${PROJECT_ROOT}/.runtime/context" "Context directory"
+check_directory "${PROJECT_ROOT}/.runtime/context" "Context directory" "true"
 check_directory "${PROJECT_ROOT}/configs/constraints" "Constraints directory"
-check_directory "${PROJECT_ROOT}/tooling/evals" "Evals directory"
-check_directory "${PROJECT_ROOT}/observability" "Observability directory"
-check_directory "${PROJECT_ROOT}/tooling/rules" "Rules directory"
+check_directory "${PROJECT_ROOT}/evals" "Evals directory"
+check_directory "${PROJECT_ROOT}/.runtime/moss-harness" "Observability directory"
+check_directory "${PROJECT_ROOT}/configs/rules" "Rules directory"
 check_directory "${PROJECT_ROOT}/scripts" "Scripts directory"
-check_directory "${PROJECT_ROOT}/runtime" "Runtime directory" "true"
 check_directory "${PROJECT_ROOT}/configs/agents" "Agent configs directory"
 check_directory "${PROJECT_ROOT}/configs/skills" "Skill registry directory"
 check_directory "${PROJECT_ROOT}/integrations/skills" "Skill definitions directory"
@@ -69,16 +68,16 @@ check_file "${PROJECT_ROOT}/configs/telemetry/token-telemetry.yaml" "Telemetry c
 echo ""
 echo "🔧 Scripts:"
 check_file "${PROJECT_ROOT}/apps/agent-cli/start-session.sh" "Start session script"
-check_file "${PROJECT_ROOT}/tooling/scripts/update-context.sh" "Update context script"
+check_file "${PROJECT_ROOT}/scripts/update-context.sh" "Update context script"
 check_file "${PROJECT_ROOT}/apps/agent-cli/create-checkpoint.sh" "Create checkpoint script"
 check_file "${PROJECT_ROOT}/apps/agent-cli/restore-checkpoint.sh" "Restore checkpoint script"
 
 echo ""
 echo "🛠️ Tools:"
-check_file "${PROJECT_ROOT}/tooling/rules/filesystem/read.yaml" "Read tool"
-check_file "${PROJECT_ROOT}/tooling/rules/filesystem/write.yaml" "Write tool"
-check_file "${PROJECT_ROOT}/tooling/rules/code/search.yaml" "Search tool"
-check_file "${PROJECT_ROOT}/tooling/rules/execution/run-tests.yaml" "Run tests tool"
+check_file "${PROJECT_ROOT}/configs/rules/filesystem/read.yaml" "Read tool"
+check_file "${PROJECT_ROOT}/configs/rules/filesystem/write.yaml" "Write tool"
+check_file "${PROJECT_ROOT}/configs/rules/code/search.yaml" "Search tool"
+check_file "${PROJECT_ROOT}/configs/rules/execution/run-tests.yaml" "Run tests tool"
 
 echo ""
 if [[ $ERRORS -eq 0 ]]; then

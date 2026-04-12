@@ -13,10 +13,13 @@ setup() {
   # 设置测试模式
   export TEST_MODE=true
   
+  export CONFIGS_DIR="${PROJECT_ROOT}/configs"
+  export RULES_DIR="${CONFIGS_DIR}/rules"
+  export EVALS_DIR="${PROJECT_ROOT}/evals"
+  
   # 确保脚本可执行
   chmod +x "$PROJECT_ROOT"/apps/agent-cli/*.sh
   chmod +x "$PROJECT_ROOT"/scripts/*.sh
-  chmod +x "$PROJECT_ROOT"/tooling/scripts/*.sh
 }
 
 # 清理测试环境

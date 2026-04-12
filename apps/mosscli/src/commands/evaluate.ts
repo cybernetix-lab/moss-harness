@@ -1,13 +1,14 @@
-import { ReportBuilder } from "../core/report-builder.js";
+import { EvaluationBuilder } from "../core/evaluation-builder.js";
 
 export function executeEvaluateCommand(options: {
   runId: string;
   format: "md" | "json";
 }): string {
-  const builder = new ReportBuilder();
+  const builder = new EvaluationBuilder();
 
+  const evaluation = builder.buildJson(options.runId);
   if (options.format === "json") {
-    return JSON.stringify(builder.buildJson(options.runId));
+    return JSON.stringify(evaluation);
   }
 
   return builder.buildMarkdown(options.runId);

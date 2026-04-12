@@ -83,7 +83,7 @@ JSONL
 
   run node "$PROJECT_ROOT/apps/mosscli/dist/cli/index.js" evaluate --run-id learn-report
   assert_success
-  assert_output_contains "Learning Campaign Report"
+  assert_output_contains "Learning Progression Evaluation"
   assert_output_contains "Campaign ID: learn-report"
   assert_output_contains "Route: synthesis-cycle"
   assert_output_contains "Study Nodes: 3"

@@ -2,15 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type {
-  MossHarnessJsonReport,
-  MossLearningJsonReport,
-  MosscliJsonReport,
-} from "../model/report.js";
+  MossHarnessJsonEvaluation,
+  MossLearningJsonEvaluation,
+  MosscliJsonEvaluation,
+} from "../model/evaluation.js";
 import type { StageSnapshot } from "../model/run.js";
 import { EmergenceAnalyzer } from "./emergence-analyzer.js";
 import { MosscliFileStore } from "../store/file-store.js";
 
-export class ReportBuilder {
+export class EvaluationBuilder {
   private readonly store = new MosscliFileStore();
   private readonly analyzer = new EmergenceAnalyzer();
   private readonly runtimeRoot = process.env.MOSS_RUNTIME_DIR ?? path.join(process.cwd(), ".runtime");
@@ -81,14 +81,14 @@ export class ReportBuilder {
     return { createdTasks, skippedTasks };
   }
 
-  private buildLearningJson(runId: string, campaign: Record<string, unknown>): MossLearningJsonReport {
+  private buildLearningJson(runId: string, campaign: Record<string, unknown>): MossLearningJsonEvaluation {
     const delegatedTasks = this.readDelegatedLearningTasks(runId);
     const telemetrySummary = this.summarizeLearningTelemetry(runId);
     const studyPlan = (campaign["study_plan"] ?? {
       iteration: Number(campaign["iteration"] ?? 1),
       nodes: [],
       dependencies: [],
-    }) as MossLearningJsonReport["study_plan"];
+    }) as MossLearningJsonEvaluation["study_plan"];
 
     return {
       report_type: "learning",
@@ -114,7 +114,7 @@ export class ReportBuilder {
     };
   }
 
-  buildJson(runId: string): MosscliJsonReport {
+  buildJson(runId: string): MosscliJsonEvaluation {
     const learningCampaign = this.readLearningCampaign(runId);
     if (learningCampaign) {
       return this.buildLearningJson(runId, learningCampaign);
@@ -150,39 +150,39 @@ export class ReportBuilder {
   }
 
   buildMarkdown(runId: string): string {
-    const report = this.buildJson(runId);
-    if ("report_type" in report && report.report_type === "learning") {
+    const evaluation = this.buildJson(runId);
+    if ("report_type" in evaluation && evaluation.report_type === "learning") {
       return [
-        "# Learning Campaign Report",
+        "# Learning Progression Evaluation",
         "",
-        `- Campaign ID: ${report.campaign_id}`,
-        `- Route: ${report.route}`,
-        `- Route State: ${report.route_state}`,
-        `- Iteration: ${report.iteration}`,
-        `- Study Nodes: ${report.study_plan.nodes.length}`,
-        `- Delegated Tasks: ${report.summary.delegatedTasks}`,
-        `- Created Tasks: ${report.summary.createdTasks}`,
-        `- Skipped Tasks: ${report.summary.skippedTasks}`,
+        `- Campaign ID: ${evaluation.campaign_id}`,
+        `- Route: ${evaluation.route}`,
+        `- Route State: ${evaluation.route_state}`,
+        `- Iteration: ${evaluation.iteration}`,
+        `- Study Nodes: ${evaluation.study_plan.nodes.length}`,
+        `- Delegated Tasks: ${evaluation.summary.delegatedTasks}`,
+        `- Created Tasks: ${evaluation.summary.createdTasks}`,
+        `- Skipped Tasks: ${evaluation.summary.skippedTasks}`,
       ].join("\n");
     }
 
-    const runReport = report as MossHarnessJsonReport;
-    const stageLines = runReport.stages.map(
+    const runEval = evaluation as MossHarnessJsonEvaluation;
+    const stageLines = runEval.stages.map(
       (stage: StageSnapshot) =>
         `- ${stage.sequence}. ${stage.stage}: ${stage.status} (${stage.selected_agent})`,
     );
 
     return [
-      "# Moss-Harness Run Report",
+      "# Task Governance Evaluation",
       "",
-      `- Run ID: ${runReport.run_id}`,
-      `- Goal: ${runReport.goal}`,
-      `- Status: ${runReport.status}`,
-      `- Current Stage: ${runReport.current_stage}`,
-      `- Selected Agent: ${runReport.selected_agent}`,
-      `- Rework Count: ${runReport.summary.reworkCount}`,
-      `- Retry Count: ${runReport.summary.retryCount}`,
-      `- Completed Stages: ${runReport.summary.completedStages}`,
+      `- Run ID: ${runEval.run_id}`,
+      `- Goal: ${runEval.goal}`,
+      `- Status: ${runEval.status}`,
+      `- Current Stage: ${runEval.current_stage}`,
+      `- Selected Agent: ${runEval.selected_agent}`,
+      `- Rework Count: ${runEval.summary.reworkCount}`,
+      `- Retry Count: ${runEval.summary.retryCount}`,
+      `- Completed Stages: ${runEval.summary.completedStages}`,
       "",
       "## Stages",
       ...stageLines,

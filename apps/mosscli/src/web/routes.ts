@@ -4,11 +4,11 @@ import path from "node:path";
 
 import { MosscliFileStore } from "../store/file-store.js";
 import { getRuntimeRoot } from "../shared/runtime.js";
-import { ReportBuilder } from "../core/report-builder.js";
-import { executeStatusCommand } from "../commands/status.js";
+import { EvaluationBuilder } from "../core/evaluation-builder.js";
 
 type LearningCampaign = {
   campaign_id: string;
+  policy_pack?: string;
   route?: string;
   route_state?: string;
   iteration?: number;
@@ -175,7 +175,7 @@ export function handleMosscliRequest(req: IncomingMessage, res: ServerResponse):
         return;
       }
 
-      const builder = new ReportBuilder();
+      const builder = new EvaluationBuilder();
       let evaluation: Record<string, unknown> = {};
       try {
         evaluation = builder.buildJson(runId) as unknown as Record<string, unknown>;
@@ -307,6 +307,7 @@ export function handleMosscliRequest(req: IncomingMessage, res: ServerResponse):
       const telemetry = summarizeLearningTelemetry(runtimeRoot, c.campaign_id);
       return {
         campaign_id: c.campaign_id,
+        policy_pack: c.policy_pack ?? "unknown",
         route: c.route ?? "unknown",
         route_state: c.route_state ?? "unknown",
         iteration: c.iteration ?? 1,
@@ -341,21 +342,24 @@ export function handleMosscliRequest(req: IncomingMessage, res: ServerResponse):
       const lines: string[] = [];
       lines.push("<!doctype html>");
       lines.push("<style>");
-      lines.push("body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 1200px; margin: 0 auto; padding: 2rem; }");
-      lines.push("h1, h2 { color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }");
-      lines.push("pre { background: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto; }");
-      lines.push(".card { border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }");
-      lines.push(".timeline-event { padding: 0.5rem 0; border-bottom: 1px solid #eee; }");
+      lines.push("body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 1200px; margin: 0 auto; padding: 2rem; background-color: #f8fafc; color: #0f172a; }");
+      lines.push("h1, h2 { color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 0; }");
+      lines.push("pre { background: #f1f5f9; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.9em; }");
+      lines.push(".card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }");
+      lines.push(".timeline-event { padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; }");
       lines.push(".timeline-event:last-child { border-bottom: none; }");
-      lines.push(".badge { display: inline-block; padding: 0.25em 0.5em; font-size: 0.85em; font-weight: 700; border-radius: 0.25rem; background-color: #e9ecef; color: #495057; }");
-      lines.push(".nav { margin-bottom: 2rem; }");
+      lines.push(".badge { display: inline-block; padding: 0.25em 0.6em; font-size: 0.85em; font-weight: 600; border-radius: 0.25rem; background-color: #e2e8f0; color: #334155; }");
+      lines.push(".nav { margin-bottom: 2rem; font-size: 0.9em; }");
+      lines.push("a { color: #2563eb; text-decoration: none; }");
+      lines.push("a:hover { text-decoration: underline; }");
       lines.push("</style>");
-      lines.push("<title>Learning Campaign - " + found.campaign_id + "</title>");
-      lines.push('<div class="nav"><a href="/">&larr; Back to Home</a></div>');
-      lines.push("<h1>Learning Campaign: " + found.campaign_id + "</h1>");
+      lines.push("<title>Learning Progression - " + found.campaign_id + "</title>");
+      lines.push('<div class="nav"><a href="/">&larr; Back to Dashboard</a></div>');
+      lines.push("<h1>Learning Progression: " + found.campaign_id + "</h1>");
 
       lines.push('<div class="card">');
       lines.push("<h2>Overview</h2>");
+      lines.push(`<p>Policy Pack: <strong>${found.policy_pack ?? "unknown"}</strong></p>`);
       lines.push(`<p>Route: <strong>${found.route ?? "unknown"}</strong></p>`);
       lines.push(`<p>Iteration: <strong>${found.iteration ?? 1}</strong></p>`);
       lines.push(`<p>Created Tasks: <strong>${telemetry.createdTasks}</strong></p>`);
@@ -435,33 +439,38 @@ export function handleMosscliRequest(req: IncomingMessage, res: ServerResponse):
     const lines = [
       "<!doctype html>",
       "<style>",
-      "body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 1200px; margin: 0 auto; padding: 2rem; }",
-      "h1, h2 { color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }",
-      ".card { border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }",
-      ".list-item { padding: 0.5rem 0; border-bottom: 1px solid #eee; }",
+      "body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 1200px; margin: 0 auto; padding: 2rem; background-color: #f8fafc; color: #0f172a; }",
+      "h1, h2 { color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 0; }",
+      ".card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }",
+      ".list-item { padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }",
       ".list-item:last-child { border-bottom: none; }",
-      "a { color: #0066cc; text-decoration: none; }",
+      "a { color: #2563eb; text-decoration: none; }",
       "a:hover { text-decoration: underline; }",
-      ".badge { display: inline-block; padding: 0.25em 0.5em; font-size: 0.85em; font-weight: 700; border-radius: 0.25rem; background-color: #e9ecef; color: #495057; }",
-      ".badge-running { background-color: #cce5ff; color: #004085; }",
-      ".badge-completed { background-color: #d4edda; color: #155724; }",
-      ".badge-failed { background-color: #f8d7da; color: #721c24; }",
+      ".badge { display: inline-block; padding: 0.25em 0.6em; font-size: 0.85em; font-weight: 600; border-radius: 0.25rem; background-color: #e2e8f0; color: #334155; }",
+      ".badge-running { background-color: #dbeafe; color: #1e40af; }",
+      ".badge-completed { background-color: #dcfce7; color: #166534; }",
+      ".badge-failed { background-color: #fee2e2; color: #991b1b; }",
+      ".list-item-main { flex: 1; }",
+      ".list-item-meta { color: #64748b; font-size: 0.9em; margin-left: 1rem; text-align: right; }",
       "</style>",
       "<title>Mosscli Dashboard</title>",
       "<h1>mosscli Observability Panel</h1>",
     ];
 
     lines.push('<div class="card">');
-    lines.push('<h2>Recent Runs</h2>');
-    lines.push('<p><a href="/runs">Raw JSON</a></p>');
+    lines.push('<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">');
+    lines.push('<h2 style="border: none; margin: 0; padding: 0;">Task Governance (Regular Runs)</h2>');
+    lines.push('<a href="/runs" style="font-size: 0.9em;">[Raw JSON]</a>');
+    lines.push('</div>');
     if (runs.length > 0) {
       lines.push("<ul>");
       for (const run of runs) {
         const time = new Date(run.created_at).toLocaleString();
         const badgeClass = run.status === 'completed' ? 'badge-completed' : run.status === 'failed' ? 'badge-failed' : 'badge-running';
-        lines.push(
-          `<li class="list-item"><a href="/runs/${run.run_id}/view"><strong>${run.run_id}</strong></a> - ${run.goal} <span class="badge ${badgeClass}">${run.status}</span> <small>(${time})</small></li>`,
-        );
+        lines.push(`<li class="list-item">`);
+        lines.push(`<div class="list-item-main"><a href="/runs/${run.run_id}/view" style="font-size: 1.1em;"><strong>${run.run_id}</strong></a><br><span style="color: #475569; font-size: 0.95em;">${run.goal}</span></div>`);
+        lines.push(`<div class="list-item-meta"><span class="badge ${badgeClass}" style="margin-bottom: 0.25rem;">${run.status}</span><br><small>${time}</small></div>`);
+        lines.push(`</li>`);
       }
       lines.push("</ul>");
     } else {
@@ -470,15 +479,18 @@ export function handleMosscliRequest(req: IncomingMessage, res: ServerResponse):
     lines.push("</div>");
 
     lines.push('<div class="card">');
-    lines.push('<h2>Learning Campaigns</h2>');
-    lines.push('<p><a href="/learning">Raw JSON</a></p>');
+    lines.push('<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">');
+    lines.push('<h2 style="border: none; margin: 0; padding: 0;">Learning Progression (Campaigns)</h2>');
+    lines.push('<a href="/learning" style="font-size: 0.9em;">[Raw JSON]</a>');
+    lines.push('</div>');
     if (campaigns.length > 0) {
       lines.push("<ul>");
       for (const campaign of campaigns) {
         const telemetry = summarizeLearningTelemetry(runtimeRoot, campaign.campaign_id);
-        lines.push(
-          `<li class="list-item"><a href="/learning/${campaign.campaign_id}/view"><strong>${campaign.campaign_id}</strong></a> - ${campaign.route ?? "unknown"} - Iteration: ${campaign.iteration ?? 1} - Created: ${telemetry.createdTasks} - Skipped: ${telemetry.skippedTasks}</li>`,
-        );
+        lines.push(`<li class="list-item">`);
+        lines.push(`<div class="list-item-main"><a href="/learning/${campaign.campaign_id}/view" style="font-size: 1.1em;"><strong>${campaign.campaign_id}</strong></a><br><span style="color: #475569; font-size: 0.95em;">Policy Pack: ${campaign.policy_pack ?? "unknown"} &nbsp;|&nbsp; Route: ${campaign.route ?? "unknown"} &nbsp;|&nbsp; Iteration: ${campaign.iteration ?? 1}</span></div>`);
+        lines.push(`<div class="list-item-meta"><span style="display: inline-block; margin-bottom: 0.25rem;">Created: <strong>${telemetry.createdTasks}</strong> &nbsp;|&nbsp; Skipped: <strong>${telemetry.skippedTasks}</strong></span></div>`);
+        lines.push(`</li>`);
       }
       lines.push("</ul>");
     } else {

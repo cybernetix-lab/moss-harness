@@ -40,7 +40,7 @@ extract_run_id_from_output() {
 
   run node "$PROJECT_ROOT/apps/mosscli/dist/cli/index.js" evaluate --run-id "$run_id" --format md
   assert_success
-  assert_output_contains "# Moss-Harness Run Report"
+  assert_output_contains "# Task Governance Evaluation"
 
   run node "$PROJECT_ROOT/apps/mosscli/dist/cli/index.js" evaluate --run-id "$run_id" --format json
   assert_success
@@ -94,7 +94,7 @@ JSONL
 
   run node "$PROJECT_ROOT/apps/mosscli/dist/cli/index.js" trace --run-id learn-replay
   assert_success
-  assert_output_contains "Learning Campaign Replay"
+  assert_output_contains "Learning Progression Trace"
   assert_output_contains "Campaign ID: learn-replay"
   assert_output_contains "Route: synthesis-cycle"
   assert_output_contains "source-discovery -> extraction"
@@ -159,13 +159,13 @@ JSONL
   run node -e "fetch(\"http://127.0.0.1:${port}/\").then(async (res) => { process.stdout.write(String(res.status) + \"\\n\" + await res.text()); }).catch((error) => { console.error(error); process.exit(1); })"
   assert_success
   assert_output_contains "200"
-  assert_output_contains "Learning Campaigns"
+  assert_output_contains "Learning Progression (Campaigns)"
   assert_output_contains "/learning"
   assert_output_contains "/learning/learn-serve/view"
   assert_output_contains "synthesis-cycle"
   assert_output_contains "Iteration: 1"
-  assert_output_contains "Created: 1"
-  assert_output_contains "Skipped: 1"
+  assert_output_contains "Created: <strong>1</strong>"
+  assert_output_contains "Skipped: <strong>1</strong>"
 
   run node -e "fetch(\"http://127.0.0.1:${port}/learning\").then(async (res) => { process.stdout.write(String(res.status) + \"\\n\" + await res.text()); }).catch((error) => { console.error(error); process.exit(1); })"
   assert_success
@@ -187,8 +187,8 @@ JSONL
 
   assert_success
   assert_output_contains "200"
-  assert_output_contains "Learning Campaign"
-  assert_output_contains "Learning Campaign: learn-serve"
+  assert_output_contains "Learning Progression"
+  assert_output_contains "Learning Progression: learn-serve"
   assert_output_contains "source-discovery &rarr; extraction"
   assert_output_contains "learn-serve-source-discovery-1"
   assert_output_contains "Created Tasks: <strong>1</strong>"

@@ -44,5 +44,5 @@ Agent CLI 是面向终端用户的命令行界面，提供完整的 Agent 工作
 ## 与其他目录的关系
 
 - 调用 `scripts/` 管理运行时组件
-- 调用 `tooling/scripts/` 进行技能评估
+- 调用 `evals/` 进行技能评估
 - 依赖 `configs/` 中的 Agent 配置

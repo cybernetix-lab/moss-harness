@@ -14,7 +14,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-RULES_DIR="${PROJECT_ROOT}/rules"
+RULES_DIR="${PROJECT_ROOT}/configs/rules"
 RUNTIME_DIR="${PROJECT_ROOT}/runtime"
 
 # 规则集配置文件

@@ -16,7 +16,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # 数据目录
-EVAL_DIR="${PROJECT_ROOT}/tooling/evals/agents"
+EVAL_DIR="${PROJECT_ROOT}/evals/agents"
 AGENTS_DIR="${PROJECT_ROOT}/agents"
 RESULTS_DIR="${PROJECT_ROOT}/runtime/memory/agent-eval-results"
 MEMORY_DIR="${PROJECT_ROOT}/runtime/memory/sessions"

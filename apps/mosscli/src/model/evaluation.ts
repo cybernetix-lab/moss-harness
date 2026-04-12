@@ -1,6 +1,6 @@
 import type { FeedbackDecision, FlowRunStatus, StageSnapshot } from "./run.js";
 
-export interface MossHarnessJsonReport {
+export interface MossHarnessJsonEvaluation {
   run_id: string;
   status: FlowRunStatus;
   goal: string;
@@ -30,7 +30,7 @@ export interface MossHarnessJsonReport {
   stages: StageSnapshot[];
 }
 
-export interface MossLearningJsonReport {
+export interface MossLearningJsonEvaluation {
   report_type: "learning";
   campaign_id: string;
   policy_pack: string;
@@ -51,4 +51,4 @@ export interface MossLearningJsonReport {
   };
 }
 
-export type MosscliJsonReport = MossHarnessJsonReport | MossLearningJsonReport;
+export type MosscliJsonEvaluation = MossHarnessJsonEvaluation | MossLearningJsonEvaluation;

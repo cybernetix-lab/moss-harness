@@ -143,18 +143,28 @@ moss-harness/
 ├── configs/                   # [Strategy Layer] Configuration center
 │   ├── orchestration/         # Orchestration and lane configs
 │   ├── protocols/             # Structured communication protocols
-│   └── agents/                # Agent template configurations
+│   ├── agents/                # Agent template configurations
+│   └── rules/                 # Rules and tool constraints
 ├── docs/                      # Documentation and architecture specs
-├── evals/                     # Evaluation framework
+├── evals/                     # [Observability Layer] Evaluation framework and metrics
+├── integrations/              # [Harness Layer] MCP and external Skill extensions
+├── observability/             # [Observability Layer] Prometheus and Grafana configs
 ├── .runtime/moss-harness/     # [Observability Layer] Runtime persistence and fact chain
 │   ├── tasks/                 # Task Board state facts
 │   └── telemetry/             # Telemetry event logs
-├── src/                       # [Harness Layer] Core source code
-│   ├── core/                  # Workflow Orchestrator and routing
-│   ├── agents/                # Role Agent implementations
-│   └── memory/                # Memory and curation system
+├── runtime/                   # [Harness Layer] TypeScript core implementation
+│   ├── orchestration/         # Workflow Orchestrator and routing
+│   ├── context/               # Policies and context compaction
+│   ├── memory/                # Memory and curation system
+│   ├── telemetry/             # Telemetry collectors and metrics
+│   ├── sandbox/               # Execution sandbox management
+│   └── storage/               # Storage implementations (SQLite, Base)
+├── src/                       # [Harness Layer] Shell core source code
+│   ├── core/                  # Legacy bash Workflow Orchestrator
+│   ├── agents/                # Legacy bash Role Agent implementations
+│   └── memory/                # Legacy bash Memory system
 ├── tests/                     # Test cases (Bats/Jest)
-└── scripts/                   # DevOps and management scripts
+└── scripts/                   # [Harness Layer] DevOps and management scripts
 ```
 
 ---

@@ -94,7 +94,7 @@ export function executeTraceCommand(options: { runId: string }): string {
     const tasks = readLearningTasks(runtimeRoot, campaign.campaign_id as string);
     const events = readLearningEvents(runtimeRoot, campaign.campaign_id as string);
 
-    output.push("Learning Campaign Replay");
+    output.push("Learning Progression Trace");
     output.push(`Campaign ID: ${campaign.campaign_id}`);
     output.push(`Route: ${campaign.route}`);
     output.push("");
