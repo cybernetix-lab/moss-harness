@@ -28,7 +28,7 @@ memory/telemetry/
 # IDE
 .vscode/
 .idea/
-docs/superpowers/*
+docs/superpowers
 *.swp
 *.swo
 *~
@@ -46,6 +46,8 @@ __pycache__/
 .Python
 
 # Build outputs
+apps/mosscli/node_modules
+apps/mosscli/dist
 dist/
 build/
 *.egg-info/

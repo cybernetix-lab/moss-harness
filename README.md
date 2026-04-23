@@ -139,32 +139,42 @@ The project is strictly organized following the four-layer architecture (Strateg
 ```text
 moss-harness/
 ├── apps/                      # [App Layer] Case applications
-│   └── mosscli/               # CLI-first validation app
+│   ├── agent-cli/             # Legacy bash CLI application
+│   └── mosscli/               # TypeScript CLI-first validation app
 ├── configs/                   # [Strategy Layer] Configuration center
+│   ├── agents/                # Agent template configurations
+│   ├── constraints/           # System constraints and tool policies
 │   ├── orchestration/         # Orchestration and lane configs
 │   ├── protocols/             # Structured communication protocols
-│   ├── agents/                # Agent template configurations
-│   └── rules/                 # Rules and tool constraints
+│   ├── rules/                 # Rules and tool constraints
+│   ├── skills/                # Skill registry
+│   └── telemetry/             # Telemetry configurations
+├── deployments/               # Infrastructure orchestration
+│   ├── docker/                # Docker Compose configurations
+│   ├── helm/                  # Helm Charts configurations
+│   └── k8s-operator/          # Kubernetes Operator and CRDs
 ├── docs/                      # Documentation and architecture specs
 ├── evals/                     # [Observability Layer] Evaluation framework and metrics
 ├── integrations/              # [Harness Layer] MCP and external Skill extensions
+│   ├── extensions/            # Core extensions (e.g., Mailbox system)
+│   ├── mcp/                   # MCP server definitions
+│   └── skills/                # Skill definitions (React, Security, etc.)
 ├── observability/             # [Observability Layer] Prometheus and Grafana configs
-├── .runtime/moss-harness/     # [Observability Layer] Runtime persistence and fact chain
-│   ├── tasks/                 # Task Board state facts
-│   └── telemetry/             # Telemetry event logs
 ├── runtime/                   # [Harness Layer] TypeScript core implementation
-│   ├── orchestration/         # Workflow Orchestrator and routing
+│   ├── agents/                # Role Agent implementations
 │   ├── context/               # Policies and context compaction
 │   ├── memory/                # Memory and curation system
-│   ├── telemetry/             # Telemetry collectors and metrics
+│   ├── orchestration/         # Workflow Orchestrator and routing
 │   ├── sandbox/               # Execution sandbox management
-│   └── storage/               # Storage implementations (SQLite, Base)
-├── src/                       # [Harness Layer] Shell core source code
+│   ├── storage/               # Storage implementations (SQLite, Base)
+│   ├── subagent/              # Sub-agent registry and scheduler
+│   └── telemetry/             # Telemetry collectors and metrics
+├── scripts/                   # [Harness Layer] DevOps and management scripts
+├── src/                       # [Harness Layer] Shell core source code (Legacy)
 │   ├── core/                  # Legacy bash Workflow Orchestrator
 │   ├── agents/                # Legacy bash Role Agent implementations
 │   └── memory/                # Legacy bash Memory system
-├── tests/                     # Test cases (Bats/Jest)
-└── scripts/                   # [Harness Layer] DevOps and management scripts
+└── tests/                     # Test cases (Bats/Jest)
 ```
 
 ---
@@ -288,6 +298,23 @@ model:
   model: claude-3-5-sonnet
   temperature: 0.2
   max_tokens: 4096
+```
+
+### Local Models (Ollama, vLLM, LM Studio)
+
+You can easily route tasks to local, privacy-preserving models using the built-in `local` profile (which uses the OpenAI-compatible API format):
+
+```yaml
+# In configs/agents/models.yaml
+agent_models:
+  executor:
+    profile: local
+
+profiles:
+  local:
+    provider: openai-compatible
+    base_url: http://localhost:11434/v1  # Example for Ollama
+    model: qwen2.5-coder:7b
 ```
 
 ### Governance Constraints
