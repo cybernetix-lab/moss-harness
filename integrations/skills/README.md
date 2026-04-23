@@ -39,8 +39,7 @@ tags:
 ## 技能结构
 
 ```
-skills/
-├── skill-registry.yaml      # 技能注册表（自动生成）
+integrations/skills/
 ├── README.md                # 本文件
 ├── evolution/
 │   └── config.yaml          # 技能进化配置
@@ -51,7 +50,10 @@ skills/
 ├── documentation-lookup/
 │   └── skill.yaml
 └── security-scan/
-│   └── skill.yaml
+    └── skill.yaml
+
+configs/skills/
+└── skill-registry.yaml      # 技能注册表（自动生成）
 ```
 
 ## 技能定义文件
@@ -119,6 +121,17 @@ related_skills:
 evolution:
   track_patterns: true
   learn_from_usage: true
+```
+
+### 第三方技能导入约定
+
+从外部仓库导入技能时，保持上游 `SKILL.md` 原文不变，并在同目录补一个本地 `skill.yaml` 作为 Harness 适配层：
+
+```
+integrations/skills/
+└── imported-skill/
+    ├── SKILL.md     # 上游原文
+    └── skill.yaml   # Harness 发现与导入配置
 ```
 
 ## 技能注册表
@@ -298,7 +311,7 @@ done
 
 ### 添加新标签
 
-编辑 `skills/skill-registry.yaml`：
+编辑 `configs/skills/skill-registry.yaml`：
 
 ```yaml
 registry:

@@ -1,0 +1,30 @@
+name: security-review
+description: |
+  安全审查技能。针对认证、输入校验、敏感数据、第三方集成和 API 设计执行安全检查。
+
+version: 1.0.0
+
+tags:
+  - review
+  - security
+  - testing
+  - advanced
+
+triggers:
+  - pattern: "安全.*审查|security review|鉴权|敏感数据"
+    confidence: 0.92
+
+actions:
+  - type: review
+    description: 执行安全检查
+    steps:
+      - 检查密钥与凭证管理
+      - 验证输入校验与输出处理
+      - 识别注入与权限风险
+      - 输出修复建议
+
+validation:
+  - manual-review
+
+related_skills:
+  - security-scan

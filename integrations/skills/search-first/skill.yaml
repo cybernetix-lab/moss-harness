@@ -1,0 +1,30 @@
+name: search-first
+description: |
+  编码前检索现有方案的技能。优先查找仓库内已有实现、第三方库、MCP 或外部参考，再决定复用、封装还是自建。
+
+version: 1.0.0
+
+tags:
+  - research
+  - documentation
+  - maintenance
+  - intermediate
+
+triggers:
+  - pattern: "先搜索|先调研|有没有现成方案|不要重复造轮子"
+    confidence: 0.9
+
+actions:
+  - type: analyze
+    description: 识别需要检索的问题空间
+    steps:
+      - 明确目标能力和约束
+      - 优先搜索仓库内现有实现
+      - 再比较外部方案
+      - 给出 adopt、wrap 或 build 决策
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

@@ -1,0 +1,30 @@
+name: product-lens
+description: |
+  产品视角诊断技能。用于在编码前确认为什么做、为谁做，以及最小可行目标是否成立。
+
+version: 1.0.0
+
+tags:
+  - research
+  - documentation
+  - startup
+  - advanced
+
+triggers:
+  - pattern: "产品诊断|why before build|feature prioritization|用户旅程"
+    confidence: 0.86
+
+actions:
+  - type: analyze
+    description: 从产品视角审视需求
+    steps:
+      - 确认目标用户与痛点
+      - 识别 MVP 与非目标
+      - 定义成功指标
+      - 输出 go 或 no-go 建议
+
+validation:
+  - manual-review
+
+related_skills:
+  - product-capability

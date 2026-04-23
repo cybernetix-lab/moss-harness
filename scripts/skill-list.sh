@@ -4,8 +4,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-SKILLS_DIR="${PROJECT_ROOT}/skills"
-REGISTRY_FILE="${SKILLS_DIR}/skill-registry.yaml"
+SKILLS_DIR="${PROJECT_ROOT}/integrations/skills"
+REGISTRY_FILE="${PROJECT_ROOT}/configs/skills/skill-registry.yaml"
 
 echo "🛠️  Available Skills"
 echo ""

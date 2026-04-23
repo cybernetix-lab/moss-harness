@@ -1,0 +1,30 @@
+name: codebase-onboarding
+description: |
+  代码库入门技能。系统分析陌生仓库的技术栈、入口点、约定和关键数据流。
+
+version: 1.0.0
+
+tags:
+  - research
+  - documentation
+  - maintenance
+  - intermediate
+
+triggers:
+  - pattern: "onboarding|理解代码库|熟悉仓库|walk me through"
+    confidence: 0.9
+
+actions:
+  - type: analyze
+    description: 生成代码库入门概览
+    steps:
+      - 识别技术栈与入口
+      - 梳理目录职责
+      - 总结约定与模式
+      - 输出 onboarding 文档
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

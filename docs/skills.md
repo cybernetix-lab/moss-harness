@@ -13,12 +13,15 @@
 ## 技能结构
 
 ```
-skills/
-└── {category}/
-    └── {skill-name}/
-        ├── skill.yaml      # 技能定义
-        ├── examples/       # 示例代码
-        └── tests/          # 技能测试（可选）
+integrations/skills/
+└── {skill-name}/
+    ├── skill.yaml      # 技能定义
+    ├── SKILL.md        # 第三方导入技能的上游原文（可选）
+    ├── examples/       # 示例代码
+    └── tests/          # 技能测试（可选）
+
+configs/skills/
+└── skill-registry.yaml # 自动生成的技能注册表
 ```
 
 ## 创建新技能
@@ -26,7 +29,7 @@ skills/
 ### 1. 创建目录
 
 ```bash
-mkdir -p skills/coding/my-awesome-skill
+mkdir -p integrations/skills/my-awesome-skill
 ```
 
 ### 2. 编写 skill.yaml
@@ -131,8 +134,8 @@ examples:
 ### 3. 添加示例
 
 ```bash
-mkdir -p skills/coding/my-awesome-skill/examples
-cat > skills/coding/my-awesome-skill/examples/basic.tsx << 'EOF'
+mkdir -p integrations/skills/my-awesome-skill/examples
+cat > integrations/skills/my-awesome-skill/examples/basic.tsx << 'EOF'
 // 基础组件示例
 interface ButtonProps {
   label: string;
@@ -147,6 +150,16 @@ export function Button({ label, onClick }: ButtonProps) {
   );
 }
 EOF
+```
+
+### 导入第三方技能
+
+当技能来自外部仓库时，保留上游 `SKILL.md`，并在同目录补一个最小 `skill.yaml` 供 Harness 发现与导入：
+
+```text
+integrations/skills/external-skill/
+├── SKILL.md
+└── skill.yaml
 ```
 
 ## 技能类别

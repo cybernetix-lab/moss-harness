@@ -1,0 +1,30 @@
+name: api-design
+description: |
+  REST API 设计技能。用于设计或审查资源命名、状态码、错误响应、分页、过滤和版本策略。
+
+version: 1.0.0
+
+tags:
+  - research
+  - backend
+  - documentation
+  - intermediate
+
+triggers:
+  - pattern: "API.*设计|接口.*设计|endpoint|REST"
+    confidence: 0.9
+
+actions:
+  - type: design
+    description: 设计或审查 API 契约
+    steps:
+      - 梳理资源与动作
+      - 统一命名与状态码
+      - 定义请求响应结构
+      - 识别版本化与兼容性要求
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

@@ -1,22 +1,15 @@
-# Skill Registry - Multi-label Classification System
-# Auto-generated at 2026-04-08T05:30:00Z
+# 技能注册表 - 多标签分类系统
+# 自动生成于 2026-04-15T09:01:46Z
 
 registry:
-  # Skill discovery configuration
   discovery:
-    # Skill file matching pattern
     pattern: "**/skill.yaml"
-    # Scan paths (relative to project root)
     paths:
-      - "skills/"
-    # Exclude paths
+      - "integrations/skills/"
     exclude:
       - "**/evolution/**"
       - "**/deprecated/**"
-
-  # Tag taxonomy system
   taxonomy:
-    # Domain tags
     domain:
       - frontend
       - backend
@@ -26,8 +19,6 @@ registry:
       - ai-ml
       - data
       - security
-
-    # Technology tags
     technology:
       - react
       - vue
@@ -44,8 +35,6 @@ registry:
       - aws
       - gcp
       - azure
-
-    # Task type tags
     task_type:
       - coding
       - review
@@ -56,25 +45,18 @@ registry:
       - research
       - analysis
       - optimization
-
-    # Scenario tags
     scenario:
       - startup
       - enterprise
       - legacy
       - greenfield
       - maintenance
-
-    # Complexity tags
     complexity:
       - beginner
       - intermediate
       - advanced
       - expert
-
-  # Tag relationships
   relationships:
-    # Tag hierarchy
     hierarchy:
       javascript:
         parent: frontend
@@ -84,23 +66,213 @@ registry:
         parent: [frontend, javascript]
       vue:
         parent: [frontend, javascript]
-
-    # Mutually exclusive tags
     mutually_exclusive:
       - [react, vue, angular]
-
-    # Tag recommendations
     recommendations:
       react:
         suggests: [typescript, frontend, coding]
       security:
         suggests: [review, analysis, testing]
 
-# Registered skills list (auto-generated, do not edit manually)
 skills:
+  - name: knowledge-ops
+    version: 1.0.0
+    description: 知识运营技能。用于沉淀、同步、去重和检索多层知识体系中的信息。
+    path: knowledge-ops
+    tags:
+      - ops
+      - documentation
+      - enterprise
+      - advanced
+
+  - name: architecture-decision-records
+    version: 1.0.0
+    description: 架构决策记录技能。把关键架构取舍沉淀成 ADR，保留背景、备选方案和后果。
+    path: architecture-decision-records
+    tags:
+      - communication
+      - documentation
+      - enterprise
+      - advanced
+
+  - name: mcp-server-patterns
+    version: 1.0.0
+    description: MCP 服务开发技能。覆盖 Node/TypeScript SDK 下的工具、资源、提示和传输模式设计。
+    path: mcp-server-patterns
+    tags:
+      - coding
+      - backend
+      - typescript
+      - advanced
+
+  - name: eval-harness
+    version: 1.0.0
+    description: 评测框架技能。用能力评测和回归评测度量 agent 或工作流的可靠性与回归风险。
+    path: eval-harness
+    tags:
+      - review
+      - testing
+      - enterprise
+      - advanced
+
+  - name: agent-harness-construction
+    version: 1.0.0
+    description: Agent Harness 设计技能。用于优化工具定义、观察格式、恢复路径与上下文预算。
+    path: agent-harness-construction
+    tags:
+      - coding
+      - backend
+      - analysis
+      - advanced
+
+  - name: react-hooks
+    version: 1.0.0
+    description: React Hooks 开发技能。提供自定义 Hook 生成、性能优化、状态管理等服务。
+    path: react-hooks
+    tags:
+      - frontend
+      - react
+      - typescript
+      - javascript
+      - coding
+      - greenfield
+      - maintenance
+      - intermediate
+
+  - name: workspace-surface-audit
+    version: 1.0.0
+    description: 工作区能力面审计技能。盘点当前仓库、MCP、插件、环境变量表面与可用能力，并给出高价值的后续增强建议。
+    path: workspace-surface-audit
+    tags:
+      - ops
+      - analysis
+      - enterprise
+      - maintenance
+      - advanced
+
+  - name: research-ops
+    version: 1.0.0
+    description: 研究运营技能。用于获取当前事实、对比选项并给出基于证据的建议。
+    path: research-ops
+    tags:
+      - research
+      - documentation
+      - analysis
+      - advanced
+
+  - name: api-design
+    version: 1.0.0
+    description: REST API 设计技能。用于设计或审查资源命名、状态码、错误响应、分页、过滤和版本策略。
+    path: api-design
+    tags:
+      - research
+      - backend
+      - documentation
+      - intermediate
+
+  - name: documentation-lookup
+    version: 1.0.0
+    description: 文档查询技能。自动检索相关技术文档、API 参考、最佳实践。
+    path: documentation-lookup
+    tags:
+      - frontend
+      - backend
+      - devops
+      - research
+      - documentation
+      - startup
+      - enterprise
+      - maintenance
+      - beginner
+      - intermediate
+
+  - name: security-scan
+    version: 1.0.0
+    description: 安全扫描技能。自动检测代码中的安全漏洞、敏感信息泄露、不安全的编码实践。
+    path: security-scan
+    tags:
+      - security
+      - review
+      - analysis
+      - testing
+      - enterprise
+      - maintenance
+      - advanced
+      - expert
+
+  - name: product-capability
+    version: 1.0.0
+    description: 把产品意图转换为可实施能力约束的技能。明确范围、约束、接口、不变量和待决事项，为实施做准备。
+    path: product-capability
+    tags:
+      - research
+      - documentation
+      - enterprise
+      - advanced
+
+  - name: repo-scan
+    version: 1.0.0
+    description: 仓库扫描技能。对跨栈仓库做结构盘点，识别项目代码、第三方资产和可清理的冗余。
+    path: repo-scan
+    tags:
+      - research
+      - analysis
+      - maintenance
+      - advanced
+
+  - name: verification-loop
+    version: 1.0.0
+    description: 验证闭环技能。对构建、类型、Lint、测试、安全与变更范围执行系统化校验。
+    path: verification-loop
+    tags:
+      - review
+      - testing
+      - analysis
+      - advanced
+
+  - name: tdd-workflow
+    version: 1.0.0
+    description: 测试驱动开发技能。要求先写失败测试，再实现最小代码并验证通过。
+    path: tdd-workflow
+    tags:
+      - coding
+      - testing
+      - maintenance
+      - advanced
+
+  - name: codebase-onboarding
+    version: 1.0.0
+    description: 代码库入门技能。系统分析陌生仓库的技术栈、入口点、约定和关键数据流。
+    path: codebase-onboarding
+    tags:
+      - research
+      - documentation
+      - maintenance
+      - intermediate
+
+  - name: product-lens
+    version: 1.0.0
+    description: 产品视角诊断技能。用于在编码前确认为什么做、为谁做，以及最小可行目标是否成立。
+    path: product-lens
+    tags:
+      - research
+      - documentation
+      - startup
+      - advanced
+
+  - name: search-first
+    version: 1.0.0
+    description: 编码前检索现有方案的技能。优先查找仓库内已有实现、第三方库、MCP 或外部参考，再决定复用、封装还是自建。
+    path: search-first
+    tags:
+      - research
+      - documentation
+      - maintenance
+      - intermediate
+
   - name: typescript-patterns
-    version: "1.0.0"
-    description: TypeScript design patterns and best practices
+    version: 1.0.0
+    description: TypeScript 设计模式与最佳实践。提供类型定义、泛型使用、类型体操等高级技巧。
     path: typescript-patterns
     tags:
       - frontend
@@ -114,33 +286,13 @@ skills:
       - greenfield
       - advanced
 
-  - name: react-hooks
-    version: "1.0.0"
-    description: React Hooks development patterns
-    path: react-hooks
+  - name: security-review
+    version: 1.0.0
+    description: 安全审查技能。针对认证、输入校验、敏感数据、第三方集成和 API 设计执行安全检查。
+    path: security-review
     tags:
-      - frontend
-      - react
-      - javascript
-      - typescript
-      - coding
-      - intermediate
-
-  - name: security-scan
-    version: "1.0.0"
-    description: Security vulnerability scanning
-    path: security-scan
-    tags:
-      - security
       - review
-      - analysis
+      - security
+      - testing
       - advanced
 
-  - name: documentation-lookup
-    version: "1.0.0"
-    description: Documentation query and lookup
-    path: documentation-lookup
-    tags:
-      - research
-      - documentation
-      - beginner

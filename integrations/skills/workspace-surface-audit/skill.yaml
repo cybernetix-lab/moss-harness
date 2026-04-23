@@ -1,0 +1,31 @@
+name: workspace-surface-audit
+description: |
+  工作区能力面审计技能。盘点当前仓库、MCP、插件、环境变量表面与可用能力，并给出高价值的后续增强建议。
+
+version: 1.0.0
+
+tags:
+  - ops
+  - analysis
+  - enterprise
+  - maintenance
+  - advanced
+
+triggers:
+  - pattern: "工作区.*审计|能力面|setup audit|缺什么能力"
+    confidence: 0.9
+
+actions:
+  - type: audit
+    description: 盘点工作区能力面
+    steps:
+      - 扫描仓库与配置入口
+      - 识别可用插件与 MCP 表面
+      - 梳理环境依赖
+      - 输出差距与建议
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

@@ -1,0 +1,30 @@
+name: eval-harness
+description: |
+  评测框架技能。用能力评测和回归评测度量 agent 或工作流的可靠性与回归风险。
+
+version: 1.0.0
+
+tags:
+  - review
+  - testing
+  - enterprise
+  - advanced
+
+triggers:
+  - pattern: "评测框架|eval harness|回归评测|pass@k"
+    confidence: 0.88
+
+actions:
+  - type: evaluate
+    description: 设计并运行评测
+    steps:
+      - 定义能力与回归评测项
+      - 选择 grader
+      - 运行评测
+      - 汇总结论与基线
+
+validation:
+  - manual-review
+
+related_skills:
+  - verification-loop

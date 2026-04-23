@@ -1,0 +1,30 @@
+name: verification-loop
+description: |
+  验证闭环技能。对构建、类型、Lint、测试、安全与变更范围执行系统化校验。
+
+version: 1.0.0
+
+tags:
+  - review
+  - testing
+  - analysis
+  - advanced
+
+triggers:
+  - pattern: "验证闭环|verify|quality gate|交付前检查"
+    confidence: 0.9
+
+actions:
+  - type: verify
+    description: 执行交付前验证
+    steps:
+      - 检查构建和类型
+      - 运行 Lint 与测试
+      - 执行安全巡检
+      - 审阅变更范围
+
+validation:
+  - manual-review
+
+related_skills:
+  - security-review
