@@ -16,7 +16,7 @@ jobs:
     - name: Run health check
       run: |
         chmod +x scripts/*.sh
-        ./tooling/scripts/health-check.sh
+        ./scripts/health-check.sh
 
   validate-configs:
     runs-on: ubuntu-latest
@@ -63,8 +63,10 @@ jobs:
         sudo apt-get install -y shellcheck
 
     - name: Run shellcheck
+      shell: bash
       run: |
-        find . -name "*.sh" | grep -v node_modules | xargs shellcheck --severity=warning || true
+        source ./scripts/ci-shellcheck-targets.sh
+        shellcheck --severity=warning "${SHELLCHECK_TARGETS[@]}"
 
   bats-tests:
     runs-on: ubuntu-latest
@@ -81,7 +83,6 @@ jobs:
       run: |
         chmod +x apps/agent-cli/*.sh
         chmod +x scripts/*.sh
-        chmod +x tooling/scripts/*.sh
 
     - name: Run Bats tests
       run: |
@@ -102,11 +103,10 @@ jobs:
       run: |
         chmod +x apps/agent-cli/*.sh
         chmod +x scripts/*.sh
-        chmod +x tooling/scripts/*.sh
 
     - name: Test skill list
       run: |
-        ./tooling/scripts/skill-list.sh
+        ./scripts/skill-list.sh
 
     - name: Test Agent list
       run: |
@@ -114,8 +114,8 @@ jobs:
 
     - name: Test health check
       run: |
-        ./tooling/scripts/health-check.sh
+        ./scripts/health-check.sh
 
     - name: Test verify script (help only)
       run: |
-        ./tooling/scripts/verify.sh --help > /dev/null 2>&1 || true
+        ./scripts/verify.sh --help > /dev/null 2>&1 || true
