@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "rootDir": "../../../",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@mossclaw/shared": ["../shared/src/index"],
+      "@mossclaw/shared/*": ["../shared/src/*"],
+      "@agent-harness/core": ["../../../runtime/index"],
+      "@agent-harness/core/*": ["../../../runtime/*"]
+    }
+  },
+  "include": ["src/**/*", "../shared/src/**/*"]
+}
