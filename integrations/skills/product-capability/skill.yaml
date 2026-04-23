@@ -1,0 +1,31 @@
+name: product-capability
+description: |
+  把产品意图转换为可实施能力约束的技能。明确范围、约束、接口、不变量和待决事项，为实施做准备。
+
+version: 1.0.0
+
+tags:
+  - research
+  - documentation
+  - enterprise
+  - advanced
+
+triggers:
+  - pattern: "产品能力|能力约束|implementation-ready|需求约束"
+    confidence: 0.88
+
+actions:
+  - type: specify
+    description: 整理能力约束与实施契约
+    steps:
+      - 重述能力目标
+      - 提炼约束与不变量
+      - 定义接口和生命周期
+      - 输出可执行能力说明
+
+validation:
+  - manual-review
+
+related_skills:
+  - api-design
+  - documentation-lookup

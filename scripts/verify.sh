@@ -91,7 +91,6 @@ log_section() {
 # 解析 YAML 配置
 parse_yaml() {
     local file="$1"
-    local prefix="$2"
 
     if command -v python3 &> /dev/null; then
         python3 -c "
@@ -104,25 +103,22 @@ try:
             v = data['verification']
             print('MODE=' + str(v.get('mode', 'checkpoint')))
             print('PASS_SCORE=' + str(v.get('thresholds', {}).get('pass_score', 0.8)))
-            print('MAX_ATTEMPTS=' + str(v.get('thresholds', {}).get('max_attempts', 3)))
 except Exception as e:
     print('MODE=checkpoint')
     print('PASS_SCORE=0.8')
-    print('MAX_ATTEMPTS=3')
-" 2>/dev/null || echo -e "MODE=checkpoint\nPASS_SCORE=0.8\nMAX_ATTEMPTS=3"
+ " 2>/dev/null || echo -e "MODE=checkpoint\nPASS_SCORE=0.8"
     else
-        echo -e "MODE=checkpoint\nPASS_SCORE=0.8\nMAX_ATTEMPTS=3"
+        echo -e "MODE=checkpoint\nPASS_SCORE=0.8"
     fi
 }
 
 # 加载配置
 load_config() {
     if [[ -f "$CONFIG_FILE" ]]; then
-        eval "$(parse_yaml "$CONFIG_FILE" "CONFIG_")"
+        eval "$(parse_yaml "$CONFIG_FILE")"
     else
         MODE="checkpoint"
         PASS_SCORE=0.8
-        MAX_ATTEMPTS=3
     fi
 }
 
@@ -138,27 +134,24 @@ check_tool() {
 
 # 获取项目文件列表
 get_project_files() {
-    local extensions=("ts" "tsx" "js" "jsx" "json" "yaml" "yml" "md" "sh")
-    local files=""
-
-    for ext in "${extensions[@]}"; do
-        files="$files $(find "$PROJECT_ROOT" -type f -name "*.$ext" \
-            -not -path "*/node_modules/*" \
-            -not -path "*/.git/*" \
-            -not -path "*/.runtime/*" 2>/dev/null)"
-    done
-
-    echo "$files"
+    find "$PROJECT_ROOT" -type f \
+        \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o \
+           -name "*.json" -o -name "*.yaml" -o -name "*.yml" -o -name "*.md" -o \
+           -name "*.sh" \) \
+        -not -path "*/node_modules/*" \
+        -not -path "*/.git/*" \
+        -not -path "*/.runtime/*" 2>/dev/null
 }
 
 # 计算代码行数
 count_lines() {
-    local files=($@)
+    local files=("$@")
     local total=0
 
     for file in "${files[@]}"; do
         if [[ -f "$file" ]]; then
-            local lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+            local lines
+            lines=$(wc -l < "$file" 2>/dev/null || echo 0)
             total=$((total + lines))
         fi
     done
@@ -251,13 +244,16 @@ set_duration() {
 
 # Level 1: 语法检查
 run_syntax_check() {
-    local level_start=$(date +%s)
+    local level_start
     local errors=0
     local files_checked=0
+    local files=()
+
+    level_start=$(date +%s)
 
     log_section "Level 1: Syntax Check (语法检查)"
 
-    local files=($(get_project_files))
+    mapfile -t files < <(get_project_files)
     log_info "Checking ${#files[@]} files..."
 
     # Shell 脚本语法检查
@@ -300,7 +296,8 @@ run_syntax_check() {
         fi
     done
 
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "syntax" "$duration"
 
@@ -311,7 +308,8 @@ run_syntax_check() {
         log_success "Syntax check passed ($files_checked files checked in ${duration}s)"
     else
         if [[ $files_checked -gt 0 ]]; then
-            local score=$(echo "scale=2; 1 - ($errors / $files_checked)" | bc 2>/dev/null || echo 0)
+            local score
+            score=$(echo "scale=2; 1 - ($errors / $files_checked)" | bc 2>/dev/null || echo 0)
             set_score "syntax" "$score"
         else
             set_score "syntax" 1.0
@@ -325,10 +323,12 @@ run_syntax_check() {
 
 # Level 2: 静态分析
 run_static_analysis() {
-    local level_start=$(date +%s)
+    local level_start
     local issues=0
     local files_checked=0
+    local files=()
 
+    level_start=$(date +%s)
     log_section "Level 2: Static Analysis (静态分析)"
 
     # 运行 lint-rules.sh 如果存在
@@ -337,7 +337,8 @@ run_static_analysis() {
         if bash "${SCRIPT_DIR}/lint-rules.sh" --format summary > /tmp/lint-results.txt 2>&1; then
             log_success "Rule linting passed"
         else
-            local lint_issues=$(grep -c "violated" /tmp/lint-results.txt 2>/dev/null | tr -d '\n' || echo 0)
+            local lint_issues
+            lint_issues=$(grep -c "violated" /tmp/lint-results.txt 2>/dev/null | tr -d '\n' || echo 0)
             lint_issues=${lint_issues:-0}
             issues=$((issues + lint_issues))
             log_warning "Rule linting found $lint_issues issues"
@@ -346,11 +347,12 @@ run_static_analysis() {
 
     # 检查文件大小限制
     log_info "Checking file size limits..."
-    local files=($(get_project_files))
+    mapfile -t files < <(get_project_files)
     for file in "${files[@]}"; do
         if [[ -f "$file" ]]; then
             files_checked=$((files_checked + 1))
-            local lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+            local lines
+            lines=$(wc -l < "$file" 2>/dev/null || echo 0)
             if [[ $lines -gt 500 ]]; then
                 log_warning "Large file: $file ($lines lines)"
                 issues=$((issues + 1))
@@ -360,14 +362,16 @@ run_static_analysis() {
 
     # 检查重复内容 (macOS compatible)
     log_info "Checking for duplicates..."
-    local duplicates=$(find "$PROJECT_ROOT" -type f -name "*.sh" -exec md5sum {} + 2>/dev/null | \
+    local duplicates
+    duplicates=$(find "$PROJECT_ROOT" -type f -name "*.sh" -exec md5sum {} + 2>/dev/null | \
         awk '{print $1}' | sort | uniq -d | wc -l)
     if [[ $duplicates -gt 0 ]]; then
         log_warning "Found $duplicates duplicate files"
         issues=$((issues + duplicates))
     fi
 
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "static" "$duration"
 
@@ -376,7 +380,8 @@ run_static_analysis() {
         set_result "static" "PASSED"
         log_success "Static analysis passed ($files_checked files in ${duration}s)"
     else
-        local score=$(echo "scale=2; 1 - ($issues / 100)" | bc 2>/dev/null || echo 0.9)
+        local score
+        score=$(echo "scale=2; 1 - ($issues / 100)" | bc 2>/dev/null || echo 0.9)
         set_score "static" "$score"
         set_result "static" "WARNING"
         log_warning "Static analysis found $issues issues"
@@ -387,10 +392,11 @@ run_static_analysis() {
 
 # Level 3: 单元测试
 run_unit_tests() {
-    local level_start=$(date +%s)
+    local level_start
     local tests_passed=0
     local tests_failed=0
 
+    level_start=$(date +%s)
     log_section "Level 3: Unit Tests (单元测试)"
 
     # 查找测试脚本
@@ -426,12 +432,14 @@ run_unit_tests() {
     done
 
     local total_tests=$((tests_passed + tests_failed))
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "unit" "$duration"
 
     if [[ $total_tests -gt 0 ]]; then
-        local score=$(echo "scale=2; $tests_passed / $total_tests" | bc 2>/dev/null || echo 0)
+        local score
+        score=$(echo "scale=2; $tests_passed / $total_tests" | bc 2>/dev/null || echo 0)
         set_score "unit" "$score"
 
         if [[ $tests_failed -eq 0 ]]; then
@@ -451,8 +459,9 @@ run_unit_tests() {
 
 # Level 4: 集成测试
 run_integration_tests() {
-    local level_start=$(date +%s)
+    local level_start
 
+    level_start=$(date +%s)
     log_section "Level 4: Integration Tests (集成测试)"
 
     # 检查脚本间依赖
@@ -463,7 +472,8 @@ run_integration_tests() {
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" ]]; then
             # 检查 source 引用
-            local sourced=$(grep -E "^source |^\. " "$script" 2>/dev/null | \
+            local sourced
+            sourced=$(grep -E "^source |^\. " "$script" 2>/dev/null | \
                 grep -v "BASH_SOURCE" | awk '{print $2}' | tr -d '"' || true)
 
             for ref in $sourced; do
@@ -483,10 +493,12 @@ run_integration_tests() {
 
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" ]]; then
-            local yaml_refs=$(grep -E "\.yaml|\.yml" "$script" | grep -v "^#" | wc -l)
+            local yaml_refs
+            yaml_refs=$(grep -E "\.yaml|\.yml" "$script" | grep -v "^#" | wc -l)
             if [[ $yaml_refs -gt 0 ]]; then
                 # 验证这些文件存在
-                local missing=$(grep -oE "[a-zA-Z0-9_-]+\.(yaml|yml)" "$script" 2>/dev/null | while read -r f; do
+                local missing
+                missing=$(grep -oE "[a-zA-Z0-9_-]+\.(yaml|yml)" "$script" 2>/dev/null | while read -r f; do
                     if [[ ! -f "$PROJECT_ROOT/$f" && ! -f "$PROJECT_ROOT/packages/core/skills/$f" && ! -f "$PROJECT_ROOT/constraints/$f" ]]; then
                         echo "1"
                     fi
@@ -497,7 +509,8 @@ run_integration_tests() {
     done
 
     local total_errors=$((dep_errors + config_errors))
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "integration" "$duration"
 
@@ -506,7 +519,8 @@ run_integration_tests() {
         set_result "integration" "PASSED"
         log_success "Integration tests passed (${duration}s)"
     else
-        local score=$(echo "scale=2; 1 - ($total_errors / 20)" | bc 2>/dev/null || echo 0.8)
+        local score
+        score=$(echo "scale=2; 1 - ($total_errors / 20)" | bc 2>/dev/null || echo 0.8)
         set_score "integration" "$score"
         set_result "integration" "WARNING"
         log_warning "Integration tests found $total_errors issues"
@@ -517,9 +531,10 @@ run_integration_tests() {
 
 # Level 5: 安全扫描
 run_security_scan() {
-    local level_start=$(date +%s)
+    local level_start
     local vulnerabilities=0
 
+    level_start=$(date +%s)
     log_section "Level 5: Security Scan (安全扫描)"
 
     # 检查敏感信息泄露
@@ -535,7 +550,8 @@ run_security_scan() {
     )
 
     for pattern in "${patterns[@]}"; do
-        local matches=$(grep -rE "$pattern" "$PROJECT_ROOT" \
+        local matches
+        matches=$(grep -rE "$pattern" "$PROJECT_ROOT" \
             --include="*.sh" --include="*.yaml" --include="*.yml" \
             --include="*.json" --include="*.md" \
             --exclude-dir=node_modules --exclude-dir=.git \
@@ -545,7 +561,8 @@ run_security_scan() {
 
     # 检查文件权限
     log_info "Checking file permissions..."
-    local bad_perms=$(find "$SCRIPT_DIR" -type f -name "*.sh" ! -perm -111 2>/dev/null | wc -l)
+    local bad_perms
+    bad_perms=$(find "$SCRIPT_DIR" -type f -name "*.sh" ! -perm -111 2>/dev/null | wc -l)
     if [[ $bad_perms -gt 0 ]]; then
         log_warning "$bad_perms scripts not executable"
         vulnerabilities=$((vulnerabilities + bad_perms))
@@ -553,13 +570,15 @@ run_security_scan() {
 
     # 检查 eval 使用
     log_info "Checking for dangerous patterns..."
-    local eval_count=$(grep -rE "\beval\b" "$SCRIPT_DIR" --include="*.sh" 2>/dev/null | grep -v "^#" | wc -l)
+    local eval_count
+    eval_count=$(grep -rE "\beval\b" "$SCRIPT_DIR" --include="*.sh" 2>/dev/null | grep -v "^#" | wc -l)
     if [[ $eval_count -gt 0 ]]; then
         log_warning "Found $eval_count eval statements"
         vulnerabilities=$((vulnerabilities + eval_count))
     fi
 
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "security" "$duration"
 
@@ -568,7 +587,8 @@ run_security_scan() {
         set_result "security" "PASSED"
         log_success "Security scan passed (${duration}s)"
     else
-        local score=$(echo "scale=2; 1 - ($vulnerabilities / 50)" | bc 2>/dev/null || echo 0.9)
+        local score
+        score=$(echo "scale=2; 1 - ($vulnerabilities / 50)" | bc 2>/dev/null || echo 0.9)
         set_score "security" "$score"
         set_result "security" "WARNING"
         log_warning "Security scan found $vulnerabilities potential issues"
@@ -579,8 +599,9 @@ run_security_scan() {
 
 # Level 6: 性能测试
 run_performance_tests() {
-    local level_start=$(date +%s)
+    local level_start
 
+    level_start=$(date +%s)
     log_section "Level 6: Performance Tests (性能测试)"
 
     # 测量脚本执行时间
@@ -591,9 +612,11 @@ run_performance_tests() {
 
     for script in "$SCRIPT_DIR"/*.sh; do
         if [[ -f "$script" && "$(basename "$script")" != "verify.sh" ]]; then
-            local start_s=$(date +%s)
+            local start_s
+            start_s=$(date +%s)
             timeout 5 bash "$script" --help > /dev/null 2>&1 || true
-            local end_s=$(date +%s)
+            local end_s
+            end_s=$(date +%s)
             local duration_ms=$(((end_s - start_s) * 1000))
 
             if [[ $duration_ms -gt $benchmark_threshold ]]; then
@@ -605,10 +628,12 @@ run_performance_tests() {
 
     # 检查项目大小
     log_info "Checking project size..."
-    local project_size=$(du -sm "$PROJECT_ROOT" 2>/dev/null | cut -f1)
+    local project_size
+    project_size=$(du -sm "$PROJECT_ROOT" 2>/dev/null | cut -f1)
     log_info "Project size: ${project_size}MB"
 
-    local level_end=$(date +%s)
+    local level_end
+    level_end=$(date +%s)
     local duration=$((level_end - level_start))
     set_duration "performance" "$duration"
 
@@ -617,7 +642,8 @@ run_performance_tests() {
         set_result "performance" "PASSED"
         log_success "Performance tests passed (${duration}s)"
     else
-        local score=$(echo "scale=2; 1 - ($slow_scripts / 10)" | bc 2>/dev/null || echo 0.9)
+        local score
+        score=$(echo "scale=2; 1 - ($slow_scripts / 10)" | bc 2>/dev/null || echo 0.9)
         set_score "performance" "$score"
         set_result "performance" "WARNING"
         log_warning "Performance tests found $slow_scripts slow scripts"
@@ -638,7 +664,8 @@ generate_text_report() {
     report+="\n"
 
     # 汇总统计
-    local end_time=$(date +%s)
+    local end_time
+    end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
 
     report+="Summary:\n"
@@ -655,9 +682,12 @@ generate_text_report() {
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
 
     for level in "${levels[@]}"; do
-        local result=$(get_result "$level")
-        local score=$(get_score "$level")
-        local duration=$(get_duration "$level")
+        local result
+        local score
+        local duration
+        result=$(get_result "$level")
+        score=$(get_score "$level")
+        duration=$(get_duration "$level")
 
         local status_icon
         case "$result" in
@@ -707,9 +737,12 @@ generate_json_report() {
         [[ "$first" == true ]] || json+=","
         first=false
 
-        local result=$(get_result "$level")
-        local score=$(get_score "$level")
-        local duration=$(get_duration "$level")
+        local result
+        local score
+        local duration
+        result=$(get_result "$level")
+        score=$(get_score "$level")
+        duration=$(get_duration "$level")
 
         json+="\"$level\":{"
         json+="\"result\":\"$result\","
@@ -727,7 +760,8 @@ generate_markdown_report() {
     local md="# Verification Report\n\n"
     md+="**Generated:** $(date '+%Y-%m-%d %H:%M:%S')\n\n"
 
-    local end_time=$(date +%s)
+    local end_time
+    end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
 
     md+="## Summary\n\n"
@@ -746,9 +780,12 @@ generate_markdown_report() {
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
 
     for level in "${levels[@]}"; do
-        local result=$(get_result "$level")
-        local score=$(get_score "$level")
-        local duration=$(get_duration "$level")
+        local result
+        local score
+        local duration
+        result=$(get_result "$level")
+        score=$(get_score "$level")
+        duration=$(get_duration "$level")
 
         md+="| $level | $result | $score | ${duration}s |\n"
     done
@@ -770,7 +807,8 @@ calculate_total_score() {
     local levels=("syntax" "static" "unit" "integration" "security" "performance")
 
     for level in "${levels[@]}"; do
-        local score=$(get_score "$level")
+        local score
+        score=$(get_score "$level")
         if [[ -n "$score" ]]; then
             total=$(echo "$total + $score" | bc 2>/dev/null || echo $total)
             count=$((count + 1))
@@ -784,7 +822,8 @@ calculate_total_score() {
 
 # 创建检查点
 create_checkpoint() {
-    local checkpoint_name="verify-$(date +%Y%m%d-%H%M%S)"
+    local checkpoint_name
+    checkpoint_name="verify-$(date +%Y%m%d-%H%M%S)"
 
     if [[ -f "${SCRIPT_DIR}/create-checkpoint.sh" ]]; then
         bash "${SCRIPT_DIR}/create-checkpoint.sh" "$checkpoint_name" > /dev/null 2>&1
@@ -911,12 +950,10 @@ main() {
     else
         # 运行所有级别
         run_syntax_check
-        local syntax_exit=$?
 
         run_static_analysis
 
         run_unit_tests
-        local unit_exit=$?
 
         run_integration_tests
         run_security_scan
@@ -924,7 +961,8 @@ main() {
 
         # 统计结果
         for level in "syntax" "static" "unit" "integration" "security" "performance"; do
-            local result=$(get_result "$level")
+            local result
+            result=$(get_result "$level")
             case "$result" in
                 "PASSED")
                     PASSED_LEVELS=$((PASSED_LEVELS + 1))

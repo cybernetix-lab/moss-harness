@@ -1,0 +1,31 @@
+name: research-ops
+description: |
+  研究运营技能。用于获取当前事实、对比选项并给出基于证据的建议。
+
+version: 1.0.0
+
+tags:
+  - research
+  - documentation
+  - analysis
+  - advanced
+
+triggers:
+  - pattern: "research|调研|比较方案|最新情况"
+    confidence: 0.9
+
+actions:
+  - type: research
+    description: 执行证据优先调研
+    steps:
+      - 梳理已知信息
+      - 分类问题类型
+      - 选择轻量调研路径
+      - 区分事实与推断
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup
+  - search-first

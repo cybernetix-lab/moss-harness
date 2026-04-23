@@ -6,8 +6,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$PROJECT_ROOT/skills"
-REGISTRY_FILE="$SKILLS_DIR/skill-registry.yaml"
+SKILLS_DIR="$PROJECT_ROOT/integrations/skills"
+REGISTRY_FILE="$PROJECT_ROOT/configs/skills/skill-registry.yaml"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -199,7 +199,7 @@ get_skill_details() {
             
             echo -e "${GREEN}名称:${NC} $name"
             echo -e "${GREEN}版本:${NC} $version"
-            echo -e "${GREEN}路径:${NC} skills/$path"
+            echo -e "${GREEN}路径:${NC} integrations/skills/$path"
             echo -e "${GREEN}描述:${NC} $description"
             echo ""
             echo -e "${GREEN}标签:${NC}"

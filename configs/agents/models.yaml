@@ -57,6 +57,15 @@ profiles:
     max_tokens: 2048
     description: 用于成本敏感的场景
 
+  # 本地大模型 - 用于隐私敏感或离线场景 (如 Ollama, vLLM, LM Studio)
+  local:
+    provider: openai-compatible  # 大多数本地服务兼容 OpenAI API 格式
+    base_url: http://localhost:11434/v1  # Ollama 默认地址
+    model: qwen2.5-coder:7b      # 推荐的代码模型
+    temperature: 0.1
+    max_tokens: 4096
+    description: 用于数据不出网的本地隐私场景
+
 # 模型能力定义（用于动态选择）
 capabilities:
   claude-3-opus:

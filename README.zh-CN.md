@@ -139,32 +139,42 @@ node apps/mosscli/dist/cli/index.js evaluate
 ```text
 moss-harness/
 ├── apps/                      # 【App 层】案例应用
-│   └── mosscli/               # CLI-first 的验证应用
+│   ├── agent-cli/             # Bash 版本的 CLI 应用 (Legacy)
+│   └── mosscli/               # TypeScript 版本的 CLI-first 验证应用
 ├── configs/                   # 【Strategy 层】配置中心
+│   ├── agents/                # Agent 模板配置
+│   ├── constraints/           # 系统约束与工具策略
 │   ├── orchestration/         # 编排与泳道配置
 │   ├── protocols/             # 结构化通信协议
-│   ├── agents/                # Agent 模板配置
-│   └── rules/                 # 规则与工具约束
+│   ├── rules/                 # 规则与工具约束
+│   ├── skills/                # 技能注册表
+│   └── telemetry/             # 遥测大盘配置
+├── deployments/               # 基础设施编排
+│   ├── docker/                # Docker Compose 编排
+│   ├── helm/                  # Helm Charts 编排
+│   └── k8s-operator/          # Kubernetes Operator 与 CRDs
 ├── docs/                      # 文档与架构规范
 ├── evals/                     # 【Observability 层】评估框架与指标
 ├── integrations/              # 【Harness 层】MCP 与外部 Skill 扩展
+│   ├── extensions/            # 核心扩展 (例如: 信箱系统)
+│   ├── mcp/                   # MCP Server 定义
+│   └── skills/                # 具体技能定义 (React, Security 等)
 ├── observability/             # 【Observability 层】Prometheus 与 Grafana 大盘配置
-├── .runtime/moss-harness/     # 【Observability 层】运行时落盘与事实链
-│   ├── tasks/                 # Task Board 状态事实
-│   └── telemetry/             # 遥测事件日志
 ├── runtime/                   # 【Harness 层】TypeScript 核心底座实现
-│   ├── orchestration/         # Workflow Orchestrator 编排器与路由
+│   ├── agents/                # 角色 Agent 实现
 │   ├── context/               # 策略 (Policies) 与上下文压缩
 │   ├── memory/                # 记忆与沉淀系统
-│   ├── telemetry/             # 遥测指标收集器
+│   ├── orchestration/         # Workflow Orchestrator 编排器与路由
 │   ├── sandbox/               # 执行沙箱管控
-│   └── storage/               # 持久化存储实现 (SQLite, Base)
+│   ├── storage/               # 持久化存储实现 (SQLite, Base)
+│   ├── subagent/              # 子代理 (Sub-agent) 注册与调度
+│   └── telemetry/             # 遥测指标收集器
+├── scripts/                   # 【Harness 层】运维与管控脚本
 ├── src/                       # 【Harness 层】Shell 核心底座源码 (Legacy)
 │   ├── core/                  # Workflow Orchestrator 编排器
 │   ├── agents/                # 角色 Agent 实现
 │   └── memory/                # 记忆与沉淀系统
-├── tests/                     # 测试用例 (Bats/Jest)
-└── scripts/                   # 【Harness 层】运维与管控脚本
+└── tests/                     # 测试用例 (Bats/Jest)
 ```
 
 ---
@@ -288,6 +298,23 @@ model:
   model: claude-3-5-sonnet
   temperature: 0.2
   max_tokens: 4096
+```
+
+### 本地模型支持 (Ollama, vLLM, LM Studio)
+
+对于数据敏感或离线环境，系统内置了对本地大模型（如 Qwen2.5, DeepSeek 等）的支持。大多数本地推理引擎均支持 OpenAI 兼容 API：
+
+```yaml
+# 修改 configs/agents/models.yaml
+agent_models:
+  executor:
+    profile: local
+
+profiles:
+  local:
+    provider: openai-compatible
+    base_url: http://localhost:11434/v1  # 例如 Ollama
+    model: qwen2.5-coder:7b
 ```
 
 ### 治理约束配置

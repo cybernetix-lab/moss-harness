@@ -1,0 +1,30 @@
+name: repo-scan
+description: |
+  仓库扫描技能。对跨栈仓库做结构盘点，识别项目代码、第三方资产和可清理的冗余。
+
+version: 1.0.0
+
+tags:
+  - research
+  - analysis
+  - maintenance
+  - advanced
+
+triggers:
+  - pattern: "repo scan|仓库扫描|代码盘点|第三方资产"
+    confidence: 0.86
+
+actions:
+  - type: scan
+    description: 扫描仓库结构与资产构成
+    steps:
+      - 枚举模块与文件
+      - 识别第三方嵌入代码
+      - 标记重复与冗余
+      - 输出模块级结论
+
+validation:
+  - manual-review
+
+related_skills:
+  - codebase-onboarding

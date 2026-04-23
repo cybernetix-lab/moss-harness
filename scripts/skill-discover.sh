@@ -6,8 +6,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$PROJECT_ROOT/skills"
-REGISTRY_FILE="$SKILLS_DIR/skill-registry.yaml"
+SKILLS_DIR="$PROJECT_ROOT/integrations/skills"
+REGISTRY_FILE="$PROJECT_ROOT/configs/skills/skill-registry.yaml"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -18,19 +18,19 @@ NC='\033[0m' # No Color
 
 # 日志函数
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    echo -e "${BLUE}[INFO]${NC} $1" >&2
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo -e "${YELLOW}[WARNING]${NC} $1" >&2
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
 # 检查依赖
@@ -56,7 +56,7 @@ parse_skill() {
     # 读取标签数组
     local tags=$(yq e '.tags[]' "$skill_file" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
     
-    # 获取技能目录（相对于 skills 目录的路径）
+    # 获取技能目录（相对于 integrations/skills 目录的路径）
     local skill_dir=$(dirname "$skill_file")
     # macOS compatible relative path calculation
     local relative_path=$(echo "$skill_dir" | sed "s|^$SKILLS_DIR/||")
@@ -102,7 +102,7 @@ generate_registry() {
     
     # 保留注册表的配置部分
     if [ -f "$REGISTRY_FILE" ]; then
-        yq e '.registry' "$REGISTRY_FILE" > "$temp_file"
+        yq e '{"registry": .registry}' "$REGISTRY_FILE" > "$temp_file"
     else
         # 创建默认配置
         cat > "$temp_file" << 'EOF'
@@ -110,7 +110,7 @@ registry:
   discovery:
     pattern: "**/skill.yaml"
     paths:
-      - "skills/"
+      - "integrations/skills/"
     exclude:
       - "**/evolution/**"
       - "**/deprecated/**"

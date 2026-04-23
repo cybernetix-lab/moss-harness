@@ -1,0 +1,30 @@
+name: architecture-decision-records
+description: |
+  架构决策记录技能。把关键架构取舍沉淀成 ADR，保留背景、备选方案和后果。
+
+version: 1.0.0
+
+tags:
+  - communication
+  - documentation
+  - enterprise
+  - advanced
+
+triggers:
+  - pattern: "ADR|架构决策|record this decision|为什么选这个"
+    confidence: 0.9
+
+actions:
+  - type: document
+    description: 记录架构决策
+    steps:
+      - 总结决策背景
+      - 列出备选方案
+      - 说明取舍理由
+      - 写入 ADR 文档
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

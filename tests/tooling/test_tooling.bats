@@ -68,12 +68,12 @@ load ../test_helper
 # 技能定义测试
 @test "skill definitions should exist" {
   assert_dir_exists "$PROJECT_ROOT/integrations/skills"
-  assert_file_exists "$PROJECT_ROOT/integrations/skills/react-hooks/skill.yaml"
+  assert_file_exists "$PROJECT_ROOT/integrations/skills/search-first/skill.yaml"
   assert_file_exists "$PROJECT_ROOT/integrations/skills/typescript-patterns/skill.yaml"
 }
 
-@test "react-hooks skill.yaml should be valid yaml" {
-  run yamllint -d relaxed "$PROJECT_ROOT/integrations/skills/react-hooks/skill.yaml"
+@test "search-first skill.yaml should be valid yaml" {
+  run yamllint -d relaxed "$PROJECT_ROOT/integrations/skills/search-first/skill.yaml"
   assert_success
 }
 

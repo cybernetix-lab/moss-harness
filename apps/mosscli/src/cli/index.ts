@@ -5,8 +5,10 @@ import { executeTraceCommand } from "../commands/trace.js";
 import { executeEvaluateCommand } from "../commands/evaluate.js";
 import { executeServeCommand } from "../commands/serve.js";
 import { executeStatusCommand } from "../commands/status.js";
+import { executeMcpCommand } from "../commands/mcp.js";
+import { executeOpenclawCommand } from "../commands/openclaw.js";
 
-const COMMANDS = ["run", "status", "trace", "evaluate", "serve"] as const;
+const COMMANDS = ["run", "status", "trace", "evaluate", "serve", "mcp", "claw-migrate"] as const;
 type CommandName = (typeof COMMANDS)[number];
 
 function renderCommandHelp(command: CommandName) {
@@ -16,6 +18,8 @@ function renderCommandHelp(command: CommandName) {
     trace: "Output the execution tracing timeline for one run based on the fact chain.",
     evaluate: "Render an evaluation and analytics report for a moss-harness run.",
     serve: "Start the read-only Mosscli web panel.",
+    mcp: "Start an MCP stdio server to expose mosscli capabilities to other agents.",
+    "claw-migrate": "Migrate and register mosscli as an MCP server in OpenClaw.",
   };
 
   const usageLines: Record<CommandName, string[]> = {
@@ -24,6 +28,8 @@ function renderCommandHelp(command: CommandName) {
     trace: ["  mosscli trace --run-id <run_id>", "  mosscli trace --help"],
     evaluate: ["  mosscli evaluate --run-id <run_id> [--format <md|json>]", "  mosscli evaluate --help"],
     serve: ["  mosscli serve [--port <port>]", "  mosscli serve --help"],
+    mcp: ["  mosscli mcp", "  mosscli mcp --help"],
+    "claw-migrate": ["  mosscli claw-migrate", "  mosscli claw-migrate --help"],
   };
 
   return [
@@ -119,6 +125,16 @@ async function serveCommand(args: string[]) {
   return 0;
 }
 
+async function mcpCommand(_args: string[]) {
+  await executeMcpCommand();
+  return 0;
+}
+
+async function clawMigrateCommand(_args: string[]) {
+  await executeOpenclawCommand();
+  return 0;
+}
+
 async function main(argv: string[]) {
   const args = argv.slice(2);
   const firstArg = args[0];
@@ -154,6 +170,14 @@ async function main(argv: string[]) {
 
       if (firstArg === "serve") {
         return await serveCommand(args.slice(1));
+      }
+
+      if (firstArg === "mcp") {
+        return await mcpCommand(args.slice(1));
+      }
+
+      if (firstArg === "claw-migrate") {
+        return await clawMigrateCommand(args.slice(1));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

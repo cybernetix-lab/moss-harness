@@ -1,0 +1,30 @@
+name: tdd-workflow
+description: |
+  测试驱动开发技能。要求先写失败测试，再实现最小代码并验证通过。
+
+version: 1.0.0
+
+tags:
+  - coding
+  - testing
+  - maintenance
+  - advanced
+
+triggers:
+  - pattern: "TDD|测试驱动|先写测试|failing test"
+    confidence: 0.95
+
+actions:
+  - type: test
+    description: 按 TDD 流程实现变更
+    steps:
+      - 先写失败测试
+      - 运行确认 RED
+      - 编写最小实现
+      - 运行确认 GREEN
+
+validation:
+  - tests
+
+related_skills:
+  - verification-loop

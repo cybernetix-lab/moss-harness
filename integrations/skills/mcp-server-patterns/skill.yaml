@@ -1,0 +1,30 @@
+name: mcp-server-patterns
+description: |
+  MCP 服务开发技能。覆盖 Node/TypeScript SDK 下的工具、资源、提示和传输模式设计。
+
+version: 1.0.0
+
+tags:
+  - coding
+  - backend
+  - typescript
+  - advanced
+
+triggers:
+  - pattern: "MCP server|MCP 服务|工具注册|stdio|streamable http"
+    confidence: 0.9
+
+actions:
+  - type: implement
+    description: 设计或维护 MCP 服务
+    steps:
+      - 定义工具与资源边界
+      - 补齐输入校验
+      - 选择传输方式
+      - 验证 SDK 用法
+
+validation:
+  - typecheck
+
+related_skills:
+  - documentation-lookup

@@ -1,0 +1,30 @@
+name: knowledge-ops
+description: |
+  知识运营技能。用于沉淀、同步、去重和检索多层知识体系中的信息。
+
+version: 1.0.0
+
+tags:
+  - ops
+  - documentation
+  - enterprise
+  - advanced
+
+triggers:
+  - pattern: "知识库|knowledge ops|沉淀知识|同步知识"
+    confidence: 0.9
+
+actions:
+  - type: organize
+    description: 整理与沉淀知识
+    steps:
+      - 分类知识类型
+      - 去重现有记录
+      - 写入合适存储层
+      - 补充索引与关系
+
+validation:
+  - manual-review
+
+related_skills:
+  - documentation-lookup

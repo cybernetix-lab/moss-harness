@@ -1,0 +1,30 @@
+name: agent-harness-construction
+description: |
+  Agent Harness 设计技能。用于优化工具定义、观察格式、恢复路径与上下文预算。
+
+version: 1.0.0
+
+tags:
+  - coding
+  - backend
+  - analysis
+  - advanced
+
+triggers:
+  - pattern: "agent harness|action space|观察格式|恢复路径"
+    confidence: 0.87
+
+actions:
+  - type: design
+    description: 改进 agent harness 结构
+    steps:
+      - 梳理工具边界
+      - 规范观察输出
+      - 设计错误恢复契约
+      - 优化上下文预算
+
+validation:
+  - manual-review
+
+related_skills:
+  - mcp-server-patterns
