@@ -5,20 +5,23 @@ import type { OntologyObjectType, OntologyProperty } from '../../domain/models/o
 import type { IOntologyRepository } from '../../domain/repositories/IOntologyRepository';
 
 type StorageRow = Record<string, unknown>;
+type LogLevel = 'log' | 'warn' | 'error';
+type LogContext = Record<string, unknown>;
 
 export class UnifiedOntologyRepository implements IOntologyRepository {
   private readonly objectTypesTableName = 'ontology_object_types';
   private readonly objectsTableName = 'ontology_objects';
+  private readonly logPrefix = '[UnifiedOntologyRepository]';
 
   constructor(private readonly storage: IStorage) {}
 
   async listObjectTypes(): Promise<OntologyObjectType[]> {
-    console.log('[UnifiedOntologyRepository] listObjectTypes called', {
-      method: 'listObjectTypes'
-    });
+    const method = 'listObjectTypes';
+    this.log('log', 'called', { method });
 
     try {
-      console.log('[UnifiedOntologyRepository] listObjectTypes query started', {
+      this.log('log', 'query_started', {
+        method,
         table: this.objectTypesTableName,
         orderBy: ['objectType']
       });
@@ -29,28 +32,28 @@ export class UnifiedOntologyRepository implements IOntologyRepository {
          ORDER BY objectType ASC`
       );
 
-      console.log('[UnifiedOntologyRepository] listObjectTypes query completed', {
+      this.log('log', 'query_completed', {
+        method,
         count: rows.length
       });
 
       return rows.map((row) => this.mapToObjectType(row));
     } catch (error) {
-      console.error('[UnifiedOntologyRepository] listObjectTypes failed', error);
+      this.logError(method, error);
       throw error;
     }
   }
 
   async getObject(objectType: string, objectId: string): Promise<OntologyObject | null> {
-    console.log('[UnifiedOntologyRepository] getObject called', {
+    const method = 'getObject';
+    const context = {
       objectType,
       objectId
-    });
+    };
+    this.log('log', 'called', { method, ...context });
 
     try {
-      console.log('[UnifiedOntologyRepository] getObject query started', {
-        objectType,
-        objectId
-      });
+      this.log('log', 'query_started', { method, ...context });
 
       const [row] = await this.select(
         `SELECT objectType, objectId, displayName, state, properties
@@ -61,34 +64,26 @@ export class UnifiedOntologyRepository implements IOntologyRepository {
       );
 
       if (!row) {
-        console.warn('[UnifiedOntologyRepository] getObject miss', {
-          objectType,
-          objectId
-        });
+        this.log('warn', 'miss', { method, ...context });
         return null;
       }
 
-      console.log('[UnifiedOntologyRepository] getObject hit', {
-        objectType,
-        objectId
-      });
+      this.log('log', 'hit', { method, ...context });
 
       return this.mapToObject(row);
     } catch (error) {
-      console.error('[UnifiedOntologyRepository] getObject failed', error);
+      this.logError(method, error, context);
       throw error;
     }
   }
 
   async queryObjects(filters: OntologyQuery): Promise<OntologyObject[]> {
-    console.log('[UnifiedOntologyRepository] queryObjects called', {
-      filters
-    });
+    const method = 'queryObjects';
+    const context = { filters };
+    this.log('log', 'called', { method, ...context });
 
     try {
-      console.log('[UnifiedOntologyRepository] queryObjects query started', {
-        filters
-      });
+      this.log('log', 'query_started', { method, ...context });
 
       const whereClauses: string[] = [];
       const params: unknown[] = [];
@@ -111,14 +106,15 @@ export class UnifiedOntologyRepository implements IOntologyRepository {
         params
       );
 
-      console.log('[UnifiedOntologyRepository] queryObjects query completed', {
+      this.log('log', 'query_completed', {
+        method,
         count: rows.length,
-        filters
+        ...context
       });
 
       return rows.map((row) => this.mapToObject(row));
     } catch (error) {
-      console.error('[UnifiedOntologyRepository] queryObjects failed', error);
+      this.logError(method, error, context);
       throw error;
     }
   }
@@ -168,5 +164,17 @@ export class UnifiedOntologyRepository implements IOntologyRepository {
   private async select(sql: string, params?: unknown[]): Promise<StorageRow[]> {
     const result = await this.storage.execute(sql, params);
     return result.rows;
+  }
+
+  private log(level: LogLevel, event: string, context: LogContext): void {
+    console[level](this.logPrefix, event, context);
+  }
+
+  private logError(method: string, error: unknown, context: LogContext = {}): void {
+    this.log('error', 'failed', {
+      method,
+      ...context,
+      error
+    });
   }
 }
