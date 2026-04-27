@@ -19,6 +19,7 @@ import { ModelController } from './api/controllers/ModelController';
 import { RosterLoader } from './services/RosterLoader';
 import path from 'path';
 import { ensureTaskTableShape } from './infrastructure/database/taskSchema';
+import { ensureOntologySchema } from './infrastructure/database/ontologySchema';
 import { createDefaultModelCatalogService } from './services/ModelCatalogService';
 
 const app = express();
@@ -102,6 +103,7 @@ async function bootstrap() {
   }
 
   await ensureTaskTableShape(storage);
+  await ensureOntologySchema(storage);
   await ensureColumn('agents', 'isBuiltin', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('agents', 'isDisabled', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('skills', 'isBuiltin', 'INTEGER NOT NULL DEFAULT 0');
