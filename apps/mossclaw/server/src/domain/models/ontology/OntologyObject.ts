@@ -1,7 +1,3 @@
-export interface OntologyObject {
-  objectType: string;
-  objectId: string;
-  displayName: string;
-  state: string;
-  properties: Record<string, unknown>;
-}
+import type { OntologyObjectDto } from '@mossclaw/shared';
+
+export type OntologyObject = OntologyObjectDto;

@@ -1,8 +1,9 @@
 import type { IStorage } from '@agent-harness/core/storage/types';
-import type { OntologyObject } from '../../domain/models/ontology/OntologyObject';
-import type { OntologyObjectType } from '../../domain/models/ontology/OntologySchema';
+import type { OntologyObjectDto, OntologyObjectTypeDto } from '@mossclaw/shared';
 
-const SEEDED_OBJECT_TYPES: OntologyObjectType[] = [
+type SqlExecutor = Pick<IStorage, 'execute'>;
+
+const SEEDED_OBJECT_TYPES: OntologyObjectTypeDto[] = [
   {
     objectType: 'Order',
     description: '订单对象',
@@ -13,7 +14,7 @@ const SEEDED_OBJECT_TYPES: OntologyObjectType[] = [
   }
 ];
 
-const SEEDED_OBJECTS: OntologyObject[] = [
+const SEEDED_OBJECTS: OntologyObjectDto[] = [
   {
     objectType: 'Order',
     objectId: 'order-001',
@@ -26,21 +27,68 @@ const SEEDED_OBJECTS: OntologyObject[] = [
   }
 ];
 
-async function ensureOntologyTables(storage: IStorage): Promise<void> {
-  await storage.execute(`CREATE TABLE IF NOT EXISTS ontology_object_types (
+const ONTOLOGY_OBJECT_TYPES_TABLE_SQL = `CREATE TABLE IF NOT EXISTS ontology_object_types (
     objectType TEXT PRIMARY KEY,
     description TEXT NOT NULL,
     properties TEXT NOT NULL
-  );`);
+  );`;
 
-  await storage.execute(`CREATE TABLE IF NOT EXISTS ontology_objects (
+const ONTOLOGY_OBJECTS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS ontology_objects (
     objectType TEXT NOT NULL,
     objectId TEXT NOT NULL,
     displayName TEXT NOT NULL,
     state TEXT NOT NULL,
     properties TEXT NOT NULL,
-    PRIMARY KEY (objectType, objectId)
-  );`);
+    PRIMARY KEY (objectType, objectId),
+    FOREIGN KEY (objectType) REFERENCES ontology_object_types(objectType)
+  );`;
+
+async function createOntologyObjectsTable(executor: SqlExecutor): Promise<void> {
+  await executor.execute(ONTOLOGY_OBJECTS_TABLE_SQL);
+}
+
+async function hasTable(storage: IStorage, tableName: string): Promise<boolean> {
+  const result = await storage.execute(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+    [tableName]
+  );
+
+  return result.rowCount > 0;
+}
+
+async function hasOntologyObjectTypeForeignKey(storage: IStorage): Promise<boolean> {
+  const result = await storage.execute("PRAGMA foreign_key_list('ontology_objects')");
+
+  return result.rows.some(
+    (row) =>
+      row.from === 'objectType' &&
+      row.table === 'ontology_object_types' &&
+      row.to === 'objectType'
+  );
+}
+
+async function rebuildOntologyObjectsTableWithForeignKey(storage: IStorage): Promise<void> {
+  await storage.transaction(async (trx) => {
+    await trx.execute('ALTER TABLE ontology_objects RENAME TO ontology_objects_legacy');
+    await createOntologyObjectsTable(trx);
+    await trx.execute(`INSERT INTO ontology_objects (objectType, objectId, displayName, state, properties)
+      SELECT objectType, objectId, displayName, state, properties
+      FROM ontology_objects_legacy`);
+    await trx.execute('DROP TABLE ontology_objects_legacy');
+  });
+}
+
+async function ensureOntologyTables(storage: IStorage): Promise<void> {
+  await storage.execute(ONTOLOGY_OBJECT_TYPES_TABLE_SQL);
+
+  if (!(await hasTable(storage, 'ontology_objects'))) {
+    await createOntologyObjectsTable(storage);
+    return;
+  }
+
+  if (!(await hasOntologyObjectTypeForeignKey(storage))) {
+    await rebuildOntologyObjectsTableWithForeignKey(storage);
+  }
 }
 
 async function seedOntologyObjectTypes(storage: IStorage): Promise<void> {

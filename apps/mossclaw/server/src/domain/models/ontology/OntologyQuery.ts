@@ -1,4 +1,3 @@
-export interface OntologyQuery {
-  objectType?: string;
-  state?: string;
-}
+import type { OntologyQueryRequestDto } from '@mossclaw/shared';
+
+export type OntologyQuery = OntologyQueryRequestDto;

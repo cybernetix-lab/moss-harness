@@ -55,4 +55,44 @@ describe('ensureOntologySchema', () => {
       riskLevel: 'Medium'
     });
   });
+
+  it('拒绝写入未定义 objectType 的 ontology object', async () => {
+    const storage = await createTestStorage();
+
+    await ensureOntologySchema(storage);
+
+    expect(() =>
+      storage.execute(
+        'INSERT INTO ontology_objects (objectType, objectId, displayName, state, properties) VALUES (?, ?, ?, ?, ?)',
+        ['MissingType', 'order-404', 'Order 404', 'PendingReview', JSON.stringify({ amount: 404 })]
+      )
+    ).toThrow(/foreign key constraint failed/i);
+  });
+
+  it('会把旧版 ontology_objects 表升级为带 objectType 外键的结构', async () => {
+    const storage = await createTestStorage();
+
+    await storage.execute(`CREATE TABLE ontology_object_types (
+      objectType TEXT PRIMARY KEY,
+      description TEXT NOT NULL,
+      properties TEXT NOT NULL
+    );`);
+    await storage.execute(`CREATE TABLE ontology_objects (
+      objectType TEXT NOT NULL,
+      objectId TEXT NOT NULL,
+      displayName TEXT NOT NULL,
+      state TEXT NOT NULL,
+      properties TEXT NOT NULL,
+      PRIMARY KEY (objectType, objectId)
+    );`);
+
+    await ensureOntologySchema(storage);
+
+    expect(() =>
+      storage.execute(
+        'INSERT INTO ontology_objects (objectType, objectId, displayName, state, properties) VALUES (?, ?, ?, ?, ?)',
+        ['MissingType', 'order-405', 'Order 405', 'PendingReview', JSON.stringify({ amount: 405 })]
+      )
+    ).toThrow(/foreign key constraint failed/i);
+  });
 });

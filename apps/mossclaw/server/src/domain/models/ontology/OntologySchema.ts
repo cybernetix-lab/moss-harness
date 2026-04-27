@@ -1,23 +1,13 @@
-export type OntologyPropertyType = 'string' | 'number' | 'boolean' | 'datetime' | 'enum';
+import type {
+  OntologyEnumPropertyDto,
+  OntologyObjectTypeDto,
+  OntologyPropertyDto,
+  OntologyPropertyTypeDto,
+  OntologyScalarPropertyDto
+} from '@mossclaw/shared';
 
-interface OntologyPropertyBase {
-  name: string;
-  required: boolean;
-}
-
-export interface OntologyScalarProperty extends OntologyPropertyBase {
-  type: Exclude<OntologyPropertyType, 'enum'>;
-}
-
-export interface OntologyEnumProperty extends OntologyPropertyBase {
-  type: 'enum';
-  enumValues: string[];
-}
-
-export type OntologyProperty = OntologyScalarProperty | OntologyEnumProperty;
-
-export interface OntologyObjectType {
-  objectType: string;
-  description?: string;
-  properties: OntologyProperty[];
-}
+export type OntologyPropertyType = OntologyPropertyTypeDto;
+export type OntologyScalarProperty = OntologyScalarPropertyDto;
+export type OntologyEnumProperty = OntologyEnumPropertyDto;
+export type OntologyProperty = OntologyPropertyDto;
+export type OntologyObjectType = OntologyObjectTypeDto;
