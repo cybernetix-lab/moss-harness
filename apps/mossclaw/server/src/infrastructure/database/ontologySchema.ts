@@ -78,9 +78,11 @@ async function rebuildOntologyObjectsTableWithForeignKey(storage: IStorage): Pro
   });
 }
 
-async function ensureOntologyTables(storage: IStorage): Promise<void> {
+async function ensureOntologyObjectTypesTable(storage: IStorage): Promise<void> {
   await storage.execute(ONTOLOGY_OBJECT_TYPES_TABLE_SQL);
+}
 
+async function ensureOntologyObjectsTable(storage: IStorage): Promise<void> {
   if (!(await hasTable(storage, 'ontology_objects'))) {
     await createOntologyObjectsTable(storage);
     return;
@@ -110,7 +112,8 @@ async function seedOntologyObjects(storage: IStorage): Promise<void> {
 }
 
 export async function ensureOntologySchema(storage: IStorage): Promise<void> {
-  await ensureOntologyTables(storage);
+  await ensureOntologyObjectTypesTable(storage);
   await seedOntologyObjectTypes(storage);
+  await ensureOntologyObjectsTable(storage);
   await seedOntologyObjects(storage);
 }

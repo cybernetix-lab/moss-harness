@@ -95,4 +95,49 @@ describe('ensureOntologySchema', () => {
       )
     ).toThrow(/foreign key constraint failed/i);
   });
+
+  it('升级带 legacy ontology object 数据的旧表时，会先补齐 objectType 再回填对象', async () => {
+    const storage = await createTestStorage();
+
+    await storage.execute(`CREATE TABLE ontology_objects (
+      objectType TEXT NOT NULL,
+      objectId TEXT NOT NULL,
+      displayName TEXT NOT NULL,
+      state TEXT NOT NULL,
+      properties TEXT NOT NULL,
+      PRIMARY KEY (objectType, objectId)
+    );`);
+    await storage.execute(
+      'INSERT INTO ontology_objects (objectType, objectId, displayName, state, properties) VALUES (?, ?, ?, ?, ?)',
+      ['Order', 'legacy-order-001', 'Legacy Order 001', 'PendingReview', JSON.stringify({ amount: 88, riskLevel: 'Low' })]
+    );
+
+    await expect(ensureOntologySchema(storage)).resolves.toBeUndefined();
+
+    const orderTypeResult = await storage.execute(
+      'SELECT objectType, description FROM ontology_object_types WHERE objectType = ?',
+      ['Order']
+    );
+    const legacyObjectResult = await storage.execute(
+      'SELECT objectType, objectId, displayName, state, properties FROM ontology_objects WHERE objectType = ? AND objectId = ?',
+      ['Order', 'legacy-order-001']
+    );
+    const orderType = orderTypeResult.rows[0];
+    const legacyObject = legacyObjectResult.rows[0];
+
+    expect(orderType).toMatchObject({
+      objectType: 'Order',
+      description: '订单对象'
+    });
+    expect(legacyObject).toMatchObject({
+      objectType: 'Order',
+      objectId: 'legacy-order-001',
+      displayName: 'Legacy Order 001',
+      state: 'PendingReview'
+    });
+    expect(JSON.parse(String(legacyObject?.properties))).toEqual({
+      amount: 88,
+      riskLevel: 'Low'
+    });
+  });
 });
