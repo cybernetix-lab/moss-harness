@@ -8,11 +8,14 @@ import { TASK_SUBSCRIPTION_EVENT } from '@mossclaw/shared';
 import { createStorage, DEFAULT_STORAGE_CONFIG } from '@agent-harness/core/storage';
 import { UnifiedTaskRepository } from './infrastructure/database/UnifiedTaskRepository';
 import { UnifiedAgentRepository } from './infrastructure/database/UnifiedAgentRepository';
+import { UnifiedOntologyRepository } from './infrastructure/database/UnifiedOntologyRepository';
 import { UnifiedSkillRepository } from './infrastructure/database/UnifiedSkillRepository';
 import { TaskController } from './api/controllers/TaskController';
 import { AgentController } from './api/controllers/AgentController';
+import { OntologyController, registerOntologyRoutes } from './api/controllers/OntologyController';
 import { TaskService } from './services/TaskService';
 import { AgentService } from './services/AgentService';
+import { OntologyService } from './services/OntologyService';
 import { SkillService } from './services/SkillService';
 import { SkillController } from './api/controllers/SkillController';
 import { ModelController } from './api/controllers/ModelController';
@@ -112,11 +115,13 @@ async function bootstrap() {
   // 2. Initialize Repositories
   const taskRepository = new UnifiedTaskRepository(storage);
   const agentRepository = new UnifiedAgentRepository(storage);
+  const ontologyRepository = new UnifiedOntologyRepository(storage);
   const skillRepository = new UnifiedSkillRepository(storage);
 
   // 3. Initialize Services
   const taskService = new TaskService(taskRepository, agentRepository, io);
   const agentService = new AgentService(agentRepository);
+  const ontologyService = new OntologyService(ontologyRepository);
   const skillService = new SkillService(skillRepository);
   const modelCatalogService = createDefaultModelCatalogService();
 
@@ -128,6 +133,7 @@ async function bootstrap() {
   // 4. Initialize Controllers
   const taskController = new TaskController(taskService);
   const agentController = new AgentController(agentService);
+  const ontologyController = new OntologyController(ontologyService);
   const skillController = new SkillController(skillService);
   const modelController = new ModelController(modelCatalogService);
 
@@ -145,6 +151,8 @@ async function bootstrap() {
   app.patch('/api/agents/:id/disable', (req, res) => agentController.disableAgent(req, res));
   app.patch('/api/agents/:id/enable', (req, res) => agentController.enableAgent(req, res));
   app.delete('/api/agents/:id', (req, res) => agentController.deleteAgent(req, res));
+
+  registerOntologyRoutes(app, ontologyController);
 
   app.get('/api/skills', (req, res) => skillController.getSkills(req, res));
   app.get('/api/models', (req, res) => modelController.getModels(req, res));
