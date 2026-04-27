@@ -3,6 +3,10 @@ import type {
   CreateTaskRequestDto,
   ExecuteTaskResponseDto,
   ModelOptionDto,
+  OntologyObjectDto,
+  OntologyQueryRequestDto,
+  OntologyQueryResponseDto,
+  OntologySchemaResponseDto,
   SkillDto,
   TaskControlResponseDto,
   TaskDto,
@@ -69,5 +73,23 @@ export function setSkillDisabled(skillId: string, isDisabled: boolean): Promise<
   const action = isDisabled ? 'disable' : 'enable';
   return fetchJson<SkillDto>(`${API_BASE_URL}/api/skills/${skillId}/${action}`, {
     method: 'PATCH',
+  });
+}
+
+export function getOntologySchema(): Promise<OntologySchemaResponseDto> {
+  return fetchJson<OntologySchemaResponseDto>(`${API_BASE_URL}/api/ontology/schema`);
+}
+
+export function getOntologyObject(objectType: string, objectId: string): Promise<OntologyObjectDto> {
+  return fetchJson<OntologyObjectDto>(`${API_BASE_URL}/api/ontology/objects/${objectType}/${objectId}`);
+}
+
+export function queryOntology(payload: OntologyQueryRequestDto): Promise<OntologyQueryResponseDto> {
+  return fetchJson<OntologyQueryResponseDto>(`${API_BASE_URL}/api/ontology/query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 }
