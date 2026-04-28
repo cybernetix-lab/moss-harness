@@ -4,3 +4,4 @@ export * from './ontology';
 export * from './realtime';
 export * from './skills';
 export * from './tasks';
+export * from './tools';
