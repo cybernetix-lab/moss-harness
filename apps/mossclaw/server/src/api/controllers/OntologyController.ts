@@ -1,37 +1,38 @@
 import type { Request, Response } from 'express';
-import type { OntologyQueryRequestDto } from '@mossclaw/shared';
 import { OntologyService } from '../../services/OntologyService';
-import { isBadRequestError, requireObject, requireTrimmedString } from './requestParams';
+import { OntologyToolBoundary } from '../../services/toolGateway/OntologyToolBoundary';
+import { isBadRequestError } from '../../lib/validation';
 
 type OntologyRoutesApp = {
   get: (path: string, handler: (req: Request, res: Response) => void | Promise<void>) => unknown;
   post: (path: string, handler: (req: Request, res: Response) => void | Promise<void>) => unknown;
 };
 
-const SCHEMA_LOAD_ERROR = 'Failed to load ontology schema';
-const OBJECT_LOAD_ERROR = 'Failed to load ontology object';
-const QUERY_OBJECTS_ERROR = 'Failed to query ontology objects';
-
 export class OntologyController {
-  constructor(private readonly ontologyService: OntologyService) {}
+  constructor(
+    private readonly ontologyService: OntologyService,
+    private readonly ontologyToolBoundary = new OntologyToolBoundary()
+  ) {}
 
   async getSchema(_req: Request, res: Response) {
     try {
       const schema = await this.ontologyService.getSchema();
       res.json(schema);
     } catch {
-      res.status(500).json({ error: SCHEMA_LOAD_ERROR });
+      res.status(500).json({ error: this.ontologyToolBoundary.getSchemaLoadErrorMessage() });
     }
   }
 
   async getObject(req: Request, res: Response) {
     try {
-      const objectType = requireTrimmedString(req.params.objectType, 'Ontology objectType');
-      const objectId = requireTrimmedString(req.params.objectId, 'Ontology objectId');
+      const { objectType, objectId } = this.ontologyToolBoundary.normalizeGetObjectArguments({
+        objectType: req.params.objectType,
+        objectId: req.params.objectId
+      });
       const object = await this.ontologyService.getObject(objectType, objectId);
 
       if (!object) {
-        res.status(404).json({ error: 'Ontology object not found' });
+        res.status(404).json({ error: this.ontologyToolBoundary.getObjectNotFoundMessage() });
         return;
       }
 
@@ -42,13 +43,13 @@ export class OntologyController {
         return;
       }
 
-      res.status(500).json({ error: OBJECT_LOAD_ERROR });
+      res.status(500).json({ error: this.ontologyToolBoundary.getObjectLoadErrorMessage() });
     }
   }
 
   async queryObjects(req: Request, res: Response) {
     try {
-      const payload = normalizeQueryPayload(req.body);
+      const payload = this.ontologyToolBoundary.normalizeQueryArguments(req.body);
       const result = await this.ontologyService.queryObjects(payload);
       res.json(result);
     } catch (error: any) {
@@ -57,7 +58,7 @@ export class OntologyController {
         return;
       }
 
-      res.status(500).json({ error: QUERY_OBJECTS_ERROR });
+      res.status(500).json({ error: this.ontologyToolBoundary.getQueryObjectsErrorMessage() });
     }
   }
 }
@@ -66,23 +67,4 @@ export function registerOntologyRoutes(app: OntologyRoutesApp, ontologyControlle
   app.get('/api/ontology/schema', (req, res) => ontologyController.getSchema(req, res));
   app.get('/api/ontology/objects/:objectType/:objectId', (req, res) => ontologyController.getObject(req, res));
   app.post('/api/ontology/query', (req, res) => ontologyController.queryObjects(req, res));
-}
-
-function normalizeQueryPayload(value: unknown): OntologyQueryRequestDto {
-  if (value === undefined) {
-    return {};
-  }
-
-  const payload = requireObject(value, 'Ontology query payload');
-  const normalized: OntologyQueryRequestDto = {};
-
-  if (payload.objectType !== undefined) {
-    normalized.objectType = requireTrimmedString(payload.objectType, 'Ontology query payload.objectType');
-  }
-
-  if (payload.state !== undefined) {
-    normalized.state = requireTrimmedString(payload.state, 'Ontology query payload.state');
-  }
-
-  return normalized;
 }
