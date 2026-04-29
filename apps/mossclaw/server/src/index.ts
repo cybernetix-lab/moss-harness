@@ -13,6 +13,7 @@ import { UnifiedSkillRepository } from './infrastructure/database/UnifiedSkillRe
 import { TaskController } from './api/controllers/TaskController';
 import { AgentController } from './api/controllers/AgentController';
 import { OntologyController, registerOntologyRoutes } from './api/controllers/OntologyController';
+import { ToolGatewayController, registerToolGatewayRoutes } from './api/controllers/ToolGatewayController';
 import { TaskService } from './services/TaskService';
 import { AgentService } from './services/AgentService';
 import { OntologyService } from './services/OntologyService';
@@ -20,6 +21,9 @@ import { SkillService } from './services/SkillService';
 import { SkillController } from './api/controllers/SkillController';
 import { ModelController } from './api/controllers/ModelController';
 import { RosterLoader } from './services/RosterLoader';
+import { OntologyToolAdapter } from './services/toolGateway/OntologyToolAdapter';
+import { createDefaultToolRegistry } from './services/toolGateway/ToolRegistry';
+import { ToolGatewayService } from './services/toolGateway/ToolGatewayService';
 import path from 'path';
 import { ensureTaskTableShape } from './infrastructure/database/taskSchema';
 import { ensureOntologySchema } from './infrastructure/database/ontologySchema';
@@ -123,6 +127,11 @@ async function bootstrap() {
   const agentService = new AgentService(agentRepository);
   const ontologyService = new OntologyService(ontologyRepository);
   const skillService = new SkillService(skillRepository);
+  const ontologyToolAdapter = new OntologyToolAdapter(ontologyService);
+  const toolGatewayService = new ToolGatewayService(
+    createDefaultToolRegistry(),
+    ontologyToolAdapter
+  );
   const modelCatalogService = createDefaultModelCatalogService();
 
   // 3.5 Sync YAML Configurations to SQLite Database
@@ -134,6 +143,7 @@ async function bootstrap() {
   const taskController = new TaskController(taskService);
   const agentController = new AgentController(agentService);
   const ontologyController = new OntologyController(ontologyService);
+  const toolGatewayController = new ToolGatewayController(toolGatewayService);
   const skillController = new SkillController(skillService);
   const modelController = new ModelController(modelCatalogService);
 
@@ -153,6 +163,7 @@ async function bootstrap() {
   app.delete('/api/agents/:id', (req, res) => agentController.deleteAgent(req, res));
 
   registerOntologyRoutes(app, ontologyController);
+  registerToolGatewayRoutes(app, toolGatewayController);
 
   app.get('/api/skills', (req, res) => skillController.getSkills(req, res));
   app.get('/api/models', (req, res) => modelController.getModels(req, res));
