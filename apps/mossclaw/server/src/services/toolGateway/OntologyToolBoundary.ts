@@ -1,10 +1,16 @@
 import type { OntologyQueryRequestDto, ToolErrorDto } from '@mossclaw/shared';
-import { requireObject, requireTrimmedString } from '../../lib/validation';
+import { BadRequestError, requireObject, requireTrimmedString } from '../../lib/validation';
 
 export type OntologyToolName =
   | 'ontology.get_object'
   | 'ontology.get_schema'
   | 'ontology.query';
+
+const ONTOLOGY_TOOL_NAMES = [
+  'ontology.get_object',
+  'ontology.get_schema',
+  'ontology.query'
+] as const satisfies readonly OntologyToolName[];
 
 type GetObjectArgumentLabels = {
   objectType?: string;
@@ -29,6 +35,10 @@ const DEFAULT_QUERY_ARGUMENT_LABELS: Required<QueryArgumentLabels> = {
 };
 
 const ONTOLOGY_TOOL_ERROR_CATALOG = Object.freeze({
+  invalidGetSchemaArguments: {
+    errorCode: 'INVALID_ARGUMENT',
+    description: 'Tool arguments must be empty'
+  },
   invalidGetObjectArguments: {
     errorCode: 'INVALID_ARGUMENT',
     description: 'Tool arguments.objectType and arguments.objectId must be non-empty strings'
@@ -63,17 +73,32 @@ const TOOL_ERROR_DIRECTORY: Record<
   OntologyToolName,
   ReadonlyArray<keyof typeof ONTOLOGY_TOOL_ERROR_CATALOG>
 > = {
-  'ontology.get_schema': ['schemaLoadFailed'],
+  'ontology.get_schema': ['invalidGetSchemaArguments', 'schemaLoadFailed'],
   'ontology.get_object': ['invalidGetObjectArguments', 'objectNotFound', 'objectLoadFailed'],
   'ontology.query': ['invalidQueryArguments', 'queryFailed']
 };
 
+export function isOntologyToolName(value: string): value is OntologyToolName {
+  return (ONTOLOGY_TOOL_NAMES as readonly string[]).includes(value);
+}
+
 export class OntologyToolBoundary {
+  normalizeGetSchemaArguments(value: unknown, label = 'Tool arguments'): void {
+    if (value === undefined) {
+      return;
+    }
+
+    if (!isPlainObject(value) || Object.keys(value).length > 0) {
+      throw new BadRequestError(`${label} must be empty`);
+    }
+  }
+
   normalizeGetObjectArguments(
     value: unknown,
     labels: GetObjectArgumentLabels = DEFAULT_GET_OBJECT_ARGUMENT_LABELS
   ): { objectType: string; objectId: string } {
-    const params = asObject(value);
+    const params = requireObject(value, 'Tool arguments');
+    assertAllowedKeys(params, ['objectType', 'objectId']);
 
     return {
       objectType: requireTrimmedString(
@@ -96,6 +121,7 @@ export class OntologyToolBoundary {
     }
 
     const payload = requireObject(value, labels.payload ?? DEFAULT_QUERY_ARGUMENT_LABELS.payload);
+    assertAllowedKeys(payload, ['objectType', 'state']);
     const normalized: OntologyQueryRequestDto = {};
 
     if (payload.objectType !== undefined) {
@@ -139,10 +165,18 @@ export class OntologyToolBoundary {
   }
 }
 
-function asObject(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return {};
+function assertAllowedKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  labelPrefix = 'Tool arguments'
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      throw new BadRequestError(`${labelPrefix}.${key} is not supported`);
+    }
   }
+}
 
-  return value as Record<string, unknown>;
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
