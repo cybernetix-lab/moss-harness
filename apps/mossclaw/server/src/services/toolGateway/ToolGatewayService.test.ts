@@ -8,6 +8,10 @@ function buildToolGatewayService(options: {
   tool?: ToolDescriptorDto;
   adapterResult?: unknown;
   adapterError?: unknown;
+  workflowAdapterResult?: unknown;
+  workflowAdapterError?: unknown;
+  ingestAdapterResult?: unknown;
+  ingestAdapterError?: unknown;
 } = {}) {
   const tool = options.tool;
   const registry = tool
@@ -22,22 +26,44 @@ function buildToolGatewayService(options: {
       ? vi.fn().mockRejectedValue(options.adapterError)
       : vi.fn().mockResolvedValue(options.adapterResult)
   };
+  const workflowBuilderToolAdapter = {
+    invoke: options.workflowAdapterError
+      ? vi.fn().mockRejectedValue(options.workflowAdapterError)
+      : vi.fn().mockResolvedValue(options.workflowAdapterResult)
+  };
+  const ontologyIngestToolAdapter = {
+    invoke: options.ingestAdapterError
+      ? vi.fn().mockRejectedValue(options.ingestAdapterError)
+      : vi.fn().mockResolvedValue(options.ingestAdapterResult)
+  };
 
   return {
-    toolGatewayService: new ToolGatewayService(registry, ontologyToolAdapter),
+    toolGatewayService: new ToolGatewayService(
+      registry,
+      ontologyToolAdapter as never,
+      workflowBuilderToolAdapter as never,
+      ontologyIngestToolAdapter as never
+    ),
     ontologyToolAdapter,
+    workflowBuilderToolAdapter,
+    ontologyIngestToolAdapter,
     registry
   };
 }
 
 describe('ToolGatewayService', () => {
-  it('lists ontology tools from the registry', () => {
+  it('lists ontology and workflow builder tools from the registry', () => {
     const { toolGatewayService } = buildToolGatewayService();
 
     expect(toolGatewayService.listTools().map((tool) => tool.name)).toEqual([
       'ontology.get_object',
       'ontology.get_schema',
-      'ontology.query'
+      'ontology.ingest_preview',
+      'ontology.ingest_submit',
+      'ontology.query',
+      'workflow_builder.compile',
+      'workflow_builder.simulate',
+      'workflow_builder.validate_plan'
     ]);
   });
 
@@ -156,7 +182,125 @@ describe('ToolGatewayService', () => {
     });
 
     await expect(toolGatewayService.invoke('non-ontology.tool', {})).rejects.toThrow(
-      'Unsupported ontology tool registration: non-ontology.tool'
+      'Unsupported tool registration: non-ontology.tool'
     );
+  });
+
+  it('dispatches workflow_builder tools to the workflow builder adapter', async () => {
+    const tool = createDefaultToolRegistry().get('workflow_builder.compile');
+    const { toolGatewayService, workflowBuilderToolAdapter, ontologyToolAdapter } =
+      buildToolGatewayService({
+        tool,
+        workflowAdapterResult: {
+          ok: true,
+          accepted: false,
+          diagnostics: [
+            {
+              code: 'NO_ELIGIBLE_ACTION',
+              severity: 'error',
+              message: 'No eligible action matched workflow step "Send a Slack message"',
+              stepId: 'step-1'
+            }
+          ]
+        }
+      });
+    const payload = {
+      arguments: {
+        goal: {
+          title: 'Review pending orders'
+        },
+        plan: {
+          steps: [
+            {
+              stepId: 'step-1',
+              title: 'Send a Slack message',
+              capabilityTags: ['notify']
+            }
+          ]
+        }
+      }
+    };
+
+    await expect(toolGatewayService.invoke('workflow_builder.compile', payload)).resolves.toEqual({
+      ok: true,
+      toolName: 'workflow_builder.compile',
+      result: {
+        ok: true,
+        accepted: false,
+        diagnostics: [
+          {
+            code: 'NO_ELIGIBLE_ACTION',
+            severity: 'error',
+            message: 'No eligible action matched workflow step "Send a Slack message"',
+            stepId: 'step-1'
+          }
+        ]
+      }
+    });
+    expect(workflowBuilderToolAdapter.invoke).toHaveBeenCalledWith('workflow_builder.compile', payload);
+    expect(ontologyToolAdapter.invoke).not.toHaveBeenCalled();
+  });
+
+  it('dispatches ontology ingest tools to the ingest adapter', async () => {
+    const tool = {
+      name: 'ontology.ingest_preview',
+      category: 'ontology',
+      description: 'Preview ontology ingest',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      outputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      errors: []
+    };
+    const { toolGatewayService, ontologyIngestToolAdapter, ontologyToolAdapter, workflowBuilderToolAdapter } =
+      buildToolGatewayService({
+        tool,
+        ingestAdapterResult: {
+          ok: true,
+          preview: {
+            dryRun: true,
+            summary: {
+              totalRecords: 1,
+              acceptedRecords: 1,
+              rejectedRecords: 0,
+              createdObjects: 0,
+              updatedObjects: 0,
+              skippedObjects: 1
+            },
+            diagnostics: [],
+            sampleObjects: []
+          }
+        }
+      });
+    const payload = {
+      arguments: {
+        source: {
+          kind: 'json'
+        },
+        objects: []
+      }
+    };
+
+    await expect(toolGatewayService.invoke('ontology.ingest_preview', payload)).resolves.toEqual({
+      ok: true,
+      toolName: 'ontology.ingest_preview',
+      result: {
+        ok: true,
+        preview: {
+          dryRun: true,
+          summary: {
+            totalRecords: 1,
+            acceptedRecords: 1,
+            rejectedRecords: 0,
+            createdObjects: 0,
+            updatedObjects: 0,
+            skippedObjects: 1
+          },
+          diagnostics: [],
+          sampleObjects: []
+        }
+      }
+    });
+    expect(ontologyIngestToolAdapter.invoke).toHaveBeenCalledWith('ontology.ingest_preview', payload);
+    expect(ontologyToolAdapter.invoke).not.toHaveBeenCalled();
+    expect(workflowBuilderToolAdapter.invoke).not.toHaveBeenCalled();
   });
 });

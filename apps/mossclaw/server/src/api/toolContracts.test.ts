@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import type {
+  CompileWorkflowPlanResponseDto,
   ToolDescriptorDto,
   ToolErrorDto,
   ToolExampleDto,
@@ -99,5 +100,46 @@ describe('tool gateway shared contracts', () => {
     expectTypeOf(error.errorCode).toMatchTypeOf<string>();
     expectTypeOf(result).toMatchTypeOf<ToolInvokeResultDto>();
     expectTypeOf(result).toMatchTypeOf<SuccessResult | ErrorResult>();
+  });
+
+  it('允许通用 tool invoke dto 承载 workflow builder compile payload', () => {
+    const request = {
+      arguments: {
+        goal: {
+          title: 'Review pending orders'
+        },
+        plan: {
+          steps: [
+            {
+              stepId: 'step-1',
+              title: 'Find pending orders'
+            }
+          ]
+        }
+      }
+    } satisfies ToolInvokeRequestDto;
+
+    const compileResult = {
+      ok: true,
+      accepted: false,
+      diagnostics: [
+        {
+          code: 'NO_ELIGIBLE_ACTION',
+          severity: 'error',
+          message: 'No compile-time action matched the plan step',
+          stepId: 'step-1'
+        }
+      ]
+    } satisfies CompileWorkflowPlanResponseDto;
+
+    const success = {
+      ok: true,
+      toolName: 'workflow_builder.compile',
+      result: compileResult
+    } satisfies ToolInvokeSuccessDto;
+
+    expectTypeOf(request).toMatchTypeOf<ToolInvokeRequestDto>();
+    expectTypeOf(success).toMatchTypeOf<ToolInvokeSuccessDto>();
+    expectTypeOf(success.result).toMatchTypeOf<CompileWorkflowPlanResponseDto>();
   });
 });

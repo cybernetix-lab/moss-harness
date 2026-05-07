@@ -75,19 +75,30 @@ describe('OntologyController', () => {
     const tools = registry.list();
     const getObjectTool = registry.get('ontology.get_object');
     const getSchemaTool = registry.get('ontology.get_schema');
+    const ingestPreviewTool = registry.get('ontology.ingest_preview');
+    const ingestSubmitTool = registry.get('ontology.ingest_submit');
     const queryTool = registry.get('ontology.query');
 
     expect(tools.map((tool) => tool.name)).toEqual([
       'ontology.get_object',
       'ontology.get_schema',
-      'ontology.query'
+      'ontology.ingest_preview',
+      'ontology.ingest_submit',
+      'ontology.query',
+      'workflow_builder.compile',
+      'workflow_builder.simulate',
+      'workflow_builder.validate_plan'
     ]);
     expect(getObjectTool).toBeDefined();
     expect(getSchemaTool).toBeDefined();
+    expect(ingestPreviewTool).toBeDefined();
+    expect(ingestSubmitTool).toBeDefined();
     expect(queryTool).toBeDefined();
 
     assertCompleteToolMetadata(getObjectTool!);
     assertCompleteToolMetadata(getSchemaTool!);
+    assertCompleteToolMetadata(ingestPreviewTool!);
+    assertCompleteToolMetadata(ingestSubmitTool!);
     assertCompleteToolMetadata(queryTool!);
 
     expect(getObjectTool?.errors).toEqual(

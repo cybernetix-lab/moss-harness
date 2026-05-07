@@ -13,21 +13,56 @@ import { UnifiedSkillRepository } from './infrastructure/database/UnifiedSkillRe
 import { TaskController } from './api/controllers/TaskController';
 import { AgentController } from './api/controllers/AgentController';
 import { OntologyController, registerOntologyRoutes } from './api/controllers/OntologyController';
+import {
+  OntologyIngestController,
+  registerOntologyIngestRoutes
+} from './api/controllers/OntologyIngestController';
+import { OntologyProjectionController } from './api/controllers/OntologyProjectionController';
+import { registerOntologyProjectionRoutes } from './api/controllers/OntologyProjectionRoutes';
+import {
+  WorkflowBuilderController,
+  registerWorkflowBuilderRoutes
+} from './api/controllers/WorkflowBuilderController';
+import {
+  WorkflowRuntimeController,
+  registerWorkflowRuntimeRoutes
+} from './api/controllers/WorkflowRuntimeController';
 import { ToolGatewayController, registerToolGatewayRoutes } from './api/controllers/ToolGatewayController';
+import { registerSwaggerRoutes } from './api/controllers/SwaggerController';
 import { TaskService } from './services/TaskService';
 import { AgentService } from './services/AgentService';
 import { OntologyService } from './services/OntologyService';
 import { SkillService } from './services/SkillService';
+import { WorkflowBuilderService } from './services/workflowBuilder/WorkflowBuilderService';
 import { SkillController } from './api/controllers/SkillController';
 import { ModelController } from './api/controllers/ModelController';
 import { RosterLoader } from './services/RosterLoader';
 import { OntologyToolAdapter } from './services/toolGateway/OntologyToolAdapter';
+import { OntologyIngestToolAdapter } from './services/toolGateway/OntologyIngestToolAdapter';
+import { WorkflowBuilderToolAdapter } from './services/toolGateway/WorkflowBuilderToolAdapter';
 import { createDefaultToolRegistry } from './services/toolGateway/ToolRegistry';
 import { ToolGatewayService } from './services/toolGateway/ToolGatewayService';
 import path from 'path';
 import { ensureTaskTableShape } from './infrastructure/database/taskSchema';
 import { ensureOntologySchema } from './infrastructure/database/ontologySchema';
+import { ensureOntologyIngestSchema } from './infrastructure/database/ontologyIngestSchema';
 import { createDefaultModelCatalogService } from './services/ModelCatalogService';
+import { TypeProjectionService } from './services/ontologyProjection/TypeProjectionService';
+import { SubgraphProjectionService } from './services/ontologyProjection/SubgraphProjectionService';
+import { LoopAnalysisService } from './services/ontologyProjection/LoopAnalysisService';
+import { createOntologyIngestService } from './services/ontologyIngest/createOntologyIngestService';
+import { TaskScheduler } from '@agent-harness/core/subagent';
+import { UnifiedWorkflowRunRepository } from './infrastructure/database/UnifiedWorkflowRunRepository';
+import { UnifiedWorkflowExecutionLogRepository } from './infrastructure/database/UnifiedWorkflowExecutionLogRepository';
+import { ensureWorkflowRunTableShape } from './infrastructure/database/workflowRunSchema';
+import { ExecutionStateStore } from './services/workflowRuntime/ExecutionStateStore';
+import { RunPolicyGuard } from './services/workflowRuntime/RunPolicyGuard';
+import { StepExecutorRegistry } from './services/workflowRuntime/StepExecutorRegistry';
+import { ExecutionEngine } from './services/workflowRuntime/ExecutionEngine';
+import { SubagentTaskHandleAdapter } from './services/workflowRuntime/SubagentTaskHandleAdapter';
+import { ToolGatewayStepExecutor } from './services/workflowRuntime/executors/ToolGatewayStepExecutor';
+import { SubagentTaskStepExecutor } from './services/workflowRuntime/executors/SubagentTaskStepExecutor';
+import { WorkflowRuntimeService } from './services/workflowRuntime/WorkflowRuntimeService';
 
 const app = express();
 const server = http.createServer(app);
@@ -111,6 +146,8 @@ async function bootstrap() {
 
   await ensureTaskTableShape(storage);
   await ensureOntologySchema(storage);
+  await ensureOntologyIngestSchema(storage);
+  await ensureWorkflowRunTableShape(storage);
   await ensureColumn('agents', 'isBuiltin', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('agents', 'isDisabled', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('skills', 'isBuiltin', 'INTEGER NOT NULL DEFAULT 0');
@@ -121,16 +158,52 @@ async function bootstrap() {
   const agentRepository = new UnifiedAgentRepository(storage);
   const ontologyRepository = new UnifiedOntologyRepository(storage);
   const skillRepository = new UnifiedSkillRepository(storage);
+  const workflowRunRepository = new UnifiedWorkflowRunRepository(storage);
+  const workflowExecutionLogRepository = new UnifiedWorkflowExecutionLogRepository(storage);
 
   // 3. Initialize Services
   const taskService = new TaskService(taskRepository, agentRepository, io);
   const agentService = new AgentService(agentRepository);
   const ontologyService = new OntologyService(ontologyRepository);
+  const typeProjectionService = new TypeProjectionService(ontologyService);
+  const subgraphProjectionService = new SubgraphProjectionService(ontologyService);
+  const loopAnalysisService = new LoopAnalysisService();
   const skillService = new SkillService(skillRepository);
+  const workflowBuilderService = new WorkflowBuilderService();
+  const ontologyIngestService = createOntologyIngestService(storage);
   const ontologyToolAdapter = new OntologyToolAdapter(ontologyService);
+  const ontologyIngestToolAdapter = new OntologyIngestToolAdapter(ontologyIngestService);
+  const workflowBuilderToolAdapter = new WorkflowBuilderToolAdapter(workflowBuilderService);
   const toolGatewayService = new ToolGatewayService(
     createDefaultToolRegistry(),
-    ontologyToolAdapter
+    ontologyToolAdapter,
+    workflowBuilderToolAdapter,
+    ontologyIngestToolAdapter
+  );
+  const workflowRuntimeTaskScheduler = new TaskScheduler(storage, 5);
+  await workflowRuntimeTaskScheduler.initialize();
+  await workflowRuntimeTaskScheduler.start();
+  const executionStateStore = new ExecutionStateStore();
+  const runPolicyGuard = new RunPolicyGuard();
+  const stepExecutorRegistry = new StepExecutorRegistry();
+  const subagentTaskHandleAdapter = new SubagentTaskHandleAdapter(
+    storage,
+    workflowRuntimeTaskScheduler
+  );
+  stepExecutorRegistry.register('tool_gateway', new ToolGatewayStepExecutor(toolGatewayService));
+  stepExecutorRegistry.register(
+    'subagent_task',
+    new SubagentTaskStepExecutor(subagentTaskHandleAdapter)
+  );
+  const executionEngine = new ExecutionEngine(
+    stepExecutorRegistry,
+    executionStateStore,
+    runPolicyGuard
+  );
+  const workflowRuntimeService = new WorkflowRuntimeService(
+    workflowRunRepository,
+    workflowExecutionLogRepository,
+    executionEngine
   );
   const modelCatalogService = createDefaultModelCatalogService();
 
@@ -143,6 +216,15 @@ async function bootstrap() {
   const taskController = new TaskController(taskService);
   const agentController = new AgentController(agentService);
   const ontologyController = new OntologyController(ontologyService);
+  const ontologyProjectionController = new OntologyProjectionController({
+    getTypes: () => typeProjectionService.getTypes(),
+    getNeighbors: (payload) => subgraphProjectionService.getNeighbors(payload),
+    getSubgraph: (payload) => subgraphProjectionService.getSubgraph(payload),
+    analyzeLoops: (payload) => loopAnalysisService.analyze(payload)
+  });
+  const ontologyIngestController = new OntologyIngestController(ontologyIngestService);
+  const workflowBuilderController = new WorkflowBuilderController(workflowBuilderService);
+  const workflowRuntimeController = new WorkflowRuntimeController(workflowRuntimeService);
   const toolGatewayController = new ToolGatewayController(toolGatewayService);
   const skillController = new SkillController(skillService);
   const modelController = new ModelController(modelCatalogService);
@@ -163,7 +245,12 @@ async function bootstrap() {
   app.delete('/api/agents/:id', (req, res) => agentController.deleteAgent(req, res));
 
   registerOntologyRoutes(app, ontologyController);
+  registerOntologyIngestRoutes(app, ontologyIngestController);
+  registerOntologyProjectionRoutes(app, ontologyProjectionController);
+  registerWorkflowBuilderRoutes(app, workflowBuilderController);
+  registerWorkflowRuntimeRoutes(app, workflowRuntimeController);
   registerToolGatewayRoutes(app, toolGatewayController);
+  registerSwaggerRoutes(app, { enabled: isSwaggerUiEnabled() });
 
   app.get('/api/skills', (req, res) => skillController.getSkills(req, res));
   app.get('/api/models', (req, res) => modelController.getModels(req, res));
@@ -189,6 +276,10 @@ async function bootstrap() {
   server.listen(PORT, () => {
     console.log(`MossClaw server running on port ${PORT}`);
   });
+}
+
+function isSwaggerUiEnabled(): boolean {
+  return process.env.ENABLE_SWAGGER_UI === 'true' || process.env.NODE_ENV !== 'production';
 }
 
 bootstrap().catch(console.error);

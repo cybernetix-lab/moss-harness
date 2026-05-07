@@ -91,4 +91,50 @@ describe('registerToolGatewayRoutes', () => {
     });
     expect(toolGatewayController.invoke).toHaveBeenCalledTimes(1);
   });
+
+  it('mounts POST /api/tools/:toolName/invoke for workflow builder tools', async () => {
+    const response = await fetch(`${baseUrl}/api/tools/workflow_builder.compile/invoke`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        arguments: {
+          goal: {
+            title: 'Review pending orders'
+          },
+          plan: {
+            steps: [
+              {
+                stepId: 'step-1',
+                title: 'Find pending orders'
+              }
+            ]
+          }
+        }
+      })
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      route: 'invoke',
+      toolName: 'workflow_builder.compile',
+      body: {
+        arguments: {
+          goal: {
+            title: 'Review pending orders'
+          },
+          plan: {
+            steps: [
+              {
+                stepId: 'step-1',
+                title: 'Find pending orders'
+              }
+            ]
+          }
+        }
+      }
+    });
+    expect(toolGatewayController.invoke).toHaveBeenCalledTimes(1);
+  });
 });

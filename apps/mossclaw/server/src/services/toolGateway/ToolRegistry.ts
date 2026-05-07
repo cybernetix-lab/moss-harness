@@ -1,5 +1,7 @@
 import type { ToolDescriptorDto } from '@mossclaw/shared';
 import { ontologyToolDefinitions } from './toolDefinitions';
+import { ontologyIngestToolDefinitions } from './ontologyIngestToolDefinitions';
+import { workflowBuilderToolDefinitions } from './workflowBuilderToolDefinitions';
 
 export class ToolRegistry {
   private readonly tools: ToolDescriptorDto[];
@@ -21,7 +23,11 @@ export class ToolRegistry {
 }
 
 export function createDefaultToolRegistry(): ToolRegistry {
-  return new ToolRegistry(ontologyToolDefinitions);
+  return new ToolRegistry([
+    ...ontologyToolDefinitions,
+    ...ontologyIngestToolDefinitions,
+    ...workflowBuilderToolDefinitions
+  ]);
 }
 
 function cloneFrozenToolDescriptor(tool: ToolDescriptorDto): ToolDescriptorDto {

@@ -52,6 +52,11 @@ describe('ToolGatewayController', () => {
         buildToolDescriptor({
           name: 'ontology.query',
           description: 'Query ontology objects'
+        }),
+        buildToolDescriptor({
+          name: 'workflow_builder.compile',
+          category: 'workflow_builder',
+          description: 'Compile workflow plan into a workflow definition'
         })
       ])
     });
@@ -66,6 +71,11 @@ describe('ToolGatewayController', () => {
       buildToolDescriptor({
         name: 'ontology.query',
         description: 'Query ontology objects'
+      }),
+      buildToolDescriptor({
+        name: 'workflow_builder.compile',
+        category: 'workflow_builder',
+        description: 'Compile workflow plan into a workflow definition'
       })
     ]);
   });
@@ -125,6 +135,71 @@ describe('ToolGatewayController', () => {
       arguments: {
         objectType: 'Order',
         objectId: 'missing'
+      }
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(result);
+  });
+
+  it('returns 200 with workflow builder compile result payload', async () => {
+    const result: ToolInvokeResultDto = {
+      ok: true,
+      toolName: 'workflow_builder.compile',
+      result: {
+        ok: true,
+        accepted: false,
+        diagnostics: [
+          {
+            code: 'NO_ELIGIBLE_ACTION',
+            severity: 'error',
+            message: 'No eligible action matched workflow step "Send a Slack message"',
+            stepId: 'step-1'
+          }
+        ]
+      }
+    };
+    const { controller, toolGatewayService } = buildController({
+      invoke: vi.fn().mockResolvedValue(result)
+    });
+    const req = {
+      params: {
+        toolName: 'workflow_builder.compile'
+      },
+      body: {
+        arguments: {
+          goal: {
+            title: 'Review pending orders'
+          },
+          plan: {
+            steps: [
+              {
+                stepId: 'step-1',
+                title: 'Send a Slack message',
+                capabilityTags: ['notify']
+              }
+            ]
+          }
+        }
+      }
+    } as unknown as Request;
+    const res = buildMockResponse();
+
+    await controller.invoke(req, res);
+
+    expect(toolGatewayService.invoke).toHaveBeenCalledWith('workflow_builder.compile', {
+      arguments: {
+        goal: {
+          title: 'Review pending orders'
+        },
+        plan: {
+          steps: [
+            {
+              stepId: 'step-1',
+              title: 'Send a Slack message',
+              capabilityTags: ['notify']
+            }
+          ]
+        }
       }
     });
     expect(res.status).toHaveBeenCalledWith(200);
