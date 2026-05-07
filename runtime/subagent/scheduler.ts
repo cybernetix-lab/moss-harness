@@ -89,6 +89,13 @@ export class TaskScheduler extends EventEmitter implements ITaskScheduler {
       ]
     );
 
+    // Enqueue task for scheduler loop execution.
+    this.queue.push({
+      task,
+      resolve: () => {},
+      reject: () => {}
+    });
+
     this.stats.totalScheduled++;
     this.stats.currentQueueLength++;
 

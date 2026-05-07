@@ -171,7 +171,7 @@ class SQLiteQueryBuilder extends BaseQueryBuilder {
 
   async insert(data: Record<string, unknown>): Promise<InsertResult> {
     const columns = Object.keys(data);
-    const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
+    const placeholders = columns.map(() => '?').join(', ');
     const values = Object.values(data);
     
     const sql = `INSERT INTO ${this.table} (${columns.join(', ')}) VALUES (${placeholders})`;
@@ -193,7 +193,7 @@ class SQLiteQueryBuilder extends BaseQueryBuilder {
     }
 
     const columns = Object.keys(data[0]);
-    const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
+    const placeholders = columns.map(() => '?').join(', ');
     
     const sql = `INSERT INTO ${this.table} (${columns.join(', ')}) VALUES (${placeholders})`;
     
@@ -217,7 +217,7 @@ class SQLiteQueryBuilder extends BaseQueryBuilder {
 
   async update(data: Record<string, unknown>): Promise<UpdateResult> {
     const columns = Object.keys(data);
-    const setClause = columns.map((col, i) => `${col} = $${i + 1}`).join(', ');
+    const setClause = columns.map((col) => `${col} = ?`).join(', ');
     const values = [...Object.values(data), ...this.getWhereParams()];
     
     const whereClause = this.buildWhereClause();
@@ -238,6 +238,23 @@ class SQLiteQueryBuilder extends BaseQueryBuilder {
     return {
       rowCount: result.rowCount,
     };
+  }
+
+  protected buildWhereClause(): string {
+    if (this.whereClauses.length === 0) {
+      return '';
+    }
+
+    return this.whereClauses
+      .map((clause) => {
+        if (clause.type === 'in') {
+          const placeholders = (clause.value as unknown[]).map(() => '?').join(', ');
+          return `${clause.column} IN (${placeholders})`;
+        }
+
+        return `${clause.column} ${clause.operator} ?`;
+      })
+      .join(' AND ');
   }
 }
 
