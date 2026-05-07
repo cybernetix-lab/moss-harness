@@ -41,5 +41,6 @@ The Web endpoint exposed by `serve` is read-only. Use the CLI as the control pla
 - [README.md](../README.md)
 - [README.zh-CN.md](../README.zh-CN.md)
 - [ARCHITECTURE.md](../ARCHITECTURE.md)
+- [docs/ontology-ingest-usage.md](ontology-ingest-usage.md)
 - [docs/design-philosophy.md](design-philosophy.md)
 - [CONTRIBUTING.md](../CONTRIBUTING.md)
