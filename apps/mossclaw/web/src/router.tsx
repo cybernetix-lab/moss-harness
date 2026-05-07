@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import AppShell from './layouts/AppShell';
 import DashboardPage from './pages/DashboardPage';
+import OntologyExplorerPage from './pages/OntologyExplorerPage';
 import SkillsPage from './pages/SkillsPage';
 import TaskCreatePage from './pages/TaskCreatePage';
 import TaskDetailPage from './pages/TaskDetailPage';
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
       {
         path: 'skills',
         element: <SkillsPage />,
+      },
+      {
+        path: 'ontology/explorer',
+        element: <OntologyExplorerPage />,
       },
     ],
   },

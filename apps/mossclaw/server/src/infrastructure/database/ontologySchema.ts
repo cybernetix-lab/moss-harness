@@ -5,16 +5,46 @@ type SqlExecutor = Pick<IStorage, 'execute'>;
 
 const SEEDED_OBJECT_TYPES: OntologyObjectTypeDto[] = [
   {
+    objectType: 'Artifact',
+    description: '证据对象',
+    properties: [
+      { name: 'kind', type: 'string', required: true },
+      { name: 'relatedOrder', type: 'string', required: true }
+    ]
+  },
+  {
     objectType: 'Order',
     description: '订单对象',
     properties: [
       { name: 'amount', type: 'number', required: true },
-      { name: 'riskLevel', type: 'string', required: true }
+      { name: 'riskLevel', type: 'string', required: true },
+      { name: 'review', type: 'string', required: true }
+    ]
+  },
+  {
+    objectType: 'Review',
+    description: '审核对象',
+    properties: [
+      { name: 'decision', type: 'string', required: true },
+      { name: 'subject', type: 'string', required: true }
     ]
   }
 ];
 
 const SEEDED_OBJECTS: OntologyObjectDto[] = [
+  {
+    objectType: 'Artifact',
+    objectId: 'artifact-001',
+    displayName: 'Artifact 001',
+    state: 'Captured',
+    properties: {
+      kind: 'Document',
+      relatedOrder: {
+        objectType: 'Order',
+        objectId: 'order-001'
+      }
+    }
+  },
   {
     objectType: 'Order',
     objectId: 'order-001',
@@ -22,7 +52,24 @@ const SEEDED_OBJECTS: OntologyObjectDto[] = [
     state: 'PendingReview',
     properties: {
       amount: 1250,
-      riskLevel: 'Medium'
+      riskLevel: 'Medium',
+      review: {
+        objectType: 'Review',
+        objectId: 'review-001'
+      }
+    }
+  },
+  {
+    objectType: 'Review',
+    objectId: 'review-001',
+    displayName: 'Review 001',
+    state: 'Open',
+    properties: {
+      decision: 'Escalate',
+      subject: {
+        objectType: 'Order',
+        objectId: 'order-001'
+      }
     }
   }
 ];

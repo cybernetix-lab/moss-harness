@@ -1,5 +1,11 @@
 import { Layout, Menu } from 'antd';
-import { DashboardOutlined, PlusOutlined, SettingOutlined, ToolOutlined } from '@ant-design/icons';
+import {
+  ApartmentOutlined,
+  DashboardOutlined,
+  PlusOutlined,
+  SettingOutlined,
+  ToolOutlined
+} from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const { Header, Content, Sider } = Layout;
@@ -10,6 +16,8 @@ export function AppShell() {
 
   const selectedKey = location.pathname.startsWith('/skills')
     ? '/skills'
+    : location.pathname.startsWith('/ontology/explorer')
+      ? '/ontology/explorer'
     : location.pathname.startsWith('/tasks/new')
       ? '/tasks/new'
       : '/';
@@ -53,6 +61,12 @@ export function AppShell() {
               icon: <ToolOutlined />,
               label: '技能市场',
               onClick: () => navigate('/skills'),
+            },
+            {
+              key: '/ontology/explorer',
+              icon: <ApartmentOutlined />,
+              label: '本体探索',
+              onClick: () => navigate('/ontology/explorer'),
             },
             {
               key: '/settings',

@@ -54,11 +54,28 @@ describe('UnifiedOntologyRepository', () => {
 
     await expect(repository.listObjectTypes()).resolves.toEqual([
       {
+        objectType: 'Artifact',
+        description: '证据对象',
+        properties: [
+          { name: 'kind', type: 'string', required: true },
+          { name: 'relatedOrder', type: 'string', required: true }
+        ]
+      },
+      {
         objectType: 'Order',
         description: '订单对象',
         properties: [
           { name: 'amount', type: 'number', required: true },
-          { name: 'riskLevel', type: 'string', required: true }
+          { name: 'riskLevel', type: 'string', required: true },
+          { name: 'review', type: 'string', required: true }
+        ]
+      },
+      {
+        objectType: 'Review',
+        description: '审核对象',
+        properties: [
+          { name: 'decision', type: 'string', required: true },
+          { name: 'subject', type: 'string', required: true }
         ]
       }
     ]);
@@ -69,7 +86,11 @@ describe('UnifiedOntologyRepository', () => {
       state: 'PendingReview',
       properties: {
         amount: 1250,
-        riskLevel: 'Medium'
+        riskLevel: 'Medium',
+        review: {
+          objectType: 'Review',
+          objectId: 'review-001'
+        }
       }
     });
     await expect(
@@ -85,7 +106,11 @@ describe('UnifiedOntologyRepository', () => {
         state: 'PendingReview',
         properties: {
           amount: 1250,
-          riskLevel: 'Medium'
+          riskLevel: 'Medium',
+          review: {
+            objectType: 'Review',
+            objectId: 'review-001'
+          }
         }
       }
     ]);
@@ -120,7 +145,7 @@ describe('UnifiedOntologyRepository', () => {
     });
     expectLogCall(calls, 'log', 'query_completed', {
       method: 'listObjectTypes',
-      count: 1
+      count: 3
     });
     expectLogCall(calls, 'log', 'called', {
       method: 'getObject',
@@ -222,7 +247,11 @@ describe('UnifiedOntologyRepository', () => {
         state: 'PendingReview',
         properties: {
           amount: 1250,
-          riskLevel: 'Medium'
+          riskLevel: 'Medium',
+          review: {
+            objectType: 'Review',
+            objectId: 'review-001'
+          }
         }
       },
       {
@@ -253,11 +282,28 @@ describe('UnifiedOntologyRepository', () => {
         state: 'PendingReview',
         properties: {
           amount: 1250,
-          riskLevel: 'Medium'
+          riskLevel: 'Medium',
+          review: {
+            objectType: 'Review',
+            objectId: 'review-001'
+          }
         }
       }
     ]);
     await expect(repository.queryObjects({})).resolves.toEqual([
+      {
+        objectType: 'Artifact',
+        objectId: 'artifact-001',
+        displayName: 'Artifact 001',
+        state: 'Captured',
+        properties: {
+          kind: 'Document',
+          relatedOrder: {
+            objectType: 'Order',
+            objectId: 'order-001'
+          }
+        }
+      },
       {
         objectType: 'Invoice',
         objectId: 'invoice-001',
@@ -274,7 +320,11 @@ describe('UnifiedOntologyRepository', () => {
         state: 'PendingReview',
         properties: {
           amount: 1250,
-          riskLevel: 'Medium'
+          riskLevel: 'Medium',
+          review: {
+            objectType: 'Review',
+            objectId: 'review-001'
+          }
         }
       },
       {
@@ -285,6 +335,19 @@ describe('UnifiedOntologyRepository', () => {
         properties: {
           amount: 80,
           riskLevel: 'Low'
+        }
+      },
+      {
+        objectType: 'Review',
+        objectId: 'review-001',
+        displayName: 'Review 001',
+        state: 'Open',
+        properties: {
+          decision: 'Escalate',
+          subject: {
+            objectType: 'Order',
+            objectId: 'order-001'
+          }
         }
       }
     ]);

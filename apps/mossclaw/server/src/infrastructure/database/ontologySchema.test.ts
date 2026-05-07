@@ -34,25 +34,72 @@ describe('ensureOntologySchema', () => {
     const objectTypes = await storage.query('ontology_object_types').orderBy('objectType').get();
     const objects = await storage.query('ontology_objects').orderBy('objectType').orderBy('objectId').get();
 
-    expect(objectTypes).toHaveLength(1);
-    expect(objects).toHaveLength(1);
+    expect(objectTypes).toHaveLength(3);
+    expect(objects).toHaveLength(3);
     expect(objectTypes[0]).toMatchObject({
+      objectType: 'Artifact',
+      description: '证据对象'
+    });
+    expect(JSON.parse(String(objectTypes[0]?.properties))).toEqual([
+      { name: 'kind', type: 'string', required: true },
+      { name: 'relatedOrder', type: 'string', required: true }
+    ]);
+    expect(objectTypes[1]).toMatchObject({
       objectType: 'Order',
       description: '订单对象'
     });
-    expect(JSON.parse(String(objectTypes[0]?.properties))).toEqual([
+    expect(JSON.parse(String(objectTypes[1]?.properties))).toEqual([
       { name: 'amount', type: 'number', required: true },
-      { name: 'riskLevel', type: 'string', required: true }
+      { name: 'riskLevel', type: 'string', required: true },
+      { name: 'review', type: 'string', required: true }
+    ]);
+    expect(objectTypes[2]).toMatchObject({
+      objectType: 'Review',
+      description: '审核对象'
+    });
+    expect(JSON.parse(String(objectTypes[2]?.properties))).toEqual([
+      { name: 'decision', type: 'string', required: true },
+      { name: 'subject', type: 'string', required: true }
     ]);
     expect(objects[0]).toMatchObject({
+      objectType: 'Artifact',
+      objectId: 'artifact-001',
+      displayName: 'Artifact 001',
+      state: 'Captured'
+    });
+    expect(JSON.parse(String(objects[0]?.properties))).toEqual({
+      kind: 'Document',
+      relatedOrder: {
+        objectType: 'Order',
+        objectId: 'order-001'
+      }
+    });
+    expect(objects[1]).toMatchObject({
       objectType: 'Order',
       objectId: 'order-001',
       displayName: 'Order 001',
       state: 'PendingReview'
     });
-    expect(JSON.parse(String(objects[0]?.properties))).toEqual({
+    expect(JSON.parse(String(objects[1]?.properties))).toEqual({
       amount: 1250,
-      riskLevel: 'Medium'
+      riskLevel: 'Medium',
+      review: {
+        objectType: 'Review',
+        objectId: 'review-001'
+      }
+    });
+    expect(objects[2]).toMatchObject({
+      objectType: 'Review',
+      objectId: 'review-001',
+      displayName: 'Review 001',
+      state: 'Open'
+    });
+    expect(JSON.parse(String(objects[2]?.properties))).toEqual({
+      decision: 'Escalate',
+      subject: {
+        objectType: 'Order',
+        objectId: 'order-001'
+      }
     });
   });
 
