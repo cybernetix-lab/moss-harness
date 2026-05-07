@@ -2,6 +2,7 @@
 .runtime/*
 logs/
 *.log
+apps/mossclaw/server/data/
 
 # Session data (legacy paths - to be removed after migration)
 sessions/
@@ -28,6 +29,8 @@ memory/telemetry/
 # IDE
 .vscode/
 .idea/
+.trae/
+.superpowers/
 docs/superpowers
 *.swp
 *.swo
