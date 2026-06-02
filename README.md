@@ -351,9 +351,3 @@ This project is licensed under the [MIT License](./LICENSE).
 
 - Design philosophy inspired by Systematics, Cybernetics, and Informatics (SCI theory).
 - Architecture design inspired by executive control and learning memory mechanisms in neuroscience.
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=cybernetix-lab/moss-harness&type=Date)](https://star-history.com/#cybernetix-lab/moss-harness&Date)
